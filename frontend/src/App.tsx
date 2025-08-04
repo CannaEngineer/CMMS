@@ -1,0 +1,79 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import theme from './theme/theme';
+
+// Layout
+import DashboardLayout from './components/Layout/DashboardLayout';
+
+// Pages
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import WorkOrders from './pages/WorkOrders';
+import Assets from './pages/Assets';
+import Maintenance from './pages/Maintenance';
+import Inventory from './pages/Inventory';
+import Locations from './pages/Locations';
+import Reports from './pages/Reports';
+import Users from './pages/Users';
+import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+function App() {
+  const isAuthenticated = true; // Temporary bypass for development
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <CssBaseline />
+          <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/*"
+              element={
+                isAuthenticated ? (
+                  <Routes>
+                    <Route path="/" element={<DashboardLayout />}>
+                      <Route index element={<Navigate to="/dashboard" replace />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="work-orders" element={<WorkOrders />} />
+                      <Route path="assets" element={<Assets />} />
+                      <Route path="maintenance" element={<Maintenance />} />
+                      <Route path="inventory" element={<Inventory />} />
+                      <Route path="locations" element={<Locations />} />
+                      <Route path="reports" element={<Reports />} />
+                      <Route path="users" element={<Users />} />
+                      <Route path="profile" element={<ProfilePage />} />
+                      <Route path="settings" element={<SettingsPage />} />
+                    </Route>
+                  </Routes>
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+          </Routes>
+          </Router>
+        </LocalizationProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

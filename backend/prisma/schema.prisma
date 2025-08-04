@@ -1,0 +1,467 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS for data consistency
+enum UserRole {
+  ADMIN
+  MANAGER
+  TECHNICIAN
+}
+
+enum WorkOrderStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELED
+}
+
+enum WorkOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum AssetStatus {
+  ONLINE
+  OFFLINE
+}
+
+enum AssetCriticality {
+  LOW
+  MEDIUM
+  HIGH
+  IMPORTANT
+}
+
+enum PMTriggerType {
+  TIME_BASED      // Fixed intervals (daily, weekly, monthly)
+  USAGE_BASED     // Based on meter readings (hours, miles, cycles)
+  CONDITION_BASED // Based on sensor thresholds
+  EVENT_BASED     // Manual triggers or system events
+}
+
+enum TaskType {
+  INSPECTION
+  CLEANING
+  LUBRICATION
+  REPLACEMENT
+  CALIBRATION
+  TESTING
+  REPAIR
+  OTHER
+}
+
+enum TaskCompletionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  FAILED
+}
+
+enum MeterType {
+  HOURS           // Operating hours
+  MILES           // Distance traveled
+  CYCLES          // Number of cycles/operations
+  GALLONS         // Fuel consumption
+  TEMPERATURE     // Temperature readings
+  PRESSURE        // Pressure readings
+  VIBRATION       // Vibration levels
+  OTHER
+}
+
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  EMERGENCY
+  INSPECTION
+  CALIBRATION
+}
+
+
+// MODELS
+model User {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  email          String       @unique
+  name           String
+  password       String // Will be hashed
+  role           UserRole     @default(TECHNICIAN)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrders     WorkOrder[]
+  
+  // New relationships for PM system
+  tasksCompleted    WorkOrderTask[] @relation("TaskCompletedBy")
+  tasksSigned       WorkOrderTask[] @relation("TaskSignedBy")
+  meterReadings     MeterReading[]  @relation("MeterReadingRecordedBy")
+  maintenancePerformed MaintenanceHistory[] @relation("MaintenancePerformedBy")
+  maintenanceSigned    MaintenanceHistory[] @relation("MaintenanceSignedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  legacyId  Int?     @unique
+  name      String @unique
+  settings  Json?
+  users     User[]
+  assets    Asset[]
+  locations Location[]
+  suppliers Supplier[]
+  parts     Part[]
+  workOrders WorkOrder[]
+  pmTasks   PMTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Asset {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  name           String
+  description    String?
+  serialNumber   String?
+  modelNumber    String?
+  manufacturer   String?
+  year           Int?
+  status         AssetStatus  @default(ONLINE)
+  criticality    AssetCriticality @default(MEDIUM)
+  barcode        String?
+  imageUrl       String?
+  attachments    Json?
+  locationId     Int
+  organizationId Int
+  parentId       Int?
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         Asset?       @relation("AssetHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Asset[]      @relation("AssetHierarchy")
+  workOrders     WorkOrder[]
+  pmSchedules    PMSchedule[]
+  
+  // New relationships for PM system
+  meterReadings     MeterReading[]     
+  maintenanceHistory MaintenanceHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([locationId])
+  @@index([status])
+  @@index([criticality])
+  @@index([parentId])
+}
+
+model Location {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  name           String
+  description    String?
+  address        String?
+  organizationId Int
+  parentId       Int?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         Location?    @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Location[]   @relation("LocationHierarchy")
+  assets         Asset[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WorkOrder {
+  id           Int               @id @default(autoincrement())
+  legacyId     Int?              @unique
+  title        String
+  description  String?
+  status       WorkOrderStatus   @default(OPEN)
+  priority     WorkOrderPriority @default(MEDIUM)
+  assetId      Int?
+  assignedToId Int?
+  asset        Asset?            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assignedTo   User?             @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // New relationships for PM system
+  tasks             WorkOrderTask[]
+  maintenanceHistory MaintenanceHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([assetId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model PMSchedule {
+  id          Int      @id @default(autoincrement())
+  legacyId    Int?     @unique
+  title       String
+  description String?
+  frequency   String // e.g., "daily", "weekly", "monthly" - kept for backwards compatibility
+  nextDue     DateTime
+  assetId     Int
+  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  // New relationships for advanced PM system
+  triggers           PMTrigger[]
+  tasks              PMScheduleTask[]
+  maintenanceHistory MaintenanceHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([assetId])
+  @@index([nextDue])
+  @@index([assetId, nextDue])
+}
+
+model Part {
+  id             Int       @id @default(autoincrement())
+  legacyId       Int?      @unique
+  name           String
+  description    String?
+  sku            String?   @unique
+  stockLevel     Int       @default(0)
+  reorderPoint   Int       @default(0)
+  organizationId Int
+  supplierId     Int?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplier       Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Supplier {
+  id             Int      @id @default(autoincrement())
+  legacyId       Int?     @unique
+  name           String
+  contactInfo    String?
+  address        String?
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parts          Part[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// PM Task Templates - reusable task definitions
+model PMTask {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String?
+  type             TaskType @default(OTHER)
+  procedure        String?  // Detailed step-by-step instructions
+  safetyRequirements String? // Safety protocols and PPE requirements
+  toolsRequired    String?  // Required tools and equipment
+  partsRequired    String?  // Comma-separated part SKUs or JSON
+  estimatedMinutes Int?     // Estimated completion time
+  organizationId   Int
+  isActive         Boolean  @default(true)
+  
+  // Relationships
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pmScheduleTasks  PMScheduleTask[]
+  workOrderTasks   WorkOrderTask[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([type])
+}
+
+// PM Triggers - advanced scheduling conditions
+model PMTrigger {
+  id           Int           @id @default(autoincrement())
+  type         PMTriggerType
+  pmScheduleId Int
+  isActive     Boolean       @default(true)
+  
+  // Time-based trigger fields
+  intervalDays    Int?     // For TIME_BASED: interval in days
+  intervalWeeks   Int?     // For TIME_BASED: interval in weeks  
+  intervalMonths  Int?     // For TIME_BASED: interval in months
+  dayOfWeek       Int?     // For TIME_BASED: 0=Sunday, 1=Monday, etc.
+  dayOfMonth      Int?     // For TIME_BASED: 1-31
+  timeOfDay       String?  // For TIME_BASED: HH:MM format
+  
+  // Usage-based trigger fields
+  meterType       MeterType? // For USAGE_BASED: which meter to track
+  thresholdValue  Float?     // For USAGE_BASED/CONDITION_BASED: trigger value
+  
+  // Condition-based trigger fields
+  sensorField     String?    // For CONDITION_BASED: sensor data field name
+  comparisonOperator String? // For CONDITION_BASED: "gt", "lt", "eq", "gte", "lte"
+  
+  // Event-based trigger fields
+  eventType       String?    // For EVENT_BASED: event identifier
+  
+  // Calculation fields
+  lastTriggered   DateTime?
+  nextDue         DateTime?
+  
+  // Relationships
+  pmSchedule      PMSchedule @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([pmScheduleId])
+  @@index([type])
+  @@index([nextDue])
+  @@index([meterType])
+}
+
+// Work Order Tasks - checklist items for work orders
+model WorkOrderTask {
+  id               Int                 @id @default(autoincrement())
+  workOrderId      Int
+  pmTaskId         Int?                // Optional link to PM task template
+  title            String
+  description      String?
+  procedure        String?             // Task-specific instructions
+  orderIndex       Int                 @default(0) // For task ordering
+  status           TaskCompletionStatus @default(NOT_STARTED)
+  
+  // Completion tracking
+  completedById    Int?
+  completedAt      DateTime?
+  notes            String?             // Technician notes
+  actualMinutes    Int?                // Actual time spent
+  
+  // Quality control
+  requiresSign     Boolean             @default(false)
+  signedById       Int?                // Supervisor signature
+  signedAt         DateTime?
+  
+  // Relationships
+  workOrder        WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  pmTask           PMTask?             @relation(fields: [pmTaskId], references: [id], onDelete: SetNull)
+  completedBy      User?               @relation("TaskCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+  signedBy         User?               @relation("TaskSignedBy", fields: [signedById], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([workOrderId])
+  @@index([status])
+  @@index([completedById])
+  @@index([pmTaskId])
+}
+
+// Meter Readings - for tracking equipment usage and triggering PMs
+model MeterReading {
+  id          Int       @id @default(autoincrement())
+  assetId     Int
+  meterType   MeterType
+  value       Float
+  unit        String?   // e.g., "hours", "miles", "cycles", "°F", "PSI"
+  readingDate DateTime  @default(now())
+  recordedById Int?
+  notes       String?
+  isAutomatic Boolean   @default(false) // True if recorded by sensors/IoT
+  
+  // Relationships
+  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  recordedBy  User?     @relation("MeterReadingRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([assetId, meterType])
+  @@index([readingDate])
+  @@index([meterType])
+  @@index([assetId, meterType, readingDate])
+}
+
+// PM Schedule Tasks - junction table for PM schedules and task templates
+model PMScheduleTask {
+  id           Int      @id @default(autoincrement())
+  pmScheduleId Int
+  pmTaskId     Int
+  orderIndex   Int      @default(0) // Task execution order
+  isRequired   Boolean  @default(true)
+  
+  // Relationships
+  pmSchedule   PMSchedule @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
+  pmTask       PMTask     @relation(fields: [pmTaskId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([pmScheduleId, pmTaskId])
+  @@index([pmScheduleId])
+  @@index([pmTaskId])
+}
+
+// Maintenance History - comprehensive log of all maintenance activities
+model MaintenanceHistory {
+  id              Int             @id @default(autoincrement())
+  assetId         Int
+  workOrderId     Int?            // Link to work order if applicable
+  pmScheduleId    Int?            // Link to PM schedule if applicable
+  type            MaintenanceType
+  title           String
+  description     String?
+  
+  // Execution details
+  performedById   Int?
+  performedAt     DateTime        @default(now())
+  durationMinutes Int?
+  laborCost       Float?
+  partsCost       Float?
+  totalCost       Float?
+  
+  // Completion details
+  isCompleted     Boolean         @default(false)
+  completedAt     DateTime?
+  notes           String?
+  attachments     Json?           // File URLs, photos, documents
+  
+  // Compliance and quality
+  signedById      Int?            // Supervisor signature
+  signedAt        DateTime?
+  complianceNotes String?
+  
+  // Relationships
+  asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  workOrder       WorkOrder?      @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  pmSchedule      PMSchedule?     @relation(fields: [pmScheduleId], references: [id], onDelete: SetNull)
+  performedBy     User?           @relation("MaintenancePerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
+  signedBy        User?           @relation("MaintenanceSignedBy", fields: [signedById], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([assetId])
+  @@index([workOrderId])
+  @@index([pmScheduleId])
+  @@index([type])
+  @@index([performedAt])
+  @@index([performedById])
+  @@index([isCompleted])
+}

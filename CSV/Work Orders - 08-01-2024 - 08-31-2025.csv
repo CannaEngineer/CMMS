@@ -1,0 +1,1312 @@
+ID,Title,Status,Priority,Work Type,Description,URL,Global ID,Assigned to,Teams Assigned to,Requested by,Requested on,Created by,Created on,Planned Start Date,Due date,Estimated Time,Started on,Completed on,Completed by,Last updated,Recurrence,Location,Location ID,Asset,Asset ID,Categories,Vendors,Vendor IDs,Procedure Name,Procedure Template ID,Procedure Passes,Procedure Flags,Procedure Failures,Procedure Score (%),Time to Complete,Time Open,Time In Progress,Time On Hold,Work Request ID,Thumbnail,Attachments,Procedure Description,Meter ID,Meter Condition,Parent,Parent ID,Total Estimated Time,Parent Global ID,Is Parent?,Total Parts Cost,Total Time Cost,Total Reported Time,Additional Costs,Question 1,Answer 1,Question 2,Answer 2,Question 3,Answer 3,Question 4,Answer 4,Question 5,Answer 5,Question 6,Answer 6,Question 7,Answer 7,Question 8,Answer 8,Question 9,Answer 9,Question 10,Answer 10,Question 11,Answer 11,Question 12,Answer 12,Question 13,Answer 13,Question 14,Answer 14,Question 15,Answer 15
+3,Service/ Pump System,DONE,MEDIUM,PREVENTIVE,Call a septic service to pump out the system and clean.,https://app.getmaintainx.com/workorders/44441984?organizationId=342508,44441984,Daniel Crawford,,,,Daniel Crawford,2024-12-09 14:32:26,,2024-12-11,1:00:00,2024-12-12 12:49:18,2024-12-12 12:49:18,Daniel Crawford,2024-12-12 12:49:18,Yearly|1,Farmhouse,2652164,Composting Toilet,7699100,,,,,,0,0,0,,70:16:52,70:16:52,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+4,Service/ Pump System,DONE,MEDIUM,PREVENTIVE,Call a septic service to pump out the system and clean.,https://app.getmaintainx.com/workorders/44730163?organizationId=342508,44730163,Daniel Crawford,,,,Daniel Crawford,2024-12-12 12:49:18,2024-12-13 00:49:18,2025-12-11,1:00:00,2025-01-27 09:37:17,2025-01-27 09:37:17,Daniel Crawford,2025-01-27 09:37:17,Yearly|1,Farmhouse,2652164,Composting Toilet,7699100,,,,,,0,0,0,,1088:47:59,1088:47:59,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+5,Water Tests,DONE,HIGH,PREVENTIVE,Get well testing completed for compliance prior to cultivation in the field,https://app.getmaintainx.com/workorders/44760893?organizationId=342508,44760893,Daniel Crawford,,,,Daniel Crawford,2024-12-12 15:24:05,2025-03-15 00:00:00,2025-04-01,1:00:00,2025-03-10 08:45:12,2025-04-17 13:20:43,Daniel Crawford,2025-04-17 13:20:43,Yearly|1,Field,2661752,Well #2 ( Outdoor Cultivation ),7741308,,Capital Region Environmental Lab,685855,,,0,0,0,,805:20:43,0,916:35:31,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+6,Repair Door Seal for 1906,DONE,HIGH,REACTIVE,Repair Door Seal on 1906 Door,https://app.getmaintainx.com/workorders/46074295?organizationId=342508,46074295,Daniel Crawford,,,,Daniel Crawford,2025-01-02 13:57:21,2025-01-02 00:00:00,2025-01-02,2:00:00,2025-01-02 13:57:27,2025-01-02 13:57:27,Daniel Crawford,2025-01-02 13:57:27,,1906,2661736,,,,,,,,0,0,0,,0:00:05,0:00:05,,,,https://app.getmaintainx.com/api/s3/uploads/3e2b2bcf-3299-411d-865e-f5835894d740_Screenshotfrom2025-01-0213-47-15.png,https://app.getmaintainx.com/api/s3/uploads/3e2b2bcf-3299-411d-865e-f5835894d740_Screenshotfrom2025-01-0213-47-15.png,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+7,Replace Water Heater,DONE,,REACTIVE,Water heater leaking in the extraction building.,https://app.getmaintainx.com/workorders/46074404?organizationId=342508,46074404,Daniel Crawford,,,,Daniel Crawford,2025-01-02 13:58:27,2025-01-01 00:00:00,2025-01-01,6:00:00,2025-01-02 13:58:49,2025-01-02 13:58:49,Daniel Crawford,2025-01-02 13:58:49,,Extraction,2661746,,,,,,,,0,0,0,,0:00:21,0:00:21,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+8,Install Epoxy Flooring,DONE,,REACTIVE,Epoxy floor coating in the new Pre-roll production space,https://app.getmaintainx.com/workorders/46075463?organizationId=342508,46075463,Daniel Crawford,,,,Daniel Crawford,2025-01-02 14:09:09,2025-01-21 00:00:00,2025-02-27,48:00:00,2025-01-27 09:37:05,2025-03-18 14:29:07,Daniel Crawford,2025-03-18 14:29:07,,Processing,2648780,,,,,,Epoxy Floor,,0,0,0,,1357:29:06,153:37:05,1203:52:01,,,,https://app.getmaintainx.com/api/s3/uploads/51dc8117-2cc4-4f36-9022-d5159add0566_2023-ultra-hd-system.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Rent Equipment,X,Grind Floor,X,Clean Floor,X,,,,,,,,,,,,,,,,,,,,,,,,
+9,Sprocket stuck,DONE,MEDIUM,REACTIVE,"Motor piece needs to be removed
+
+Requester contact information:
+Alex@hudsonhemp.com",https://app.getmaintainx.com/workorders/46086271?organizationId=342508,46086271,Daniel Crawford,,Alex@hudsonhemp.com,2025-01-02 15:15:36,Daniel Crawford,2025-01-02 15:52:04,,,1:00:00,2025-01-02 20:37:39,2025-01-02 20:37:39,Daniel Crawford,2025-01-02 20:37:39,,Hudson NY,2648779,,,,,,,,0,0,0,,4:45:35,4:45:35,,,,https://app.getmaintainx.com/api/s3/uploads/419d062f-438c-4902-89bb-f36c9f739dc4_IMG_5710.jpeg,"https://app.getmaintainx.com/api/s3/uploads/ab61ea79-9d75-47d1-8a93-cd2825fa4b8f_IMG_5707.jpeg,https://app.getmaintainx.com/api/s3/uploads/81bc4022-6074-4988-bb65-c6d55c863e53_IMG_5708.jpeg,https://app.getmaintainx.com/api/s3/uploads/cb22d73b-6538-4cf1-a4e0-7916c0501f60_IMG_5709.jpeg,https://app.getmaintainx.com/api/s3/uploads/ebdf0c95-5ff8-408c-ada5-e8b3112f89df_IMG_5711.jpeg,https://app.getmaintainx.com/api/s3/uploads/419d062f-438c-4902-89bb-f36c9f739dc4_IMG_5710.jpeg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+10,Set up outside storage pods with plywood,DONE,,REACTIVE,Michael Block- 1906. Need help making sure the forklift doesn't get stuck moving equipment from the pods to the storage containers.,https://app.getmaintainx.com/workorders/46102966?organizationId=342508,46102966,Daniel Crawford,,,2025-01-02 15:21:54,Daniel Crawford,2025-01-02 20:37:19,,,1:00:00,2025-01-02 20:37:23,2025-01-07 15:50:24,Daniel Crawford,2025-01-07 15:50:24,,Hudson NY,2648779,,,,,,,,0,0,0,,115:13:05,0:00:04,115:13:01,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+11,Willow Air Filter replacement,DONE,MEDIUM,REACTIVE,"Willow’s room need to have air filters replaced
+
+Requester contact information:
+Kelly@hudsonhemp.com",https://app.getmaintainx.com/workorders/46141761?organizationId=342508,46141761,Daniel Crawford,,Kelly@hudsonhemp.com,2025-01-03 08:11:28,Daniel Crawford,2025-01-03 08:19:18,2025-01-03 00:00:00,2025-01-03,1:00:00,2025-01-03 10:27:24,2025-01-03 10:27:24,Daniel Crawford,2025-01-03 10:27:24,,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,2:08:05,0:30:17,,1:37:48,,,,,,,,,,,false,$0.00,$0.00,0:10:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+12,Refill all eye wash stations,DONE,MEDIUM,PREVENTIVE,Work with Michael D. to fill stations with disinfectant solution,https://app.getmaintainx.com/workorders/46158457?organizationId=342508,46158457,Daniel Crawford,,,,Daniel Crawford,2025-01-03 10:43:39,2025-01-07 00:00:00,2025-01-10,3:00:00,2025-01-30 14:33:54,2025-01-30 14:33:54,Daniel Crawford,2025-01-30 14:33:54,Monthly|3|1,Hudson NY,2648779,,,,,,Refill eye wash Stations,,0,0,0,,566:33:54,566:27:36,,0:06:18,,,,,,,,,,,false,$0.00,$0.00,0:30:00,$0.00,Refill eye wash station,"Drain station,Rinse station,Have a safety officer add disinfectant solution,Document  adding disinfectant solution,Refill with potable water,Document filling unit",,,,,,,,,,,,,,,,,,,,,,,,,,,,
+13,Remove door between Distro and Barn,DONE,MEDIUM,REACTIVE,Remove the door and close in the wall to secure Distribution.,https://app.getmaintainx.com/workorders/46158941?organizationId=342508,46158941,Daniel Crawford,,,,Daniel Crawford,2025-01-03 10:47:50,2025-01-01 00:00:00,2025-01-17,4:00:00,2025-01-07 15:50:06,2025-01-07 15:50:06,Daniel Crawford,2025-01-07 15:50:06,,Distribution,2661747,,,,,,,,0,0,0,,101:02:15,71:29:58,,29:32:17,,,,,,,,,,,false,$0.00,$0.00,1:00:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+14,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/46311707?organizationId=342508,46311707,Daniel Crawford,,,,Daniel Crawford,2025-01-06 11:45:05,2025-02-01 00:00:00,2025-02-01,1:00:00,2025-03-19 10:02:42,2025-03-19 10:02:42,Daniel Crawford,2025-03-19 10:02:42,Weekly|6|Monday,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,1113:02:42,1113:02:42,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+15,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/46311867?organizationId=342508,46311867,Daniel Crawford,,,,Daniel Crawford,2025-01-06 11:46:21,2025-02-01 00:00:00,2025-02-01,1:00:00,2025-03-19 10:02:44,2025-03-19 10:02:44,Daniel Crawford,2025-03-19 10:02:44,Weekly|6|Monday,Processing,2648780,Willow Air #2 - Processing,7851714,,,,,,0,0,0,,1113:02:45,1113:02:45,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+16,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/46312041?organizationId=342508,46312041,Daniel Crawford,,,,Daniel Crawford,2025-01-06 11:47:26,2025-02-01 00:00:00,2025-02-01,1:00:00,2025-03-19 10:02:47,2025-03-19 10:02:47,Daniel Crawford,2025-03-19 10:02:47,Weekly|6|Monday,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,1113:02:47,1113:02:47,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+17,AIR COMPRESSOR FOR STATIC MACHINE IN HASH LAB,DONE,MEDIUM,REACTIVE,"Our air compressor connected to static machine is not functional at all as of 1/7. We need this fixed ASAP in order to continue with timely hash production. Thank you!
+
+Requester contact information:
+latif@hudsonhemp.com",https://app.getmaintainx.com/workorders/46384719?organizationId=342508,46384719,Daniel Crawford,,latif@hudsonhemp.com,2025-01-07 08:01:03,Daniel Crawford,2025-01-07 08:11:50,,,1:00:00,2025-01-27 09:36:55,2025-01-27 09:36:55,Daniel Crawford,2025-01-27 09:36:55,,Pre-Extraction,2661745,Air Compressor,7741265,,,,,,0,0,0,,481:25:04,481:25:04,,,,https://app.getmaintainx.com/api/s3/uploads/807b09b2-e855-41f3-831d-bedbb040d457_IMG_4505.HEIC,"https://app.getmaintainx.com/api/s3/uploads/7e707b4f-1542-433b-9096-a7ffffa546d5_IMG_4504.HEIC,https://app.getmaintainx.com/api/s3/uploads/be8e79d8-e516-4972-84a0-a6ad728e6a5d_IMG_4506.HEIC,https://app.getmaintainx.com/api/s3/uploads/807b09b2-e855-41f3-831d-bedbb040d457_IMG_4505.HEIC",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+18,Heat in Farmhouse kitchen,DONE,,REACTIVE,"The heat doesn't seem to be working in the farmhouse kitchen. Thermostat is set to 68 and the current temp in there is 59. Don't want to run into issues with frozen pipes with the cold temps we are having.
+
+Requester contact information:
+gina@hudsonhemp.com",https://app.getmaintainx.com/workorders/46404042?organizationId=342508,46404042,Daniel Crawford,,gina@hudsonhemp.com,2025-01-07 10:53:45,Daniel Crawford,2025-01-07 10:54:24,,,1:00:00,2025-01-13 14:01:18,2025-01-13 14:01:18,Daniel Crawford,2025-01-13 14:01:18,,Hudson NY,2648779,,,,,,,,0,0,0,,147:06:52,19:27:34,,127:39:18,,,,,,,,,,,false,$0.00,$0.00,0:10:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+19,Stable power for all Security related components,DONE,HIGH,REACTIVE,"We had a power outage yesterday. Since that outage I am unable to make a badge or access the entry/exit portal. I have asked Myers Security how this can be remedied. They said they will need to make a service call, but also said, if this unit doesn't have stable power it will not work.
+
+Requester contact information:
+matt@hudsonhemp.com",https://app.getmaintainx.com/workorders/46483717?organizationId=342508,46483717,Daniel Crawford,,matt@hudsonhemp.com,2025-01-08 08:19:46,Daniel Crawford,2025-01-08 08:31:46,2025-01-08 00:00:00,2025-02-01,1:00:00,2025-02-10 07:48:06,2025-02-11 13:54:00,Daniel Crawford,2025-02-11 13:54:00,,Hudson NY,2648779,,,,,,,,0,0,0,,821:22:14,457:04:59,30:05:54,334:11:21,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+20,Emergency light in distro,IN PROGRESS,,REACTIVE,"When the power went out, the emergency exit light at the back of the building did not go on. Not urgent, just give it a look when you can!",https://app.getmaintainx.com/workorders/46622764?organizationId=342508,46622764,Daniel Crawford,,,2025-01-09 14:26:14,Daniel Crawford,2025-01-09 15:27:38,,,1:00:00,2025-01-27 09:36:39,,,2025-01-27 09:36:39,,Hudson NY,2648779,,,,,,,,,,,,426:09:01,426:09:01,4520:32:58,,,https://app.getmaintainx.com/api/s3/uploads/8d41b6e7-3f43-4cae-aefa-ee3f712f89dd_1000000919_720.jpg,https://app.getmaintainx.com/api/s3/uploads/8d41b6e7-3f43-4cae-aefa-ee3f712f89dd_1000000919_720.jpg,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+21,Electrical outlet in production room,DONE,,REACTIVE,breaker is tripped not sure where its tripped.,https://app.getmaintainx.com/workorders/46672199?organizationId=342508,46672199,Daniel Crawford,,,2025-01-10 08:22:57,Daniel Crawford,2025-01-10 09:17:52,,,1:00:00,2025-01-27 09:21:44,2025-01-27 09:21:44,Daniel Crawford,2025-01-27 09:21:44,,Hudson NY,2648779,,,,,,,,0,0,0,,408:03:51,408:03:51,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+22,Need light in clone room fixed,DONE,MEDIUM,REACTIVE,"there are two lights in the back clone rooms that need to be fixed attached to this switch
+
+Requester contact information:
+4137175677",https://app.getmaintainx.com/workorders/46852612?organizationId=342508,46852612,Daniel Crawford,,4137175677,2025-01-10 15:14:30,Daniel Crawford,2025-01-13 14:00:49,2025-01-16 00:00:00,2025-02-07,1:00:00,2025-01-27 09:36:37,2025-02-08 09:10:53,Daniel Crawford,2025-02-08 09:10:53,,General,2648754,,,,Veith Electric,704262,,,0,0,0,,561:10:52,273:36:37,287:34:15,,,https://app.getmaintainx.com/api/s3/uploads/0a51ae7f-7b43-4771-b673-5f9a4643d69d_1000009917.jpg,"https://app.getmaintainx.com/api/s3/uploads/5addc650-7cfb-42ae-bad9-5d58a62e0496_1000009915.jpg,https://app.getmaintainx.com/api/s3/uploads/60e3d02d-0942-4638-9caa-6efb8d3e22e2_1000009912.jpg,https://app.getmaintainx.com/api/s3/uploads/0a51ae7f-7b43-4771-b673-5f9a4643d69d_1000009917.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+23,Test and Document Emergency Lighting,DONE,HIGH,PREVENTIVE,"Test and Document Emergency lighting checks.  Recommend any additional lights which may be missing.  
+Every exit should have an emergency light - All lights should work",https://app.getmaintainx.com/workorders/46852848?organizationId=342508,46852848,Daniel Crawford,,,,Daniel Crawford,2025-01-13 14:03:01,2025-01-13 00:00:00,2025-01-14,4:00:00,2025-01-27 09:36:34,2025-03-19 10:02:28,Daniel Crawford,2025-03-19 10:02:28,Monthly|1|13,,,,,,,,,,0,0,0,,1554:59:26,331:33:32,1223:25:54,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+24,Please fix the gap in new seal,DONE,LOW,REACTIVE,"Please fix the remaining gap after new bay door seal was applied over holiday break. This is still accessible for rodents/water/cold air to get in.
+
+Requester contact information:
+Emily@hudsonhemp.com",https://app.getmaintainx.com/workorders/46916005?organizationId=342508,46916005,Daniel Crawford,,Emily@hudsonhemp.com,2025-01-08 14:18:54,Daniel Crawford,2025-01-14 08:57:07,2025-01-07 00:00:00,2025-01-08,1:00:00,2025-01-14 08:57:31,2025-01-14 08:57:31,Daniel Crawford,2025-01-14 08:57:31,,Hudson NY,2648779,,,,,,,,0,0,0,,0:00:23,0:00:23,,,,https://app.getmaintainx.com/api/s3/uploads/a1f3ad56-f277-424f-bf79-b03a7a2155be_IMG_0076.jpeg,https://app.getmaintainx.com/api/s3/uploads/a1f3ad56-f277-424f-bf79-b03a7a2155be_IMG_0076.jpeg,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+25,Repair Bathrooms,DONE,MEDIUM,REACTIVE,"In the processing building / Break area the bathrooms need some attention.
+
+Clean out all construction material/ paint/epoxy
+Fix any peeling paint - touch up where required
+Install new soap dispensers",https://app.getmaintainx.com/workorders/46932215?organizationId=342508,46932215,Daniel Crawford,,,,Daniel Crawford,2025-01-14 11:04:12,2025-01-14 00:00:00,2025-01-21,8:00:00,2025-01-21 14:06:52,2025-01-21 14:06:52,Daniel Crawford,2025-01-21 14:06:52,,Hudson NY,2648779,,,,,,,,0,0,0,,171:02:39,171:02:39,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+26,Secure front step at the entrance of the Packaging / Quality building,DONE,HIGH,REACTIVE,"The step up into the main entrance door moves around and becomes unstable / wobbly.
+
+**This is on the Carbon Building**
+
+Requester contact information:
+rachellee@hudsonhemp.com",https://app.getmaintainx.com/workorders/46959191?organizationId=342508,46959191,Daniel Crawford,,rachellee@hudsonhemp.com,2025-01-14 14:13:38,Daniel Crawford,2025-01-14 14:15:45,2025-01-15 00:00:00,2025-01-15,1:00:00,2025-01-27 09:36:30,2025-01-27 09:36:30,Daniel Crawford,2025-01-27 09:36:30,,Hudson NY,2648779,,,,,,,,0,0,0,,297:36:30,297:36:30,,,,https://app.getmaintainx.com/api/s3/uploads/d2f21c41-e5ad-4b9f-9793-6c8d99c5db44_1000007651.jpg,"https://app.getmaintainx.com/api/s3/uploads/2fc7e02e-b2da-4cc8-a6ee-a3e1c542eb95_1000007652.jpg,https://app.getmaintainx.com/api/s3/uploads/d2f21c41-e5ad-4b9f-9793-6c8d99c5db44_1000007651.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+27,Leak from outside,DONE,MEDIUM,REACTIVE,"Seems to be new water drippings getting into the room from the spot that was just sealed up.
+
+Requester contact information:
+Shawn@hudsonhemp.com",https://app.getmaintainx.com/workorders/46959315?organizationId=342508,46959315,Daniel Crawford,,Shawn@hudsonhemp.com,2025-01-09 11:04:25,Daniel Crawford,2025-01-14 14:16:54,2025-01-15 00:00:00,2025-01-15,1:00:00,2025-01-27 09:34:25,2025-01-27 09:36:26,Daniel Crawford,2025-01-27 09:36:26,,Hudson NY,2648779,,,,,,,,0,0,0,,297:36:26,297:34:26,0:02:00,,,https://app.getmaintainx.com/api/s3/uploads/87788826-f1b3-4fce-8943-8da5c5b3eee7_1000008104.heic,https://app.getmaintainx.com/api/s3/uploads/87788826-f1b3-4fce-8943-8da5c5b3eee7_1000008104.heic,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+28,Hole in ceiling covered in the nursery,DONE,MEDIUM,REACTIVE,"there is an 8 in hole in the nursery ceiling. it has fiberglass in it too.
+
+Requester contact information:
+413-717-5677",https://app.getmaintainx.com/workorders/47490080?organizationId=342508,47490080,Daniel Crawford,,413-717-5677,2025-01-21 14:05:23,Daniel Crawford,2025-01-21 14:06:22,2025-01-21 00:00:00,2025-01-23,1:00:00,2025-01-24 07:48:23,2025-01-24 07:48:23,Daniel Crawford,2025-01-24 07:48:23,,Nursery,2661749,,,,,,,,0,0,0,,65:42:01,65:42:01,,,,https://app.getmaintainx.com/api/s3/uploads/408c5654-d874-4f3b-aba7-d33a81d042b3_20250121_140348_720.jpg,https://app.getmaintainx.com/api/s3/uploads/408c5654-d874-4f3b-aba7-d33a81d042b3_20250121_140348_720.jpg,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+29,Pest Prevention Fixes,DONE,MEDIUM,REACTIVE,"For Farmhouse :
+#1 -  Hole in floor of closet in Alex's office needs to be sealed. We had a catch in a trap in that closet during the last inspection.
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/47595228?organizationId=342508,47595228,Daniel Crawford,,kacey@hudsonhemp.com,2025-01-22 15:28:55,Daniel Crawford,2025-01-22 15:56:00,2025-01-23 00:00:00,2025-02-06,1:00:00,2025-01-27 09:34:15,2025-02-11 13:54:12,Daniel Crawford,2025-02-11 13:54:12,,Hudson NY,2648779,,,,,,,,0,0,0,,469:54:12,105:34:15,364:19:57,,,https://app.getmaintainx.com/api/s3/uploads/3bcf76f5-6d55-4883-a7a4-6d1ca3c1daa9_0.jpg,"https://app.getmaintainx.com/api/s3/uploads/3f2242f7-dcd2-48bd-b805-34f006af81bc_0.jpg,https://app.getmaintainx.com/api/s3/uploads/3bcf76f5-6d55-4883-a7a4-6d1ca3c1daa9_0.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+30,Pest Prevention Fixes: Extraction,DONE,,REACTIVE,"#2 - electrical box on east side exterior of building has a hole in it that the pest prevention guy and I literally watched a mouse climb into, needs to be sealed or plugged. 
+#3 - Door in area between extraction and milling areas has a crack in the jamb that pest can come through. We had a catch in the trap there during last inspection.
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/47595440?organizationId=342508,47595440,Daniel Crawford,,kacey@hudsonhemp.com,2025-01-22 15:32:43,Daniel Crawford,2025-01-22 15:58:21,2025-01-23 00:00:00,2025-02-06,1:00:00,2025-01-27 09:34:19,2025-03-18 14:28:21,Daniel Crawford,2025-03-18 14:28:21,,Hudson NY,2648779,,,,,,,,0,0,0,,1309:28:21,105:34:19,1203:54:02,,,https://app.getmaintainx.com/api/s3/uploads/ad02767c-e831-407e-89f3-8f1255a61123_0.jpg,"https://app.getmaintainx.com/api/s3/uploads/72a11d60-6487-4be3-842e-d56c790d0517_0.jpg,https://app.getmaintainx.com/api/s3/uploads/75dfe2d7-8011-4e8f-b2e6-76bb901b29c6_0.jpg,https://app.getmaintainx.com/api/s3/uploads/ad02767c-e831-407e-89f3-8f1255a61123_0.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+31,Pest Prevention Fixes: Processing,DONE,MEDIUM,REACTIVE,"#4 - Hole in jamb of door at break room can allow pests to come in, needs to be sealed. 
+#5 - Exterior wall separating at corner of building, allowing pests to get in. Needs to be fixed/resealed
+#6- Pole going into building needs to be better sealed. There is also a burrow hole in this area going under the building that needs to be filled. 
+#7- Pole going into building needs to be better sealed/ recaulked. There is another burrow hole on this side of the door that needs to be sealed as well.
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/47595501?organizationId=342508,47595501,Daniel Crawford,,kacey@hudsonhemp.com,2025-01-22 15:39:42,Daniel Crawford,2025-01-22 15:59:19,2025-01-23 00:00:00,2025-02-06,1:00:00,2025-01-27 09:34:21,2025-02-11 13:54:10,Daniel Crawford,2025-02-11 13:54:10,,Hudson NY,2648779,,,,,,,,0,0,0,,469:54:08,105:34:21,76:47:35,287:32:12,,https://app.getmaintainx.com/api/s3/uploads/0c13c13e-de79-48bc-9cc1-ec99159c5576_0.jpg,"https://app.getmaintainx.com/api/s3/uploads/b318c8c5-97e8-46a9-a351-e4d4556e6ee4_0.jpg,https://app.getmaintainx.com/api/s3/uploads/3bac029e-8140-4a98-9903-6a1b633c82f3_0.jpg,https://app.getmaintainx.com/api/s3/uploads/18c166c3-d3d6-4257-9981-f9fc0713cfba_0.jpg,https://app.getmaintainx.com/api/s3/uploads/cd1298ab-9015-4f3b-af21-445a611df059_0.jpg,https://app.getmaintainx.com/api/s3/uploads/0c13c13e-de79-48bc-9cc1-ec99159c5576_0.jpg",,,,,,,,false,$0.00,$0.00,1:00:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+32,Reflash and Coat Roof,DONE,HIGH,REACTIVE,"Reflash and Coat Roof
+
+Multiple issues with Processing space roof.
+
+Seems to be new water drippings getting into the room from the spot that was just sealed up.
+
+Requester contact information:
+Shawn@hudsonhemp.com",https://app.getmaintainx.com/workorders/47883353?organizationId=342508,47883353,Daniel Crawford,,,,Daniel Crawford,2025-01-27 09:36:18,2025-04-01 00:00:00,2025-06-01,1:00:00,2025-07-08 13:54:43,2025-07-08 13:54:43,Daniel Crawford,2025-07-08 13:54:43,,Processing,2648780,,,,,,,,0,0,0,,2365:54:44,2365:54:44,,,,https://app.getmaintainx.com/api/s3/uploads/87788826-f1b3-4fce-8943-8da5c5b3eee7_1000008104.heic,https://app.getmaintainx.com/api/s3/uploads/87788826-f1b3-4fce-8943-8da5c5b3eee7_1000008104.heic,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+33,Service/ Pump System,DONE,MEDIUM,PREVENTIVE,Call a septic service to pump out the system and clean.,https://app.getmaintainx.com/workorders/47883471?organizationId=342508,47883471,Daniel Crawford,,,,Daniel Crawford,2025-01-27 09:37:17,2025-12-11 14:30:53,2026-12-11,1:00:00,2025-01-30 14:34:30,2025-01-30 14:34:30,Daniel Crawford,2025-01-30 14:34:30,Yearly|1,Farmhouse,2652164,Composting Toilet,7699100,,,,,,0,0,0,,,0,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+34,Refill all eye wash stations,DONE,MEDIUM,PREVENTIVE,Work with Michael D. to fill stations with disinfectant solution,https://app.getmaintainx.com/workorders/48232430?organizationId=342508,48232430,Daniel Crawford,,,,Daniel Crawford,2025-01-30 14:33:54,2025-03-29 12:00:00,2025-04-01,3:00:00,2025-04-17 13:20:37,2025-04-17 13:20:37,Daniel Crawford,2025-04-17 13:20:37,Monthly|3|1,Hudson NY,2648779,,,,,,Refill eye wash Stations,,0,0,0,,457:20:37,309:40:32,,147:40:05,,,https://app.getmaintainx.com/api/s3/uploads/169333db-7b20-4acb-ae4c-9fe9d2a959ca_Eye_Wash_Station_Map_1.pdf,,,,,,,,false,$0.00,$0.00,1:30:00,$0.00,Refill eye wash station,"Drain station,Rinse station,Have a safety officer add disinfectant solution,Document  adding disinfectant solution,Refill with potable water,Document filling unit",,,,,,,,,,,,,,,,,,,,,,,,,,,,
+36,Fly light in distro not working,DONE,MEDIUM,REACTIVE,The electrician came and put in an outlet so it can plug it now which is awesome! But it doesn't turn on when plugged in. Would you be able to take a look at it? If it cant be fixed we''l have Meerkat swap it out the next time theyre here,https://app.getmaintainx.com/workorders/48240552?organizationId=342508,48240552,Daniel Crawford,,,2025-01-30 15:09:41,Daniel Crawford,2025-01-30 15:44:02,2025-01-30 00:00:00,2025-02-04,1:00:00,2025-03-18 14:28:30,2025-03-18 14:28:30,Daniel Crawford,2025-03-18 14:28:30,,Hudson NY,2648779,,,,,,,,0,0,0,,1125:44:28,1125:44:28,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+37,Wifi connection issues in Carbon Building,DONE,,REACTIVE,"Multiple people, multiple devices having trouble getting and staying connected to the Hudson Carbon wifi
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/48662369?organizationId=342508,48662369,Daniel Crawford,,kacey@hudsonhemp.com,2025-02-05 08:24:58,Daniel Crawford,2025-02-05 08:52:54,2025-02-05 00:00:00,2025-02-05,1:00:00,2025-02-05 08:53:34,2025-02-05 08:53:34,Daniel Crawford,2025-02-05 08:53:34,,Hudson NY,2648779,,,,,,,,0,0,0,,0:00:40,0:00:40,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+38,Change Filters (Astoria),OPEN,,PREVENTIVE,Change all of the HVAC filters in the Astoria facility.,https://app.getmaintainx.com/workorders/48668813?organizationId=342508,48668813,Lucas Halaj,,,,Lucas Halaj,2025-02-05 09:40:21,2025-02-27 00:00:00,2025-02-27,1:00:00,,,,2025-02-05 09:40:21,,Astoria,2758032,HVAC Unit #1 (Astoria),8556527,Preventive,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+39,1906 mop sink has a leak,DONE,,REACTIVE,"sink has a leak and floor is flooded over time, needed to be fixed asap.
+
+Requester contact information:
+Mblock@nukafoods.com",https://app.getmaintainx.com/workorders/48941559?organizationId=342508,48941559,Daniel Crawford,,Mblock@nukafoods.com,2025-01-27 07:41:21,Daniel Crawford,2025-02-08 09:11:32,2025-02-08 00:00:00,2025-02-08,1:00:00,2025-02-08 09:11:37,2025-02-08 09:11:37,Daniel Crawford,2025-02-08 09:11:37,,Hudson NY,2648779,,,,,,,,0,0,0,,0:00:05,0:00:05,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+40,Quality Air Testing GMP - Roll Pros,DONE,HIGH,PREVENTIVE,"Work with the Quality department to complete air test for GMP compliance.
+
+TRI Air Testing
+Call: 512-887-6838",https://app.getmaintainx.com/workorders/49174922?organizationId=342508,49174922,Daniel Crawford,Processing,,,Daniel Crawford,2025-02-11 13:36:42,2024-11-01 00:00:00,2025-01-02,1:00:00,2025-02-11 13:52:58,2025-02-11 13:52:58,Daniel Crawford,2025-02-11 13:52:58,Yearly|1,General,2648754,RollPros Blackbird 1.0 ID#5,7851683,,TRI Air Testing,737815,,,0,0,0,,0:16:15,0:16:15,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+41,Quality Air Testing GMP - Hefestus,DONE,HIGH,PREVENTIVE,"Work with the Quality department to complete air test for GMP compliance.
+
+TRI Air Testing
+Call: 512-887-6838",https://app.getmaintainx.com/workorders/49174972?organizationId=342508,49174972,Daniel Crawford,Processing,,,Daniel Crawford,2025-02-11 13:37:08,2024-11-01 00:00:00,2025-01-02,1:00:00,2025-02-11 13:53:21,2025-02-11 13:53:21,Daniel Crawford,2025-02-11 13:53:21,Yearly|1,Processing,2648780,Hefestus AuraX ID#6,7851673,,TRI Air Testing,737815,,,0,0,0,,0:16:13,0:16:13,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+44,Fix floor boards in upstairs office,DONE,LOW,REACTIVE,"Never noticed this before but it’s starting to lift, there are missing nails in this board :(",https://app.getmaintainx.com/workorders/49242496?organizationId=342508,49242496,Daniel Crawford,,,,Alexandra Harrington,2025-02-12 09:08:48,,2025-02-12,0:30:00,2025-02-12 13:03:17,2025-04-02 08:34:32,Daniel Crawford,2025-04-02 08:34:32,,Farmhouse,2652164,,,Safety,,,Fix floor boards,2376373,0,0,0,,1174:25:43,3:54:29,1170:31:14,,,https://app.getmaintainx.com/api/s3/uploads/9cd71573-c1f3-4aba-a4d8-c140d3dc2c12_IMG_6250.HEIC,https://app.getmaintainx.com/api/s3/uploads/9cd71573-c1f3-4aba-a4d8-c140d3dc2c12_IMG_6250.HEIC,,,,,,,,false,$0.00,$0.00,0,$0.00,Gather supplies,,Find location,,Nails floor board,,,,,,,,,,,,,,,,,,,,,,,,,
+45,Rollpros Upgrades,DONE,HIGH,REACTIVE,"Upgrades to the Rollpros Blackbird including:
+New Vibe Trays
+New Scale System
+New Rake and Gate Assembly
+New Platen
+New Scraper Vacuum Assembly",https://app.getmaintainx.com/workorders/49271000?organizationId=342508,49271000,Daniel Crawford,Processing,,,Daniel Crawford,2025-02-12 13:19:26,2025-02-03 00:00:00,2025-02-14,1:00:00,2025-03-18 14:29:13,2025-03-18 14:29:13,Daniel Crawford,2025-03-18 14:29:13,,General,2648754,RollPros Blackbird 1.0 ID#5,7851683,,RollPros,740445,,,0,0,0,,816:09:46,816:09:46,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+46,Clean Floor Drains,DONE,MEDIUM,PREVENTIVE,,https://app.getmaintainx.com/workorders/49272066?organizationId=342508,49272066,Daniel Crawford,Processing,,,Daniel Crawford,2025-02-12 13:28:48,2025-02-28 00:00:00,2025-03-03,1:00:00,2025-03-26 10:34:06,2025-03-26 10:34:06,Daniel Crawford,2025-03-26 10:34:06,Monthly|3|30,Processing,2648780,Floor Drains,7741260,,,,,,0,0,0,,633:34:07,633:34:07,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+47,220 outlet Installed in dry room two,OPEN,,REACTIVE,,https://app.getmaintainx.com/workorders/49439056?organizationId=342508,49439056,,,,2025-02-12 10:16:20,Daniel Crawford,2025-02-14 09:42:35,,,1:00:00,,,,2025-02-14 09:42:35,,General,2648754,,,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+48,Moving Solvent Cabinet Inside,DONE,,REACTIVE,"Requesting help moving a solvent cabinet inside of the innovation lab building
+
+Requester contact information:
+lyoung@hudsonhemp.com",https://app.getmaintainx.com/workorders/49439840?organizationId=342508,49439840,Daniel Crawford,,lyoung@hudsonhemp.com,2025-02-09 23:19:30,Daniel Crawford,2025-02-14 09:49:14,2025-03-13 00:00:00,2025-03-07,1:00:00,2025-02-19 12:56:32,2025-03-18 14:28:50,Daniel Crawford,2025-03-18 14:28:50,,Hudson NY,2648779,,,,,,,,0,0,0,,134:28:48,0,0:46:50,647:45:26,,,,,,,,,,,false,$0.00,$0.00,0:30:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+49,Rattling in Northeast corner of warehouse.,OPEN,,REACTIVE,"Periodic and sounds like the roof?
+
+Requester contact information:
+Rosie@hudsonhemp.com",https://app.getmaintainx.com/workorders/49440025?organizationId=342508,49440025,Daniel Crawford,,Rosie@hudsonhemp.com,2025-02-05 13:36:54,Daniel Crawford,2025-02-14 09:50:35,2025-03-03 00:00:00,2025-04-25,1:00:00,,,,2025-04-02 08:39:30,,Hudson NY,2648779,,,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+50,Humidifier dry room 1,OPEN,,REACTIVE,"Would like to get a humidifier installed in dry room 1, same as other dry rooms!
+
+Requester contact information:
+Brandon@hudsonhemp.com",https://app.getmaintainx.com/workorders/49440124?organizationId=342508,49440124,Daniel Crawford,,Brandon@hudsonhemp.com,2025-02-12 10:11:21,Daniel Crawford,2025-02-14 09:51:22,2025-03-04 00:00:00,2025-05-01,1:00:00,2025-02-14 09:51:39,,,2025-02-14 09:51:42,,General,2648754,,,,,,,,,,,,,3666:09:35,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+51,Air compressor maintenance,ON HOLD,,REACTIVE,We have an air leak on the RollPro machine and not sure if the air compressor is a result of it. The air compressor is showing an error message.,https://app.getmaintainx.com/workorders/49440254?organizationId=342508,49440254,Daniel Crawford,,,2025-02-13 08:03:29,Daniel Crawford,2025-02-14 09:52:31,2025-02-14 00:00:00,2025-03-01,1:00:00,2025-02-19 12:56:24,,,2025-04-02 08:35:55,,Hudson NY,2648779,,,,,,,,,,,,1125:43:23,123:03:53,1002:39:30,2962:33:43,,https://app.getmaintainx.com/api/s3/uploads/9602b45a-2f11-4487-966d-491a4b9c3c45_1000009431.heic,https://app.getmaintainx.com/api/s3/uploads/9602b45a-2f11-4487-966d-491a4b9c3c45_1000009431.heic,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+53,Rolling Wire Shelving Building,DONE,,REACTIVE,Please assemble the wire shelving with rolling bases for Distribution! We greatly need and and will appreciate the help.,https://app.getmaintainx.com/workorders/49687309?organizationId=342508,49687309,Daniel Crawford,,,2025-02-18 08:09:54,Daniel Crawford,2025-02-18 08:49:01,2025-02-19 00:00:00,2025-02-27,1:00:00,2025-02-19 12:56:34,2025-02-19 13:44:29,Daniel Crawford,2025-02-19 13:44:29,,General,2648754,,,,,,,,0,0,0,,13:44:29,12:56:34,0:47:55,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+54,Training on air compressor and SOP,DONE,,REACTIVE,Starting and Stopping the Kaeser Compressor,https://app.getmaintainx.com/workorders/49849725?organizationId=342508,49849725,Daniel Crawford,,,,Daniel Crawford,2025-02-19 14:07:07,2025-02-27 00:00:00,2025-02-20,1:00:00,2025-05-27 09:39:56,2025-05-27 09:39:56,Daniel Crawford,2025-05-27 09:39:56,,Warehouse,2661739,Kaeser Air Center Compressor,7852607,,,,,,0,0,0,,2144:39:56,2144:39:56,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+56,Feb Pest Prevention Fixes - Farmhouse,DONE,,REACTIVE,"1- Fill in gaps between pipe and exterior wall 
+2 - Fill in gaps between pipe and floor in closet in Alex's office",https://app.getmaintainx.com/workorders/49924792?organizationId=342508,49924792,Daniel Crawford,,,2025-02-20 09:15:54,Daniel Crawford,2025-02-20 10:25:34,2025-03-03 00:00:00,2025-03-28,1:00:00,2025-03-11 10:20:06,2025-03-17 15:23:36,Daniel Crawford,2025-03-17 15:23:36,,Farmhouse,2652164,,,,,,,,0,0,0,,350:23:36,201:20:07,149:03:29,,,https://app.getmaintainx.com/api/s3/uploads/9efe1f18-2e51-4e8e-90c8-595a3565865b_unnamed.jpg,"https://app.getmaintainx.com/api/s3/uploads/0ccc74bc-0f6c-41f7-b5af-c9f37de13e50_0.jpg,https://app.getmaintainx.com/api/s3/uploads/085ad355-81bd-4147-b837-e8b2690aba45_0.jpg,https://app.getmaintainx.com/api/s3/uploads/9efe1f18-2e51-4e8e-90c8-595a3565865b_unnamed.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+57,Feb Pest Prevention Fixes - Extraction,DONE,,REACTIVE,"3 - Fill gap in door in 1906 packaging space
+4 - Fill gap in garage door in 1906 packaging space 
+5 - Fill gap in garage door in extraction milling area 
+6 - Fill gap under door in extraction milling area (doorsweep?)
+7,8,9 - Fill gaps under doors in extraction gowning area, electrical closet and behind distillation (doorsweep?)(not pictured, marked on map)
+10 -Fill gaps in and under door between main extraction and milling areas
+
+Requester contact information:
+Kacey",https://app.getmaintainx.com/workorders/49924875?organizationId=342508,49924875,Daniel Crawford,,Kacey ,2025-02-20 09:20:47,Daniel Crawford,2025-02-20 10:26:12,2025-03-03 00:00:00,2025-03-28,1:00:00,2025-03-11 10:19:28,2025-03-11 10:19:28,Daniel Crawford,2025-03-11 10:19:28,,Extraction,2661746,,,,,,,,0,0,0,,201:19:28,200:02:27,,1:17:01,,https://app.getmaintainx.com/api/s3/uploads/4836f0cb-26d4-428a-9bf4-ce197c47be9a_unnamed.jpg,"https://app.getmaintainx.com/api/s3/uploads/00e616ed-7b44-48a5-986b-c202d830ef5d_0.jpg,https://app.getmaintainx.com/api/s3/uploads/7d149757-e8ef-4e97-bf59-11b7ced2b134_0.jpg,https://app.getmaintainx.com/api/s3/uploads/3211ebdb-0b1a-41d7-af24-98e1381ce41e_0.jpg,https://app.getmaintainx.com/api/s3/uploads/7112de33-f6c0-4c83-a5c7-db04289324f3_0.jpg,https://app.getmaintainx.com/api/s3/uploads/0f605857-a3d1-47dc-a50f-8d3e5f5e05c0_0.jpg,https://app.getmaintainx.com/api/s3/uploads/5c078ff4-06a0-43d9-8ef4-55da5f8ffadf_0.jpg,https://app.getmaintainx.com/api/s3/uploads/4836f0cb-26d4-428a-9bf4-ce197c47be9a_unnamed.jpg",,,,,,,,false,$0.00,$0.00,0:20:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+58,Feb Pest Prevention Fixes - Processing,DONE,,REACTIVE,"12 - Fill gaps in floor around break room door
+
+Requester contact information:
+Kacey",https://app.getmaintainx.com/workorders/49925121?organizationId=342508,49925121,Daniel Crawford,,Kacey ,2025-02-20 09:23:43,Daniel Crawford,2025-02-20 10:28:18,2025-03-03 00:00:00,2025-03-28,1:00:00,2025-03-11 10:19:57,2025-03-11 10:19:57,Daniel Crawford,2025-03-11 10:19:57,,Processing,2648780,,,,,,,,0,0,0,,201:19:56,198:31:01,,2:48:55,,https://app.getmaintainx.com/api/s3/uploads/d89ce6b4-3d29-407a-a38e-b775f76ed9e6_unnamed.jpg,"https://app.getmaintainx.com/api/s3/uploads/4e174439-2567-450f-8e2d-4bfc7e6ac756_0.jpg,https://app.getmaintainx.com/api/s3/uploads/d89ce6b4-3d29-407a-a38e-b775f76ed9e6_unnamed.jpg",,,,,,,,false,$0.00,$0.00,0:15:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+59,Feb Pest Prevention Fixes - Distribution,DONE,,REACTIVE,"11 - Fill gaps in doorway and garage door
+
+Requester contact information:
+Kacey",https://app.getmaintainx.com/workorders/49925201?organizationId=342508,49925201,Daniel Crawford,,Kacey,2025-02-20 09:22:38,Daniel Crawford,2025-02-20 10:29:11,2025-03-03 00:00:00,2025-03-28,1:00:00,2025-03-11 10:20:04,2025-03-17 15:23:33,Daniel Crawford,2025-03-17 15:23:33,,Distribution,2661747,,,,,,,,0,0,0,,350:23:33,201:20:05,1:04:51,147:58:37,,https://app.getmaintainx.com/api/s3/uploads/bf001f4b-753a-4e02-9c48-ce3cb2c8ea70_unnamed.jpg,"https://app.getmaintainx.com/api/s3/uploads/246e1c53-2eaf-47f2-9ce8-53618e2ee2ee_0.jpg,https://app.getmaintainx.com/api/s3/uploads/39c488aa-5398-499c-8ae8-e2c0e6be2473_0.jpg,https://app.getmaintainx.com/api/s3/uploads/bf001f4b-753a-4e02-9c48-ce3cb2c8ea70_unnamed.jpg",,,,,,,,false,$0.00,$0.00,0:10:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+60,Daily Cleaning,DONE,LOW,PREVENTIVE,,https://app.getmaintainx.com/workorders/50418882?organizationId=342508,50418882,"Sergio (Rico Suave) Diniz,Daniel Crawford",,,,Sergio (Rico Suave) Diniz,2025-02-26 13:08:47,2025-02-26 08:00:00,2025-02-26 18:00:00,1:00:00,2025-02-26 13:22:07,2025-02-26 13:23:17,Sergio (Rico Suave) Diniz,2025-02-26 13:23:17,Weekly|1|Monday|Tuesday|Wednesday|Thursday|Friday,General,2648754,RollPros Blackbird 1.0 ID#5,7851683,Preventive,,,Daily Cleaning Machine,2425018,3,0,0,,0:14:29,0:13:19,0:01:10,,,,,"This procedure outlines the daily cleaning routine for the RollPros Blackbird 1.0 machine, ensuring it is properly maintained and ready for use. It includes pre-cleaning inspection, cleaning process, post-cleaning inspection, and final steps to ensure the machine is in optimal condition.",,,,,,,false,$0.00,$0.00,0,$0.00,Asset Information: RollPros Blackbird 1.0,,Pre-Cleaning Inspection,,Check that all the parts are in place,"Hopper,Conveyor Belt,Blades",Is the machine turned off and unplugged?,Yes,Cleaning Process,,Wipe down the exterior surfaces with a damp cloth,X,Clean the hopper thoroughly,PASS,Remove and clean the blades,PASS,Vacuum the conveyor belt to remove debris,PASS,Post-Cleaning Inspection,,Is the machine dry and free of cleaning residue?,Yes,Ensure all parts are reassembled correctly,"Hopper,Conveyor Belt,Blades",Final Steps,,Plug the machine back in,X,Technician's signature,"Sergio (Rico Suave) Diniz,2025-02-26 13:23:13,https://app.getmaintainx.com/api/s3/uploads/4ad6ba7a-9843-4678-ad67-0bccabfa63b4_desktop-signature-1740594192914.png"
+62,Processing Wall,DONE,HIGH,REACTIVE,"Needs to be cleaned before the audit March 19
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/51074590?organizationId=342508,51074590,Daniel Crawford,,kacey@hudsonhemp.com,2025-03-05 13:48:41,Daniel Crawford,2025-03-05 13:57:04,2025-03-05 00:00:00,2025-03-15,1:00:00,2025-03-10 08:52:51,2025-03-31 10:58:14,Daniel Crawford,2025-03-31 10:58:14,,Hudson NY,2648779,,,,,,,,0,0,0,,620:01:09,113:55:47,506:05:22,,,https://app.getmaintainx.com/api/s3/uploads/3b1cde69-9754-41e6-b8f8-67a9c049c8c4_unnamed.jpg,https://app.getmaintainx.com/api/s3/uploads/3b1cde69-9754-41e6-b8f8-67a9c049c8c4_unnamed.jpg,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+63,MX TEST WORK ORDER,DONE,,REACTIVE,,https://app.getmaintainx.com/workorders/51162260?organizationId=342508,51162260,James Fitzpatrick,,,,James Fitzpatrick,2025-03-06 11:21:36,,2025-03-06,1:00:00,2025-03-06 11:24:42,2025-03-06 11:26:23,James Fitzpatrick,2025-03-06 11:26:23,,,,,,,,,Daily Cleaning Machine,2425018,2,1,0,,0:04:47,0:03:06,0:01:41,,,,,"This procedure outlines the daily cleaning routine for the RollPros Blackbird 1.0 machine, ensuring it is properly maintained and ready for use. It includes pre-cleaning inspection, cleaning process, post-cleaning inspection, and final steps to ensure the machine is in optimal condition.",,,,,,,false,$0.00,$0.00,0,$0.00,Asset Information: RollPros Blackbird 1.0,,Pre-Cleaning Inspection,,Check that all the parts are in place,Hopper,Is the machine turned off and unplugged?,Yes,Cleaning Process,,Wipe down the exterior surfaces with a damp cloth,X,Clean the hopper thoroughly,PASS,Remove and clean the blades,FLAG,Vacuum the conveyor belt to remove debris,PASS,Post-Cleaning Inspection,,Is the machine dry and free of cleaning residue?,Yes,Ensure all parts are reassembled correctly,Hopper,Final Steps,,Plug the machine back in,X,Technician's signature,"James Fitzpatrick,2025-03-06 11:26:06,https://app.getmaintainx.com/api/s3/uploads/4b1c33bc-ea0b-4fc4-8b95-09c656b1bda3_desktop-signature-1741278365663.png"
+64,Eye Wash station in Extraction,DONE,,REACTIVE,"Eye wash station in extraction by door to distillation is not functional. They pull the cord for water and it leaks out the bottom. If this cant be repaired we need to get a wall unit for them ASAP
+
+Requester contact information:
+Kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/51167108?organizationId=342508,51167108,Daniel Crawford,,Kacey@hudsonhemp.com,2025-03-05 09:45:43,Daniel Crawford,2025-03-06 12:04:35,2025-03-06 00:00:00,2025-04-01,1:00:00,2025-03-10 08:52:16,2025-05-27 09:40:04,Daniel Crawford,2025-05-27 09:40:04,,Hudson NY,2648779,,,,,,,,0,0,0,,1964:35:26,91:47:41,1872:47:45,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+65,"hairnet, shoe cover, and beard cover dispenser rehung",DONE,,REACTIVE,in the 1906/ hash lab gowning room the dispenser fell off the wall again. Just needs to be remounted please and thank you.,https://app.getmaintainx.com/workorders/51167988?organizationId=342508,51167988,Daniel Crawford,,,2025-03-06 12:11:48,Daniel Crawford,2025-03-06 12:12:27,2025-03-07 00:00:00,2025-03-06,1:00:00,2025-03-18 14:28:55,2025-03-18 14:28:55,Daniel Crawford,2025-03-18 14:28:55,,Hudson NY,2648779,,,,,,,,0,0,0,,277:28:55,16:40:02,,260:48:53,,,,,,,,,,,false,$0.00,$0.00,0:15:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+66,Paper towel dispenser installed in processing bathrooms,DONE,,REACTIVE,"Have 2 paper towel dispensers to be installed in both bathrooms in processing warehouse.
+
+Requester contact information:
+Kelly@hudsonhemp.com",https://app.getmaintainx.com/workorders/51202998?organizationId=342508,51202998,Daniel Crawford,,Kelly@hudsonhemp.com,2025-03-06 14:50:07,Daniel Crawford,2025-03-06 16:09:07,2025-03-10 00:00:00,2025-03-30,1:00:00,2025-03-10 08:49:42,2025-03-10 08:49:42,Daniel Crawford,2025-03-10 08:49:42,,Hudson NY,2648779,,,,,,,,0,0,0,,8:49:43,8:49:43,,,,https://app.getmaintainx.com/api/s3/uploads/8a6de73f-6275-4df8-926d-cdf93ab85f42_image.jpg,"https://app.getmaintainx.com/api/s3/uploads/15e05524-f500-4301-81b9-63006c1b416f_image.jpg,https://app.getmaintainx.com/api/s3/uploads/4f74d646-72d6-47b8-a007-1413ec3979eb_image.jpg,https://app.getmaintainx.com/api/s3/uploads/8a6de73f-6275-4df8-926d-cdf93ab85f42_image.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+67,Change all Willow Air Filters in Processing Filters,DONE,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/51203109?organizationId=342508,51203109,Daniel Crawford,,kacey@hudsonhemp.com,2025-03-06 15:25:13,Daniel Crawford,2025-03-06 16:10:16,2025-03-07 00:00:00,2025-03-11,1:00:00,2025-03-11 10:19:44,2025-03-11 10:19:44,Daniel Crawford,2025-03-11 10:19:44,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,105:19:44,80:02:31,,25:17:13,,,,,,,,,,,false,$0.00,$0.00,0:05:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+68,Change all filters in  Hash Lab Willow Air Units,DONE,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/51203170?organizationId=342508,51203170,Daniel Crawford,,kacey@hudsonhemp.com,2025-03-06 15:24:15,Daniel Crawford,2025-03-06 16:10:56,2025-03-07 00:00:00,2025-03-11,1:00:00,2025-03-11 10:19:40,2025-03-11 10:19:40,Daniel Crawford,2025-03-11 10:19:40,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,105:19:40,79:59:16,,25:20:24,,,,,,,,,,,false,$0.00,$0.00,0:05:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+69,hot water in 1906/ hash lab bathroom,DONE,LOW,REACTIVE,there's a weird smell coming from the hot water in the 1906/ hash lab bathroom. Can we please take a look and make sure this is normal? None of us remember the bathroom water smelling like this when running hot. Thanks.,https://app.getmaintainx.com/workorders/51244213?organizationId=342508,51244213,Daniel Crawford,,,2025-03-07 06:24:34,Daniel Crawford,2025-03-07 07:25:50,2025-03-04 00:00:00,2025-03-14,1:00:00,2025-03-26 10:38:10,2025-03-26 10:38:10,Daniel Crawford,2025-03-26 10:38:10,,Hudson NY,2648779,,,,,,,,0,0,0,,458:12:20,458:12:20,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+70,Fix leak in cleaning room,DONE,MEDIUM,REACTIVE,Leak from the sink in the new cleaning room,https://app.getmaintainx.com/workorders/51320017?organizationId=342508,51320017,"Daniel Crawford,Alexandra Harrington",Processing,,,Alexandra Harrington,2025-03-07 13:59:17,,,1:00:00,2025-04-29 09:55:04,2025-04-29 09:55:04,Daniel Crawford,2025-04-29 09:55:04,,Processing,2648780,,,Mechanical,,,,,0,0,0,,1266:55:47,1266:55:47,,,,https://app.getmaintainx.com/api/s3/uploads/13f19fb0-060c-4d74-9e90-ae61d7be6e09_IMG_6462.HEIC,https://app.getmaintainx.com/api/s3/uploads/13f19fb0-060c-4d74-9e90-ae61d7be6e09_IMG_6462.HEIC,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+72,Nail cleanup along Distro perimeters,OPEN,,REACTIVE,"Nails keep being found in employees tires after parking along the far wall of Distribution. Need a nail cleanup ASAP along entire perimeter of Distribution, thoroughly, as pallets used to be stored along the exterior walls.
+
+Requester contact information:
+emily@hudsonhemp.com",https://app.getmaintainx.com/workorders/51504374?organizationId=342508,51504374,Daniel Crawford,,emily@hudsonhemp.com,2025-03-10 12:03:16,Daniel Crawford,2025-03-10 16:27:47,2025-03-11 00:00:00,2025-03-14,1:00:00,,,,2025-03-10 16:27:47,,Hudson NY,2648779,,,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+73,Change all filters in  Hash Lab Willow Air Units,DONE,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/51571185?organizationId=342508,51571185,Daniel Crawford,,,,Daniel Crawford,2025-03-11 10:19:40,2025-04-07 13:00:00,2025-04-11,1:00:00,2025-03-17 15:23:42,2025-04-29 11:05:38,Daniel Crawford,2025-04-29 11:05:38,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,526:05:23,526:05:23,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+74,Change all Willow Air Filters in Processing Filters,DONE,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/51571193?organizationId=342508,51571193,Daniel Crawford,,,,Daniel Crawford,2025-03-11 10:19:44,2025-04-07 13:00:00,2025-04-11,1:00:00,2025-03-17 15:23:46,2025-04-29 11:05:34,Daniel Crawford,2025-04-29 11:05:34,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,526:05:20,526:05:20,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+75,Change all filters in  Hash Lab Willow Air Units,DONE,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/52084287?organizationId=342508,52084287,Daniel Crawford,,,,Daniel Crawford,2025-03-17 15:23:42,2025-05-05 13:00:00,2025-05-09,1:00:00,2025-05-06 07:45:38,2025-05-06 07:45:38,Daniel Crawford,2025-05-06 07:45:38,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,18:45:38,18:45:38,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+76,Change all Willow Air Filters in Processing Filters,DONE,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/52084294?organizationId=342508,52084294,Daniel Crawford,,,,Daniel Crawford,2025-03-17 15:23:46,2025-05-05 13:00:00,2025-05-09,1:00:00,2025-05-06 07:45:35,2025-05-06 07:45:35,Daniel Crawford,2025-05-06 07:45:35,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,18:45:36,18:45:36,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+77,Fire Safety Training - Yearly,DONE,HIGH,PREVENTIVE,Conduct yearly fire safety training,https://app.getmaintainx.com/workorders/52089112?organizationId=342508,52089112,Daniel Crawford,,,,Daniel Crawford,2025-03-17 16:06:34,,2025-03-18,1:00:00,2025-03-17 16:07:00,2025-03-19 08:14:31,Daniel Crawford,2025-03-19 08:14:31,Yearly|1,Hudson NY,2648779,,,,,,,,0,0,0,,40:07:53,0:00:26,40:07:27,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+78,Fire Safety Training - Yearly,OPEN,HIGH,PREVENTIVE,Conduct yearly fire safety training,https://app.getmaintainx.com/workorders/52089147?organizationId=342508,52089147,Daniel Crawford,,,,Daniel Crawford,2025-03-17 16:07:00,2025-03-19 00:00:00,2026-03-18,1:00:00,,,,2025-03-17 16:07:00,Yearly|1,Hudson NY,2648779,,,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+79,Get Filter Sizes for Dryroom Equipment,DONE,MEDIUM,REACTIVE,Obtain filter sizes for all dry room equipment and document for PM program,https://app.getmaintainx.com/workorders/52195311?organizationId=342508,52195311,Daniel Crawford,,,,Daniel Crawford,2025-03-18 13:37:47,2025-03-19 00:00:00,2025-03-28,1:00:00,2025-03-26 10:33:54,2025-03-26 10:33:54,Daniel Crawford,2025-03-26 10:33:54,,,,,,,,,,,0,0,0,,178:33:55,178:33:55,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+83,Replace Steam Canister and Clean Drain Valve,DONE,MEDIUM,PREVENTIVE,"TO REPLACE THE CANISTER
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. Remove O-ring from groove in drain assembly using a small screw
+driver
+8. Insect drain assembly and remove any debris – see TO CLEAN THE
+DRAIN VALVE
+9. Insert new O-ring into groove in drain assembly (O-ring is provided
+with Model 80 and Model 80LC canisters ) Dampen O-ring with
+water before inserting canister Do not use oil, grease, or any
+lubricant besides water
+10. Make sure strainer is inserted into bottom of new canister
+11. Insert canister into drain assembly Position canister with label facing
+outward
+12. Reconnect steam hose and wires ensuring wires are fully seated
+13. Replace front door
+14. Restore electrical power to humidifier
+15. Turn humidifier On and verify green On/Off light is illuminated
+16. See Start-up procedure
+17. Check for leaks.
+
+
+
+
+TO CLEAN THE DRAIN VALVE
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit
+breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. With your finger swirl the fluid/precipitate mixture in the bottom of
+the drain valve reservoir
+8. Using a sponge or paper towels soak up the water in the reservoir,
+if necessary use a wet/dry vacuum to remove residue
+9. Clean the inside of the drain port (where coil projects out) by
+gently swabbing with a bent cotton swab or other soft implement
+10. Rinse the drain valve reservoir with clean water and vacuum as
+necessary
+11. Replace canister, reconnect steam hose and wires ensuring wires
+are fully seated
+12. Replace front door
+13. Restore electrical power to humidifier
+14. Turn humidifier On and verify green On/Off light is illuminated
+15. See Start-up procedure
+16. Check for leaks",https://app.getmaintainx.com/workorders/52219987?organizationId=342508,52219987,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-18 14:53:01,2025-05-01 09:00:00,2025-06-01,1:00:00,2025-07-29 10:49:15,2025-07-29 10:49:15,Daniel Crawford,2025-07-29 10:49:15,Yearly|1,General,2648754,Processing Humidifier,9547724,"Mechanical,Preventive",,,,,0,0,0,,2137:49:16,2137:49:16,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+84,Replace Steam Canister and Clean Drain Valve,DONE,MEDIUM,PREVENTIVE,"TO REPLACE THE CANISTER
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. Remove O-ring from groove in drain assembly using a small screw
+driver
+8. Insect drain assembly and remove any debris – see TO CLEAN THE
+DRAIN VALVE
+9. Insert new O-ring into groove in drain assembly (O-ring is provided
+with Model 80 and Model 80LC canisters ) Dampen O-ring with
+water before inserting canister Do not use oil, grease, or any
+lubricant besides water
+10. Make sure strainer is inserted into bottom of new canister
+11. Insert canister into drain assembly Position canister with label facing
+outward
+12. Reconnect steam hose and wires ensuring wires are fully seated
+13. Replace front door
+14. Restore electrical power to humidifier
+15. Turn humidifier On and verify green On/Off light is illuminated
+16. See Start-up procedure
+17. Check for leaks.
+
+
+
+
+TO CLEAN THE DRAIN VALVE
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit
+breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. With your finger swirl the fluid/precipitate mixture in the bottom of
+the drain valve reservoir
+8. Using a sponge or paper towels soak up the water in the reservoir,
+if necessary use a wet/dry vacuum to remove residue
+9. Clean the inside of the drain port (where coil projects out) by
+gently swabbing with a bent cotton swab or other soft implement
+10. Rinse the drain valve reservoir with clean water and vacuum as
+necessary
+11. Replace canister, reconnect steam hose and wires ensuring wires
+are fully seated
+12. Replace front door
+13. Restore electrical power to humidifier
+14. Turn humidifier On and verify green On/Off light is illuminated
+15. See Start-up procedure
+16. Check for leaks",https://app.getmaintainx.com/workorders/52220032?organizationId=342508,52220032,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-18 14:53:18,2025-05-01 09:00:00,2025-06-01,1:00:00,2025-07-29 10:49:11,2025-07-29 10:49:11,Daniel Crawford,2025-07-29 10:49:11,Yearly|1,General,2648754,Dry Room #2 Humidifier,9547730,"Mechanical,Preventive",,,,,0,0,0,,2137:49:12,2137:49:12,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+85,Replace Steam Canister and Clean Drain Valve,DONE,MEDIUM,PREVENTIVE,"TO REPLACE THE CANISTER
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. Remove O-ring from groove in drain assembly using a small screw
+driver
+8. Insect drain assembly and remove any debris – see TO CLEAN THE
+DRAIN VALVE
+9. Insert new O-ring into groove in drain assembly (O-ring is provided
+with Model 80 and Model 80LC canisters ) Dampen O-ring with
+water before inserting canister Do not use oil, grease, or any
+lubricant besides water
+10. Make sure strainer is inserted into bottom of new canister
+11. Insert canister into drain assembly Position canister with label facing
+outward
+12. Reconnect steam hose and wires ensuring wires are fully seated
+13. Replace front door
+14. Restore electrical power to humidifier
+15. Turn humidifier On and verify green On/Off light is illuminated
+16. See Start-up procedure
+17. Check for leaks.
+
+
+
+
+TO CLEAN THE DRAIN VALVE
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit
+breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. With your finger swirl the fluid/precipitate mixture in the bottom of
+the drain valve reservoir
+8. Using a sponge or paper towels soak up the water in the reservoir,
+if necessary use a wet/dry vacuum to remove residue
+9. Clean the inside of the drain port (where coil projects out) by
+gently swabbing with a bent cotton swab or other soft implement
+10. Rinse the drain valve reservoir with clean water and vacuum as
+necessary
+11. Replace canister, reconnect steam hose and wires ensuring wires
+are fully seated
+12. Replace front door
+13. Restore electrical power to humidifier
+14. Turn humidifier On and verify green On/Off light is illuminated
+15. See Start-up procedure
+16. Check for leaks",https://app.getmaintainx.com/workorders/52220059?organizationId=342508,52220059,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-18 14:53:35,2025-05-01 09:00:00,2025-06-01,1:00:00,2025-07-29 10:49:09,2025-07-29 10:49:09,Daniel Crawford,2025-07-29 10:49:09,Yearly|1,General,2648754,Dry Room 3 Humidifier,9547734,"Mechanical,Preventive",,,,,0,0,0,,2137:49:09,2137:49:09,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+86,Replace Steam Canister and Clean Drain Valve,DONE,MEDIUM,PREVENTIVE,"TO REPLACE THE CANISTER
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. Remove O-ring from groove in drain assembly using a small screw
+driver
+8. Insect drain assembly and remove any debris – see TO CLEAN THE
+DRAIN VALVE
+9. Insert new O-ring into groove in drain assembly (O-ring is provided
+with Model 80 and Model 80LC canisters ) Dampen O-ring with
+water before inserting canister Do not use oil, grease, or any
+lubricant besides water
+10. Make sure strainer is inserted into bottom of new canister
+11. Insert canister into drain assembly Position canister with label facing
+outward
+12. Reconnect steam hose and wires ensuring wires are fully seated
+13. Replace front door
+14. Restore electrical power to humidifier
+15. Turn humidifier On and verify green On/Off light is illuminated
+16. See Start-up procedure
+17. Check for leaks.
+
+
+
+
+TO CLEAN THE DRAIN VALVE
+1. Turn humidifier off
+2. Unit will go through drain cycle – 4 mins – and turn off when
+complete
+3. Disconnect main electrical power to humidifier at the circuit
+breaker
+4. Allow the unit to cool
+5. Remove front door
+6. Remove electrode wires, high water probe wire, steam hose and
+canister
+7. With your finger swirl the fluid/precipitate mixture in the bottom of
+the drain valve reservoir
+8. Using a sponge or paper towels soak up the water in the reservoir,
+if necessary use a wet/dry vacuum to remove residue
+9. Clean the inside of the drain port (where coil projects out) by
+gently swabbing with a bent cotton swab or other soft implement
+10. Rinse the drain valve reservoir with clean water and vacuum as
+necessary
+11. Replace canister, reconnect steam hose and wires ensuring wires
+are fully seated
+12. Replace front door
+13. Restore electrical power to humidifier
+14. Turn humidifier On and verify green On/Off light is illuminated
+15. See Start-up procedure
+16. Check for leaks",https://app.getmaintainx.com/workorders/52220098?organizationId=342508,52220098,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-18 14:54:04,2025-05-01 09:00:00,2025-06-01,1:00:00,2025-07-29 10:49:06,2025-07-29 10:49:06,Daniel Crawford,2025-07-29 10:49:06,Yearly|1,General,2648754,Pre-Roll Room Humidifier,9547726,"Mechanical,Preventive",,,,,0,0,0,,2137:49:07,2137:49:07,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+88,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/52292672?organizationId=342508,52292672,Daniel Crawford,,,,Daniel Crawford,2025-03-19 10:02:42,2025-04-21 12:00:00,2025-04-21,1:00:00,2025-04-29 11:05:29,2025-04-29 11:05:29,Daniel Crawford,2025-04-29 11:05:29,Weekly|6|Monday,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,191:05:30,191:05:30,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+89,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/52292683?organizationId=342508,52292683,Daniel Crawford,,,,Daniel Crawford,2025-03-19 10:02:44,2025-04-21 12:00:00,2025-04-21,1:00:00,2025-04-29 11:05:26,2025-04-29 11:05:26,Daniel Crawford,2025-04-29 11:05:26,Weekly|6|Monday,Processing,2648780,Willow Air #2 - Processing,7851714,,,,,,0,0,0,,191:05:26,191:05:26,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+90,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/52292688?organizationId=342508,52292688,Daniel Crawford,,,,Daniel Crawford,2025-03-19 10:02:47,2025-04-21 12:00:00,2025-04-21,1:00:00,2025-04-29 11:05:22,2025-04-29 11:05:22,Daniel Crawford,2025-04-29 11:05:22,Weekly|6|Monday,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,191:05:23,191:05:23,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+91,Inspect Batteries and Refill,DONE,MEDIUM,PREVENTIVE,"I. Safety Precautions
+
+    Personal Protective Equipment (PPE):
+
+        Wear safety goggles, gloves, and protective clothing.
+
+        Use a face shield if necessary.
+
+    Work Area Safety:
+
+        Ensure the forklift is turned off and the key is removed.
+
+        Work in a well-ventilated area to avoid inhaling fumes.
+
+        Keep sparks, flames, and smoking materials away from the battery area.
+
+    Battery Safety:
+
+        Be cautious of acid spills and leaks.
+
+        Avoid short-circuiting the battery terminals.
+
+II. Tools and Materials Needed
+
+    Distilled water (never use tap water)
+
+    Hydrometer (optional, for checking electrolyte levels)
+
+    Funnel (preferably with a narrow spout)
+
+    Clean cloth or paper towels
+
+    Baking soda (for cleaning up acid spills)
+
+    Wrench or pliers (if battery caps are tight)
+
+III. Steps to Check and Refill Distilled Water
+
+    Access the Battery Compartment:
+
+        Locate the battery compartment on the forklift.
+
+        Open the battery compartment cover or door as per the forklift’s design.
+
+    Inspect the Battery:
+
+        Check for any visible damage, leaks, or corrosion on the battery casing.
+
+        If corrosion is present, clean the terminals with a mixture of baking soda and water, then rinse with clean water and dry.
+
+    Open the Battery Cell Caps:
+
+        Carefully remove the caps from the battery cells. Some batteries may have a single cover with multiple caps, while others may have individual caps.
+
+        Use a wrench or pliers if the caps are tight, but be gentle to avoid damaging them.
+
+    Check the Electrolyte Levels:
+
+        Look inside each cell to check the level of the electrolyte (the liquid covering the battery plates).
+
+        The electrolyte should cover the plates by about 1/4 to 1/2 inch (6-12 mm). If the plates are exposed, the battery needs water.
+
+    Refill with Distilled Water:
+
+        Using a funnel, slowly add distilled water to each cell until the electrolyte level is just above the plates.
+
+        Do not overfill, as the electrolyte can expand during charging and overflow.
+
+        If you accidentally overfill, use a clean syringe or turkey baster to remove excess water.
+
+    Close the Battery Cell Caps:
+
+        Securely replace the caps on each cell, ensuring they are tight but not over-tightened.
+
+        Wipe away any spilled water or electrolyte with a clean cloth.
+
+    Clean the Battery and Compartment:
+
+        Wipe down the battery casing and surrounding area to remove any dirt or residue.
+
+        Ensure the battery compartment is clean and dry before closing it.
+
+    Close the Battery Compartment:
+
+        Securely close the battery compartment cover or door.
+
+IV. Post-Refill Checks
+
+    Inspect for Leaks:
+
+        After refilling, check for any leaks around the battery caps or casing.
+
+    Charge the Battery:
+
+        If the battery was low on water, it may need to be charged. Follow the forklift’s manual for proper charging procedures.
+
+    Monitor Battery Performance:
+
+        Keep an eye on the battery’s performance and water levels over the next few days to ensure everything is functioning correctly.
+
+V. Maintenance Tips
+
+    Regular Checks: Check the water levels in the battery regularly, especially if the forklift is used frequently.
+
+    Avoid Overcharging: Overcharging can cause the battery to lose water more quickly. Ensure the charging system is functioning correctly.
+
+    Keep Records: Maintain a log of when you check and refill the battery to track its maintenance history.
+
+VI. Troubleshooting
+
+    Low Electrolyte Levels: If the battery consistently requires frequent refilling, it may indicate overcharging or a faulty battery.
+
+    Corrosion: If corrosion is a recurring issue, consider applying a corrosion-resistant spray or gel to the terminals.
+
+    Battery Not Holding Charge: If the battery is not holding a charge despite proper maintenance, it may need to be replaced.",https://app.getmaintainx.com/workorders/52296040?organizationId=342508,52296040,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-19 10:25:52,2025-05-01 00:00:00,2025-06-01,1:00:00,2025-07-29 10:49:01,2025-07-29 10:49:01,Daniel Crawford,2025-07-29 10:49:01,Yearly|1,General,2648754,Crown Electric Forklift,9559850,"Inspection,Mechanical",,,,,0,0,0,,2146:49:02,2146:49:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+92,Move items from warehouse hallway,DONE,,REACTIVE,"Items for preroll room construction need to be moved before EOD
+
+Requester contact information:
+Kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/52297983?organizationId=342508,52297983,Daniel Crawford,,Kacey@hudsonhemp.com,2025-03-19 10:40:35,Daniel Crawford,2025-03-19 10:41:21,,,1:00:00,2025-04-29 09:54:57,2025-04-29 09:54:57,Daniel Crawford,2025-04-29 09:54:57,,Hudson NY,2648779,,,,,,,,0,0,0,,983:13:35,358:28:10,,624:45:25,,https://app.getmaintainx.com/api/s3/uploads/804db852-0c27-46bb-9e11-d6451ae90fcd_254DED3C-FDB8-43E1-B8EE-1FE9F681E984.jpeg,https://app.getmaintainx.com/api/s3/uploads/804db852-0c27-46bb-9e11-d6451ae90fcd_254DED3C-FDB8-43E1-B8EE-1FE9F681E984.jpeg,,,,,,,,false,$0.00,$0.00,0:10:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+93,Please fix/work on distro/hash golf cart,DONE,MEDIUM,REACTIVE,"The distro/hash golf cart has been dead for four months now and hasn’t been in use. Can this be maintained and fixed please?
+
+Requester contact information:
+Emily@hudsonhemp.com",https://app.getmaintainx.com/workorders/52376246?organizationId=342508,52376246,Daniel Crawford,,Emily@hudsonhemp.com,2025-03-19 15:11:54,Daniel Crawford,2025-03-20 07:31:29,2025-03-31 00:00:00,2025-04-04,1:00:00,2025-04-01 11:53:18,2025-04-01 11:53:18,Daniel Crawford,2025-04-01 11:53:18,,Hudson NY,2648779,,,,,,,,0,0,0,,35:53:19,35:53:19,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+95,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52828635?organizationId=342508,52828635,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:02:07,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:49,2025-04-11 10:03:49,Daniel Crawford,2025-04-11 10:03:49,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #2,9544400,,,,,,0,0,0,,403:01:41,403:01:41,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+96,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52828660?organizationId=342508,52828660,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:02:21,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:44,2025-04-11 10:03:44,Daniel Crawford,2025-04-11 10:03:44,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #2,9544399,,,,,,0,0,0,,403:01:22,403:01:22,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+97,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52828688?organizationId=342508,52828688,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:02:36,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:38,2025-04-11 10:03:38,Daniel Crawford,2025-04-11 10:03:38,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #2,9544402,,,,,,0,0,0,,403:01:01,403:01:01,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+98,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52829099?organizationId=342508,52829099,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:06:21,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:41,2025-04-11 10:03:41,Daniel Crawford,2025-04-11 10:03:41,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #1,9662130,,,,,,0,0,0,,402:57:20,402:57:20,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+99,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52829245?organizationId=342508,52829245,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:07:47,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:35,2025-04-11 10:03:35,Daniel Crawford,2025-04-11 10:03:35,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #1,9662207,,,,,,0,0,0,,402:55:47,402:55:47,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+100,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/52829592?organizationId=342508,52829592,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:10:42,2025-03-01 00:00:00,2025-03-26,1:00:00,2025-04-11 10:03:29,2025-04-11 10:03:29,Daniel Crawford,2025-04-11 10:03:29,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #1,9662223,,,,,,0,0,0,,402:52:47,402:52:47,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+101,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52830520?organizationId=342508,52830520,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:18:12,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:25,2025-05-27 09:41:25,Daniel Crawford,2025-05-27 09:41:25,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #1,9662254,,,,,,0,0,0,,1506:23:12,1506:23:12,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+102,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52830879?organizationId=342508,52830879,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:20:58,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:21,2025-05-27 09:41:21,Daniel Crawford,2025-05-27 09:41:21,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #2,9662272,,,,,,0,0,0,,1506:20:22,1506:20:22,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+103,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52832088?organizationId=342508,52832088,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:31:14,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:15,2025-05-27 09:41:15,Daniel Crawford,2025-05-27 09:41:15,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #1,9662290,,,,,,0,0,0,,1506:10:00,1506:10:00,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+104,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52832103?organizationId=342508,52832103,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:31:25,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:18,2025-05-27 09:41:18,Daniel Crawford,2025-05-27 09:41:18,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #2,9662334,,,,,,0,0,0,,1506:09:53,1506:09:53,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+105,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52832130?organizationId=342508,52832130,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:31:39,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:07,2025-05-27 09:41:07,Daniel Crawford,2025-05-27 09:41:07,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #1,9662285,,,,,,0,0,0,,1506:09:27,1506:09:27,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+106,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/52832158?organizationId=342508,52832158,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-25 15:31:53,2025-03-01 00:00:00,2025-04-07,1:00:00,2025-05-27 09:41:02,2025-05-27 09:41:02,Daniel Crawford,2025-05-27 09:41:02,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #2,9662323,,,,,,0,0,0,,1506:09:09,1506:09:09,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+107,Inspect Exhaust Fan,DONE,,PREVENTIVE,Inspect the fan and louvers. Change or adjust belts if necessary.,https://app.getmaintainx.com/workorders/52880118?organizationId=342508,52880118,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 07:39:26,2025-03-26 00:00:00,2025-04-08,1:00:00,2025-05-27 09:41:51,2025-05-27 09:41:51,Daniel Crawford,2025-05-27 09:41:51,Yearly|1,Cultivation,2661740,Harnois Exhaust Fan #3,9691615,,,,Inspect Fan and Louver - Yearly,2532819,0,0,0,,1490:02:24,1490:02:24,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,Inspect fan blades for any damage,,Comments on fan blade condition,,Inspect louver for any damage,,Comments on louver condition,,Is there any debris present in the fan or louver?,,Comments on debris removal,,Inspect belts for dry rotting or damage,,Comments on belt condition,,Are the belts loose?,,Actions taken to tighten belts,,Upload photo of fan and louver after inspection,,Inspector's Signature,,,,,,,
+108,Inspect Exhaust Fan,DONE,,PREVENTIVE,Inspect the fan and louvers. Change or adjust belts if necessary.,https://app.getmaintainx.com/workorders/52880316?organizationId=342508,52880316,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 07:41:09,2025-03-26 00:00:00,2025-04-08,1:00:00,2025-05-27 09:41:38,2025-05-27 09:41:38,Daniel Crawford,2025-05-27 09:41:38,Yearly|1,Cultivation,2661740,Harnois Exhaust Fan #2,9691613,,,,Inspect Fan and Louver - Yearly,2532819,0,0,0,,1490:00:28,1490:00:28,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,Inspect fan blades for any damage,,Comments on fan blade condition,,Inspect louver for any damage,,Comments on louver condition,,Is there any debris present in the fan or louver?,,Comments on debris removal,,Inspect belts for dry rotting or damage,,Comments on belt condition,,Are the belts loose?,,Actions taken to tighten belts,,Upload photo of fan and louver after inspection,,Inspector's Signature,,,,,,,
+109,Inspect Exhaust Fan,DONE,,REACTIVE,Inspect the fan and louvers. Change or adjust belts if necessary.,https://app.getmaintainx.com/workorders/52880339?organizationId=342508,52880339,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 07:41:22,2025-03-26 00:00:00,2025-04-08,1:00:00,2025-05-27 09:41:58,2025-05-27 09:41:58,Daniel Crawford,2025-05-27 09:41:58,Yearly|1,Cultivation,2661740,Harnois Exhaust Fan #1,9691611,,,,Inspect Fan and Louver - Yearly,2532819,0,0,0,,1490:00:35,1490:00:35,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,Inspect fan blades for any damage,,Comments on fan blade condition,,Inspect louver for any damage,,Comments on louver condition,,Is there any debris present in the fan or louver?,,Comments on debris removal,,Inspect belts for dry rotting or damage,,Comments on belt condition,,Are the belts loose?,,Actions taken to tighten belts,,Upload photo of fan and louver after inspection,,Inspector's Signature,,,,,,,
+110,Clean Floor Drains,DONE,MEDIUM,PREVENTIVE,,https://app.getmaintainx.com/workorders/52902926?organizationId=342508,52902926,Daniel Crawford,Processing,,,Daniel Crawford,2025-03-26 10:34:06,2025-06-27 12:00:00,2025-06-30,1:00:00,2025-07-29 10:49:17,2025-07-29 10:49:17,Daniel Crawford,2025-07-29 10:49:17,Monthly|3|30,Processing,2648780,Floor Drains,7741260,,,,,,0,0,0,,766:49:17,766:49:17,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+111,Finalize Pre-Roll Room Project,DONE,,PREVENTIVE,These items are to be completed for the Pre-Roll Room ( See Procedure ),https://app.getmaintainx.com/workorders/52906617?organizationId=342508,52906617,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 11:02:54,2025-04-01 00:00:00,2025-05-01,1:00:00,2025-05-27 09:42:28,2025-05-27 09:42:28,Daniel Crawford,2025-05-27 09:42:28,,Processing,2648780,,,Project,,,Preroll Room Punch List 3/25,,0,0,0,,1353:42:29,1353:42:29,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,Install dehumidifier in Hefestus Curtain Area,,Move cord drops to work centers ,,Install broom hanger and cleaning area setup,,Install rivets in curtains,,Flip door going out to Warehouse,,,,,,,,,,,,,,,,,,,,,
+112,Packaging Room Refresh,DONE,,REACTIVE,Complete Tasks ( See procedure ),https://app.getmaintainx.com/workorders/52909677?organizationId=342508,52909677,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 11:26:05,2025-05-01 00:00:00,2025-06-01,1:00:00,2025-05-27 09:43:10,2025-05-27 09:43:21,Daniel Crawford,2025-05-27 09:43:21,,Processing,2648780,,,,,,Packaging Space Refresh,,0,0,0,,633:43:21,633:43:11,0:00:10,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,Remove old equipment which is no longer needed,X,Paint walls and ceiling,X,Fix condensation issue on the main panel,X,Tape off electric panel area,X,Move all lights over one beam to center the light better in the room,X,Remove large dehumidifier,X,Install Small Dehumidifier,X,Install Duct work and controls for HVAC,X,,,,,,,,,,,,,,
+113,Monthly Fire Extinguisher Inspection,DONE,,PREVENTIVE,"Compliant with OSHA Standards (29 CFR 1910.157)
+Purpose
+
+To ensure all fire extinguishers are properly maintained, accessible, and in good working condition per OSHA regulations.
+Scope
+
+Applies to all portable fire extinguishers in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees the program and ensures compliance.
+
+    Designated Inspector: Trained personnel conducting monthly checks.
+
+    Maintenance Team: Addresses issues identified during inspections.
+
+Procedure
+1. Visual Inspection
+
+a. Location & Accessibility
+
+    Confirm extinguisher is in its designated location.
+
+    Ensure nothing obstructs access (min. 36” clearance per OSHA).
+
+    Verify visibility of signage or markings.
+
+b. Physical Condition
+
+    Check for obvious damage (dents, corrosion, leaks, clogged nozzles).
+
+    Inspect hose/tube for cracks or detachment.
+
+    Verify the locking pin is intact and tamper seal unbroken.
+
+c. Pressure & Gauge
+
+    For gauge-type extinguishers:
+
+        Needle must be in the ""green"" zone (proper pressure).
+
+    For cartridge-operated units:
+
+        Verify the cartridge is securely seated and undamaged.
+
+d. Labeling & Tags
+
+    Ensure legible operating instructions and NFPA rating label.
+
+    Verify monthly inspection tag is present and up-to-date.
+
+2. Documentation
+
+    Record inspection results on the Fire Extinguisher Inspection Tag (date, initials, condition).
+
+    Log findings in the Fire Safety Inspection Checklist.
+
+3. Corrective Actions
+
+    Minor Issues (e.g., obstructed access): Correct immediately.
+
+    Major Issues (e.g., damage/low pressure): Tag as ""DEFECTIVE,"" remove from service, and notify maintenance for repair/replacement.
+
+4. Reporting
+
+    Submit inspection reports to the Facilities Manager.
+
+    Schedule annual professional maintenance (per NFPA 10).",https://app.getmaintainx.com/workorders/52947795?organizationId=342508,52947795,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 17:33:17,2025-04-15 00:00:00,2025-04-21,1:00:00,2025-04-21 22:13:49,2025-05-06 07:46:14,Daniel Crawford,2025-05-06 07:46:14,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Monthly Fire Extinguisher Checks,,0,0,0,,511:46:12,166:13:49,0:57:06,344:35:17,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,1:30:00,$0.00,Date of inspection,04/21/2025,Farmhouse,"1,2",Extraction/1906,"3,4,5,6,7,8,9,10,11,12,13,14,15,16",Processing / Warehouse,"15,16,17,18",Distribution,"20,21,25",Carbon Building,19,Outdoor / Outbuildings,"22,23,24,26,27",Comments / Flags,Fire Extinguishers 2-8-13-14-19 need to be hanged up,,,,,,,,,,,,,,
+114,Monthly Emergency Light Inspection,DONE,,PREVENTIVE,"To ensure emergency lighting systems are operational, properly maintained, and meet regulatory requirements for safe egress during power failures.
+Scope
+
+Applies to all battery-powered emergency lights and exit signs in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees compliance and maintenance.
+
+    Designated Inspector: Conducts monthly inspections.
+
+    Maintenance Team: Repairs or replaces faulty units.
+
+Procedure
+1. Visual Inspection
+
+a. Physical Condition
+
+    Check for visible damage (cracks, corrosion, loose wiring, or missing covers).
+
+    Ensure lenses are clean and free of obstructions.
+
+    Verify that units are securely mounted.
+
+b. Power Indicator
+
+    Confirm the ""power on"" LED (if present) is illuminated (indicates AC power is supplied).
+
+2. Functional Test
+
+Manual Activation (30-Second Test)
+
+    Simulate Power Failure:
+
+        For units with a test button: Press and hold for 10 seconds.
+
+        For hardwired units: Switch off the circuit breaker or unplug the unit.
+
+    Verify Illumination:
+
+        Emergency lights must activate immediately and remain lit for at least 30 seconds.
+
+        Exit signs must stay illuminated (if battery-backed).
+
+    Restore Power:
+
+        Reactivate the circuit breaker/release the test button.
+
+        Confirm the unit returns to charging mode (charging indicator LED on, if equipped).
+
+
+3. Documentation
+
+    Record results on the Emergency Light Inspection Tag (date, inspector initials, pass/fail).
+
+    Update the Emergency Light Inspection Log (include unit location, test results, and actions taken).
+
+4. Corrective Actions
+
+    Failed Test/Defects: Tag the unit, report to maintenance, and replace batteries or bulbs within 24 hours.
+
+    Chronic Issues: Schedule a full system inspection by a licensed electrician.
+
+5. Annual Requirements
+
+    Conduct a 90-minute full discharge test (per NFPA 101) to confirm battery capacity.",https://app.getmaintainx.com/workorders/52948397?organizationId=342508,52948397,Daniel Crawford,Facilities,,,Daniel Crawford,2025-03-26 17:42:43,2025-04-15 00:00:00,2025-04-21,1:00:00,2025-03-27 08:32:53,2025-05-06 07:45:58,Daniel Crawford,2025-05-06 07:45:58,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Emergency Light Checklist,2538917,0,0,0,,511:45:58,0,614:34:28,344:38:37,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,1:30:00,$0.00,,04/21/2025,Farmhouse,"1,2,3",Extraction / 1906 / Hash Lab,"4,5,6,8,9,11,12,13,14,15,16,17,18,19,20,21",Processing / Warehouse,"22,23,24,25",Distribution,"32,33",Carbon,"26,27,28,29,30,31",,,,,,,,,,,,,,,,,,
+115,PVC pipe for sink in Pre-roll storage room is loose,DONE,,REACTIVE,"Devan showed me the pvc pipe from the wall to the sink haas come loose and is leaking water on the floor.
+
+Requester contact information:
+shawn@hudsonhemp.com",https://app.getmaintainx.com/workorders/53115113?organizationId=342508,53115113,Daniel Crawford,Facilities,shawn@hudsonhemp.com,2025-03-28 08:55:03,Daniel Crawford,2025-03-28 11:39:55,2025-03-28 00:00:00,2025-03-31,1:00:00,2025-04-10 14:56:04,2025-04-10 14:56:04,Daniel Crawford,2025-04-10 14:56:04,,Hudson NY,2648779,,,,,,,,0,0,0,,315:16:08,71:57:31,,243:18:37,,https://app.getmaintainx.com/api/s3/uploads/34a12281-b494-4374-b24d-3ca6d04a05c1_20250328_0849510.heic,https://app.getmaintainx.com/api/s3/uploads/34a12281-b494-4374-b24d-3ca6d04a05c1_20250328_0849510.heic,,,,,,,,false,$0.00,$0.00,0:10:00,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+116,Install UV Light in Daikin HVAC,OPEN,,REACTIVE,Install Scorpion LX15 UV Light,https://app.getmaintainx.com/workorders/53289127?organizationId=342508,53289127,,Facilities,,,Daniel Crawford,2025-03-31 10:57:57,2025-03-28 00:00:00,2025-04-25,1:00:00,,,,2025-03-31 10:57:57,,Processing,2648780,Daikin 10 Ton Heat Pump,9441921,,,,,,,,,,,,,,,,https://app.getmaintainx.com/api/s3/uploads/45366b6e-b470-4d2c-b7c5-15fa9574a0a4_3-164_scorpionlx15instr.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+117,Trim machine bearings,DONE,,REACTIVE,"Clean, inspect, lubricate",https://app.getmaintainx.com/workorders/53412497?organizationId=342508,53412497,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-01 11:31:06,2025-04-01 00:00:00,2025-04-30,1:00:00,2025-05-27 09:42:17,2025-05-27 09:42:17,Daniel Crawford,2025-05-27 09:42:17,,Processing,2648780,Mobius Trimmer ID#2,7741207,,,,,,0,0,0,,1342:11:10,1342:11:10,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+118,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323417?organizationId=342508,54323417,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:29,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:47,2025-04-29 11:52:47,Daniel Crawford,2025-04-29 11:52:47,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #1,9662223,,,,,,0,0,0,,433:49:17,433:49:17,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+119,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323438?organizationId=342508,54323438,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:36,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:42,2025-04-29 11:52:42,Daniel Crawford,2025-04-29 11:52:42,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #1,9662207,,,,,,0,0,0,,433:49:06,433:49:06,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+120,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323443?organizationId=342508,54323443,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:38,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:36,2025-04-29 11:52:36,Daniel Crawford,2025-04-29 11:52:36,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #2,9544402,,,,,,0,0,0,,433:48:57,433:48:57,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+121,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323448?organizationId=342508,54323448,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:41,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:33,2025-04-29 11:52:33,Daniel Crawford,2025-04-29 11:52:33,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #1,9662130,,,,,,0,0,0,,433:48:51,433:48:51,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+122,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323458?organizationId=342508,54323458,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:44,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:30,2025-04-29 11:52:30,Daniel Crawford,2025-04-29 11:52:30,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #2,9544399,,,,,,0,0,0,,433:48:46,433:48:46,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+123,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/54323471?organizationId=342508,54323471,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-11 10:03:49,2025-04-10 13:00:00,2025-05-05,1:00:00,2025-04-29 11:52:27,2025-04-29 11:52:27,Daniel Crawford,2025-04-29 11:52:27,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #2,9544400,,,,,,0,0,0,,433:48:38,433:48:38,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+124,Refill all eye wash stations,OPEN,MEDIUM,PREVENTIVE,Work with Michael D. to fill stations with disinfectant solution,https://app.getmaintainx.com/workorders/54856913?organizationId=342508,54856913,Daniel Crawford,,,,Daniel Crawford,2025-04-17 13:20:37,2025-06-28 12:00:00,2025-07-01,3:00:00,,,,2025-04-17 13:20:37,Monthly|3|1,Hudson NY,2648779,,,,,,Refill eye wash Stations,,,,,,,,,,,,https://app.getmaintainx.com/api/s3/uploads/169333db-7b20-4acb-ae4c-9fe9d2a959ca_Eye_Wash_Station_Map_1.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Refill eye wash station,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+126,Need oil or grease for RollPro grinder,DONE,,REACTIVE,Grinder is making loud squeaking noises when in use. Hopefully just needs some lubrication.,https://app.getmaintainx.com/workorders/54857133?organizationId=342508,54857133,Daniel Crawford,Facilities,,2025-04-17 07:34:09,Daniel Crawford,2025-04-17 13:22:45,2025-04-17 09:00:00,2025-04-18,1:00:00,2025-05-27 09:42:05,2025-05-27 09:42:05,Daniel Crawford,2025-05-27 09:42:05,,Hudson NY,2648779,,,,,,,,0,0,0,,956:19:19,956:19:19,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+127,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/55774015?organizationId=342508,55774015,Daniel Crawford,,,,Daniel Crawford,2025-04-29 11:05:22,2025-06-02 12:00:00,2025-06-02,1:00:00,2025-07-08 13:55:13,2025-07-08 13:55:13,Daniel Crawford,2025-07-08 13:55:13,Weekly|6|Monday,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,865:55:13,865:55:13,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+128,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/55774023?organizationId=342508,55774023,Daniel Crawford,,,,Daniel Crawford,2025-04-29 11:05:26,2025-06-02 12:00:00,2025-06-02,1:00:00,2025-07-08 13:55:09,2025-07-08 13:55:09,Daniel Crawford,2025-07-08 13:55:09,Weekly|6|Monday,Processing,2648780,Willow Air #2 - Processing,7851714,,,,,,0,0,0,,865:55:10,865:55:10,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+129,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/55774035?organizationId=342508,55774035,Daniel Crawford,,,,Daniel Crawford,2025-04-29 11:05:29,2025-06-02 12:00:00,2025-06-02,1:00:00,2025-07-08 13:55:07,2025-07-08 13:55:07,Daniel Crawford,2025-07-08 13:55:07,Weekly|6|Monday,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,865:55:07,865:55:07,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+130,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780367?organizationId=342508,55780367,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:27,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:20:07,2025-06-23 17:20:07,Daniel Crawford,2025-06-23 17:20:07,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #2,9544400,,,,,,0,0,0,,1108:20:08,1108:20:08,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+131,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780376?organizationId=342508,55780376,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:30,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:19:02,2025-06-23 17:19:02,Daniel Crawford,2025-06-23 17:19:02,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #2,9544399,,,,,,0,0,0,,1108:19:03,1108:19:03,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+132,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780381?organizationId=342508,55780381,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:33,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:18:52,2025-06-23 17:18:52,Daniel Crawford,2025-06-23 17:18:52,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #1,9662130,,,,,,0,0,0,,1108:18:53,1108:18:53,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+133,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780393?organizationId=342508,55780393,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:37,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:18:41,2025-06-23 17:18:41,Daniel Crawford,2025-06-23 17:18:41,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #2,9544402,,,,,,0,0,0,,1108:18:41,1108:18:41,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+134,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780407?organizationId=342508,55780407,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:43,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:18:31,2025-06-23 17:18:31,Daniel Crawford,2025-06-23 17:18:31,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #1,9662207,,,,,,0,0,0,,1108:18:31,1108:18:31,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+135,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/55780417?organizationId=342508,55780417,Daniel Crawford,Facilities,,,Daniel Crawford,2025-04-29 11:52:47,2025-05-08 13:00:00,2025-06-02,1:00:00,2025-06-23 17:18:23,2025-06-23 17:18:23,Daniel Crawford,2025-06-23 17:18:23,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #1,9662223,,,,,,0,0,0,,1108:18:23,1108:18:23,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+136,Seal off the 1906 packaging space,DONE,HIGH,REACTIVE,"Ants are coming into the packaging room. Needs to be sealed off to avoid pests asap please!
+
+I went through and cleaned up the debris and sprayed it with bleach. 
+
+Technician will go in Monday morning and seal off with clear caulk around the edge of the floor",https://app.getmaintainx.com/workorders/55928808?organizationId=342508,55928808,Daniel Crawford,Facilities,,2025-04-29 17:28:33,Daniel Crawford,2025-04-30 16:10:25,2025-05-05 00:00:00,2025-05-05,1:00:00,2025-05-06 08:27:33,2025-05-06 08:27:33,Daniel Crawford,2025-05-06 08:27:33,,Hudson NY,2648779,,,,,,,,0,0,0,,32:27:34,32:27:34,,,,https://app.getmaintainx.com/api/s3/uploads/4b3ab4b1-60e6-44bd-96d4-6e98485520a8_Resized_20250429_154556_1745955963841.jpeg,"https://app.getmaintainx.com/api/s3/uploads/4b3ab4b1-60e6-44bd-96d4-6e98485520a8_Resized_20250429_154556_1745955963841.jpeg,https://app.getmaintainx.com/api/s3/uploads/e83adb8e-a1f0-4bbe-8db5-e736d8fd21d4_camera.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+137,FIRE DRILL,DONE,HIGH,PREVENTIVE,"Conduct Fire drill, complete reports and upload to Compliance folder
+
+Compliance Folder
+https://drive.google.com/drive/u/1/folders/1MzpXk3Fs3t4fUCZmTytT0n_A1onM7HLO
+
+Fire Drill Report
+https://docs.google.com/forms/d/e/1FAIpQLSdDfMlxN_gQMH7GtNLdI1wwGKS-XnXUZyg97hq4KJekvO59gg/viewform?usp=header
+
+
+Post-Fire Drill Evaluation ( Building Specific )
+https://docs.google.com/forms/d/e/1FAIpQLSdueG5-Ufv8Kno1aELS-x-NABvIPnYzABRauRCwlx8T9_onOg/viewform?usp=header",https://app.getmaintainx.com/workorders/56095517?organizationId=342508,56095517,Daniel Crawford,,,,Daniel Crawford,2025-05-02 09:38:06,2025-05-01 00:00:00,2025-05-01,1:00:00,2025-05-02 09:38:10,2025-05-02 09:38:10,Daniel Crawford,2025-05-02 09:38:10,Yearly|1,Hudson NY,2648779,,,,,,,,0,0,0,,0:00:03,0:00:03,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+138,FIRE DRILL,OPEN,HIGH,PREVENTIVE,"Conduct Fire drill, complete reports and upload to Compliance folder
+
+Compliance Folder
+https://drive.google.com/drive/u/1/folders/1MzpXk3Fs3t4fUCZmTytT0n_A1onM7HLO
+
+Fire Drill Report
+https://docs.google.com/forms/d/e/1FAIpQLSdDfMlxN_gQMH7GtNLdI1wwGKS-XnXUZyg97hq4KJekvO59gg/viewform?usp=header
+
+
+Post-Fire Drill Evaluation ( Building Specific )
+https://docs.google.com/forms/d/e/1FAIpQLSdueG5-Ufv8Kno1aELS-x-NABvIPnYzABRauRCwlx8T9_onOg/viewform?usp=header",https://app.getmaintainx.com/workorders/56095529?organizationId=342508,56095529,Daniel Crawford,,,,Daniel Crawford,2025-05-02 09:38:10,,2026-05-01,1:00:00,,,,2025-05-02 09:39:15,Monthly|6|1,Hudson NY,2648779,,,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+139,Nursery Water Filter Change,DONE,,REACTIVE,"The water filter needs to be replaced
+
+Requester contact information:
+adam@hudsonhemp.com",https://app.getmaintainx.com/workorders/56262557?organizationId=342508,56262557,Daniel Crawford,,adam@hudsonhemp.com,2025-05-02 13:21:37,Daniel Crawford,2025-05-05 09:45:57,2025-05-13 00:00:00,2025-05-15,1:00:00,2025-05-27 09:39:19,2025-05-27 09:39:19,Daniel Crawford,2025-05-27 09:39:19,,Hudson NY,2648779,,,,,,,,0,0,0,,345:39:19,345:39:19,,,,https://app.getmaintainx.com/api/s3/uploads/ebe6dc51-3a4c-4ecc-b2fa-7cbd5ccfa616_20250502_132019_720.jpg,"https://app.getmaintainx.com/api/s3/uploads/d26ab0b2-f4f9-4933-adf6-aa1a0194eee4_20250502_132025_720.jpg,https://app.getmaintainx.com/api/s3/uploads/ebe6dc51-3a4c-4ecc-b2fa-7cbd5ccfa616_20250502_132019_720.jpg",,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+140,Change all Willow Air Filters in Processing Filters,DONE,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/56366354?organizationId=342508,56366354,Daniel Crawford,,,,Daniel Crawford,2025-05-06 07:45:35,2025-06-09 13:00:00,2025-06-13,1:00:00,2025-06-23 17:17:56,2025-06-23 17:17:56,Daniel Crawford,2025-06-23 17:17:56,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,340:17:57,340:17:57,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+141,Change all filters in  Hash Lab Willow Air Units,DONE,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/56366363?organizationId=342508,56366363,Daniel Crawford,,,,Daniel Crawford,2025-05-06 07:45:38,2025-06-09 13:00:00,2025-06-13,1:00:00,2025-06-23 17:16:47,2025-06-23 17:16:47,Daniel Crawford,2025-06-23 17:16:47,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,340:16:47,340:16:47,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+142,Monthly Emergency Light Inspection,DONE,,PREVENTIVE,"To ensure emergency lighting systems are operational, properly maintained, and meet regulatory requirements for safe egress during power failures.
+Scope
+
+Applies to all battery-powered emergency lights and exit signs in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees compliance and maintenance.
+
+    Designated Inspector: Conducts monthly inspections.
+
+    Maintenance Team: Repairs or replaces faulty units.
+
+Procedure
+1. Visual Inspection
+
+a. Physical Condition
+
+    Check for visible damage (cracks, corrosion, loose wiring, or missing covers).
+
+    Ensure lenses are clean and free of obstructions.
+
+    Verify that units are securely mounted.
+
+b. Power Indicator
+
+    Confirm the ""power on"" LED (if present) is illuminated (indicates AC power is supplied).
+
+2. Functional Test
+
+Manual Activation (30-Second Test)
+
+    Simulate Power Failure:
+
+        For units with a test button: Press and hold for 10 seconds.
+
+        For hardwired units: Switch off the circuit breaker or unplug the unit.
+
+    Verify Illumination:
+
+        Emergency lights must activate immediately and remain lit for at least 30 seconds.
+
+        Exit signs must stay illuminated (if battery-backed).
+
+    Restore Power:
+
+        Reactivate the circuit breaker/release the test button.
+
+        Confirm the unit returns to charging mode (charging indicator LED on, if equipped).
+
+
+3. Documentation
+
+    Record results on the Emergency Light Inspection Tag (date, inspector initials, pass/fail).
+
+    Update the Emergency Light Inspection Log (include unit location, test results, and actions taken).
+
+4. Corrective Actions
+
+    Failed Test/Defects: Tag the unit, report to maintenance, and replace batteries or bulbs within 24 hours.
+
+    Chronic Issues: Schedule a full system inspection by a licensed electrician.
+
+5. Annual Requirements
+
+    Conduct a 90-minute full discharge test (per NFPA 101) to confirm battery capacity.",https://app.getmaintainx.com/workorders/56366398?organizationId=342508,56366398,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-06 07:45:58,2025-05-22 12:00:00,2025-05-28,1:00:00,2025-06-23 17:16:31,2025-06-23 17:16:31,Daniel Crawford,2025-06-23 17:16:31,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Emergency Light Checklist,2538917,0,0,0,,773:16:31,773:16:31,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,,,Farmhouse,,Extraction / 1906 / Hash Lab,,Processing / Warehouse,,Distribution,,Carbon,,,,,,,,,,,,,,,,,,,
+143,Monthly Fire Extinguisher Inspection,DONE,,PREVENTIVE,"Compliant with OSHA Standards (29 CFR 1910.157)
+Purpose
+
+To ensure all fire extinguishers are properly maintained, accessible, and in good working condition per OSHA regulations.
+Scope
+
+Applies to all portable fire extinguishers in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees the program and ensures compliance.
+
+    Designated Inspector: Trained personnel conducting monthly checks.
+
+    Maintenance Team: Addresses issues identified during inspections.
+
+Procedure
+1. Visual Inspection
+
+a. Location & Accessibility
+
+    Confirm extinguisher is in its designated location.
+
+    Ensure nothing obstructs access (min. 36” clearance per OSHA).
+
+    Verify visibility of signage or markings.
+
+b. Physical Condition
+
+    Check for obvious damage (dents, corrosion, leaks, clogged nozzles).
+
+    Inspect hose/tube for cracks or detachment.
+
+    Verify the locking pin is intact and tamper seal unbroken.
+
+c. Pressure & Gauge
+
+    For gauge-type extinguishers:
+
+        Needle must be in the ""green"" zone (proper pressure).
+
+    For cartridge-operated units:
+
+        Verify the cartridge is securely seated and undamaged.
+
+d. Labeling & Tags
+
+    Ensure legible operating instructions and NFPA rating label.
+
+    Verify monthly inspection tag is present and up-to-date.
+
+2. Documentation
+
+    Record inspection results on the Fire Extinguisher Inspection Tag (date, initials, condition).
+
+    Log findings in the Fire Safety Inspection Checklist.
+
+3. Corrective Actions
+
+    Minor Issues (e.g., obstructed access): Correct immediately.
+
+    Major Issues (e.g., damage/low pressure): Tag as ""DEFECTIVE,"" remove from service, and notify maintenance for repair/replacement.
+
+4. Reporting
+
+    Submit inspection reports to the Facilities Manager.
+
+    Schedule annual professional maintenance (per NFPA 10).",https://app.getmaintainx.com/workorders/56366425?organizationId=342508,56366425,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-06 07:46:14,2025-05-22 12:00:00,2025-05-28,1:00:00,2025-06-23 17:17:45,2025-06-23 17:17:45,Daniel Crawford,2025-06-23 17:17:45,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Monthly Fire Extinguisher Checks,,0,0,0,,773:17:45,773:17:45,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Date of inspection,,Farmhouse,,Extraction/1906,,Processing / Warehouse,,Distribution,,Carbon Building,,Outdoor / Outbuildings,,Comments / Flags,,,,,,,,,,,,,,,
+144,Pest entry 1906 packaging area,DONE,,REACTIVE,"PLease seal under and on both sides of the door where wall meets floor where springtails have gained entry
+
+Requester contact information:
+kacey@hudsonhemp.com",https://app.getmaintainx.com/workorders/56990004?organizationId=342508,56990004,Daniel Crawford,Facilities,kacey@hudsonhemp.com,2025-05-12 15:20:43,Daniel Crawford,2025-05-13 08:37:05,2025-05-15 00:00:00,2025-05-15,1:00:00,2025-05-27 09:42:51,2025-05-27 09:42:51,Daniel Crawford,2025-05-27 09:42:51,,Hudson NY,2648779,,,,,,,,0,0,0,,297:42:52,297:42:52,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+145,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248339?organizationId=342508,58248339,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:02,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:16:08,2025-06-23 17:16:08,Daniel Crawford,2025-06-23 17:16:08,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #2,9662323,,,,,,0,0,0,,655:35:06,655:35:06,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+146,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248350?organizationId=342508,58248350,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:07,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:17:28,2025-06-23 17:17:28,Daniel Crawford,2025-06-23 17:17:28,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #1,9662285,,,,,,0,0,0,,655:36:20,655:36:20,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+147,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248374?organizationId=342508,58248374,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:15,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:15:54,2025-06-23 17:15:54,Daniel Crawford,2025-06-23 17:15:54,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #1,9662290,,,,,,0,0,0,,655:34:39,655:34:39,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+148,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248381?organizationId=342508,58248381,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:18,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:15:21,2025-06-23 17:15:21,Daniel Crawford,2025-06-23 17:15:21,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #2,9662334,,,,,,0,0,0,,655:34:02,655:34:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+149,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248391?organizationId=342508,58248391,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:22,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:15:07,2025-06-23 17:15:07,Daniel Crawford,2025-06-23 17:15:07,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #2,9662272,,,,,,0,0,0,,655:33:45,655:33:45,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+150,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/58248401?organizationId=342508,58248401,Daniel Crawford,Facilities,,,Daniel Crawford,2025-05-27 09:41:25,2025-04-26 13:00:00,2025-06-02,1:00:00,2025-06-23 17:14:33,2025-06-23 17:14:33,Daniel Crawford,2025-06-23 17:14:33,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #1,9662254,,,,,,0,0,0,,655:33:08,655:33:08,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+154,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879108?organizationId=342508,60879108,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:14:33,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:40,2025-07-08 13:58:40,Daniel Crawford,2025-07-08 13:58:40,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #1,9662254,,,,,,0,0,0,,356:44:06,356:44:06,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+155,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879149?organizationId=342508,60879149,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:15:07,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:32,2025-07-08 13:58:32,Daniel Crawford,2025-07-08 13:58:32,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #2,9662272,,,,,,0,0,0,,356:43:24,356:43:24,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+156,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879169?organizationId=342508,60879169,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:15:21,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:24,2025-07-08 13:58:24,Daniel Crawford,2025-07-08 13:58:24,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #2,9662334,,,,,,0,0,0,,356:43:02,356:43:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+157,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879207?organizationId=342508,60879207,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:15:54,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:19,2025-07-08 13:58:19,Daniel Crawford,2025-07-08 13:58:19,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #1,9662290,,,,,,0,0,0,,356:42:24,356:42:24,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+158,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879225?organizationId=342508,60879225,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:16:09,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:09,2025-07-08 13:58:09,Daniel Crawford,2025-07-08 13:58:09,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #2,9662323,,,,,,0,0,0,,356:42:00,356:42:00,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+159,Monthly Emergency Light Inspection,DONE,,PREVENTIVE,"To ensure emergency lighting systems are operational, properly maintained, and meet regulatory requirements for safe egress during power failures.
+Scope
+
+Applies to all battery-powered emergency lights and exit signs in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees compliance and maintenance.
+
+    Designated Inspector: Conducts monthly inspections.
+
+    Maintenance Team: Repairs or replaces faulty units.
+
+Procedure
+1. Visual Inspection
+
+a. Physical Condition
+
+    Check for visible damage (cracks, corrosion, loose wiring, or missing covers).
+
+    Ensure lenses are clean and free of obstructions.
+
+    Verify that units are securely mounted.
+
+b. Power Indicator
+
+    Confirm the ""power on"" LED (if present) is illuminated (indicates AC power is supplied).
+
+2. Functional Test
+
+Manual Activation (30-Second Test)
+
+    Simulate Power Failure:
+
+        For units with a test button: Press and hold for 10 seconds.
+
+        For hardwired units: Switch off the circuit breaker or unplug the unit.
+
+    Verify Illumination:
+
+        Emergency lights must activate immediately and remain lit for at least 30 seconds.
+
+        Exit signs must stay illuminated (if battery-backed).
+
+    Restore Power:
+
+        Reactivate the circuit breaker/release the test button.
+
+        Confirm the unit returns to charging mode (charging indicator LED on, if equipped).
+
+
+3. Documentation
+
+    Record results on the Emergency Light Inspection Tag (date, inspector initials, pass/fail).
+
+    Update the Emergency Light Inspection Log (include unit location, test results, and actions taken).
+
+4. Corrective Actions
+
+    Failed Test/Defects: Tag the unit, report to maintenance, and replace batteries or bulbs within 24 hours.
+
+    Chronic Issues: Schedule a full system inspection by a licensed electrician.
+
+5. Annual Requirements
+
+    Conduct a 90-minute full discharge test (per NFPA 101) to confirm battery capacity.",https://app.getmaintainx.com/workorders/60879260?organizationId=342508,60879260,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:16:31,2025-06-19 12:00:00,2025-06-25,1:00:00,2025-07-08 13:57:47,2025-07-08 13:57:47,Daniel Crawford,2025-07-08 13:57:47,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Emergency Light Checklist,2538917,0,0,0,,356:41:15,356:41:15,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,,,Farmhouse,,Extraction / 1906 / Hash Lab,,Processing / Warehouse,,Distribution,,Carbon,,,,,,,,,,,,,,,,,,,
+160,Change all filters in  Hash Lab Willow Air Units,DONE,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/60879286?organizationId=342508,60879286,Daniel Crawford,,,,Daniel Crawford,2025-06-23 17:16:47,2025-07-07 13:00:00,2025-07-11,1:00:00,2025-07-08 13:53:49,2025-07-08 13:53:49,Daniel Crawford,2025-07-08 13:53:49,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,24:53:50,24:53:50,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+161,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/60879337?organizationId=342508,60879337,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:17:28,2025-05-31 13:00:00,2025-07-07,1:00:00,2025-07-08 13:58:02,2025-07-08 13:58:02,Daniel Crawford,2025-07-08 13:58:02,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #1,9662285,,,,,,0,0,0,,356:40:33,356:40:33,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+162,Monthly Fire Extinguisher Inspection,DONE,,PREVENTIVE,"Compliant with OSHA Standards (29 CFR 1910.157)
+Purpose
+
+To ensure all fire extinguishers are properly maintained, accessible, and in good working condition per OSHA regulations.
+Scope
+
+Applies to all portable fire extinguishers in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees the program and ensures compliance.
+
+    Designated Inspector: Trained personnel conducting monthly checks.
+
+    Maintenance Team: Addresses issues identified during inspections.
+
+Procedure
+1. Visual Inspection
+
+a. Location & Accessibility
+
+    Confirm extinguisher is in its designated location.
+
+    Ensure nothing obstructs access (min. 36” clearance per OSHA).
+
+    Verify visibility of signage or markings.
+
+b. Physical Condition
+
+    Check for obvious damage (dents, corrosion, leaks, clogged nozzles).
+
+    Inspect hose/tube for cracks or detachment.
+
+    Verify the locking pin is intact and tamper seal unbroken.
+
+c. Pressure & Gauge
+
+    For gauge-type extinguishers:
+
+        Needle must be in the ""green"" zone (proper pressure).
+
+    For cartridge-operated units:
+
+        Verify the cartridge is securely seated and undamaged.
+
+d. Labeling & Tags
+
+    Ensure legible operating instructions and NFPA rating label.
+
+    Verify monthly inspection tag is present and up-to-date.
+
+2. Documentation
+
+    Record inspection results on the Fire Extinguisher Inspection Tag (date, initials, condition).
+
+    Log findings in the Fire Safety Inspection Checklist.
+
+3. Corrective Actions
+
+    Minor Issues (e.g., obstructed access): Correct immediately.
+
+    Major Issues (e.g., damage/low pressure): Tag as ""DEFECTIVE,"" remove from service, and notify maintenance for repair/replacement.
+
+4. Reporting
+
+    Submit inspection reports to the Facilities Manager.
+
+    Schedule annual professional maintenance (per NFPA 10).",https://app.getmaintainx.com/workorders/60879361?organizationId=342508,60879361,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:17:45,2025-06-19 12:00:00,2025-06-25,1:00:00,2025-07-08 13:57:56,2025-07-08 13:57:56,Daniel Crawford,2025-07-08 13:57:56,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Monthly Fire Extinguisher Checks,,0,0,0,,356:40:10,356:40:10,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Date of inspection,,Farmhouse,,Extraction/1906,,Processing / Warehouse,,Distribution,,Carbon Building,,Outdoor / Outbuildings,,Comments / Flags,,,,,,,,,,,,,,,
+163,Change all Willow Air Filters in Processing Filters,DONE,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/60879380?organizationId=342508,60879380,Daniel Crawford,,,,Daniel Crawford,2025-06-23 17:17:56,2025-07-07 13:00:00,2025-07-11,1:00:00,2025-07-08 13:53:53,2025-07-08 13:53:53,Daniel Crawford,2025-07-08 13:53:53,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,24:53:53,24:53:53,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+164,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879412?organizationId=342508,60879412,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:18:23,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:44,2025-07-08 13:55:44,Daniel Crawford,2025-07-08 13:55:44,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #1,9662223,,,,,,0,0,0,,356:37:21,356:37:21,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+165,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879418?organizationId=342508,60879418,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:18:31,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:42,2025-07-08 13:55:42,Daniel Crawford,2025-07-08 13:55:42,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #1,9662207,,,,,,0,0,0,,356:37:10,356:37:10,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+166,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879430?organizationId=342508,60879430,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:18:41,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:39,2025-07-08 13:55:39,Daniel Crawford,2025-07-08 13:55:39,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #2,9544402,,,,,,0,0,0,,356:36:58,356:36:58,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+167,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879444?organizationId=342508,60879444,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:18:52,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:35,2025-07-08 13:55:35,Daniel Crawford,2025-07-08 13:55:35,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #1,9662130,,,,,,0,0,0,,356:36:43,356:36:43,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+168,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879461?organizationId=342508,60879461,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:19:02,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:37,2025-07-08 13:55:37,Daniel Crawford,2025-07-08 13:55:37,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #2,9544399,,,,,,0,0,0,,356:36:34,356:36:34,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+169,Clean and inspect,DONE,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/60879536?organizationId=342508,60879536,Daniel Crawford,Facilities,,,Daniel Crawford,2025-06-23 17:20:07,2025-06-12 13:00:00,2025-07-07,1:00:00,2025-07-08 13:55:33,2025-07-08 13:55:33,Daniel Crawford,2025-07-08 13:55:33,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #2,9544400,,,,,,0,0,0,,356:35:26,356:35:26,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+170,Change all filters in  Hash Lab Willow Air Units,OPEN,,PREVENTIVE,Please replace all filters in Hash Lab! Theyre lookin quite green,https://app.getmaintainx.com/workorders/62292360?organizationId=342508,62292360,Daniel Crawford,,,,Daniel Crawford,2025-07-08 13:53:49,2025-08-04 13:00:00,2025-08-08,1:00:00,,,,2025-07-08 13:53:49,MonthlyByWeekday|1|Second_Fri,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+171,Change all Willow Air Filters in Processing Filters,OPEN,,PREVENTIVE,Air purifiers in Processing need new filters (2 purifiers in room),https://app.getmaintainx.com/workorders/62292372?organizationId=342508,62292372,Daniel Crawford,,,,Daniel Crawford,2025-07-08 13:53:53,2025-08-04 13:00:00,2025-08-08,1:00:00,,,,2025-07-08 13:53:53,MonthlyByWeekday|1|Second_Fri,Processing,2648780,Willow Air,7741256,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+172,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/62292534?organizationId=342508,62292534,Daniel Crawford,,,,Daniel Crawford,2025-07-08 13:55:07,2025-07-14 12:00:00,2025-07-14,1:00:00,2025-07-29 10:37:52,2025-07-29 10:37:52,Daniel Crawford,2025-07-29 10:37:52,Weekly|6|Monday,Processing,2648780,Willow Air,7741256,,,,,,0,0,0,,358:37:52,358:37:52,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+173,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/62292540?organizationId=342508,62292540,Daniel Crawford,,,,Daniel Crawford,2025-07-08 13:55:10,2025-07-14 12:00:00,2025-07-14,1:00:00,2025-07-29 10:37:46,2025-07-29 10:37:46,Daniel Crawford,2025-07-29 10:37:46,Weekly|6|Monday,Processing,2648780,Willow Air #2 - Processing,7851714,,,,,,0,0,0,,358:37:47,358:37:47,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+174,Change Filters,DONE,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/62292545?organizationId=342508,62292545,Daniel Crawford,,,,Daniel Crawford,2025-07-08 13:55:13,2025-07-14 12:00:00,2025-07-14,1:00:00,2025-07-29 10:37:43,2025-07-29 10:37:43,Daniel Crawford,2025-07-29 10:37:43,Weekly|6|Monday,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,0,0,0,,358:37:44,358:37:44,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+175,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292587?organizationId=342508,62292587,,Facilities,,,Daniel Crawford,2025-07-08 13:55:33,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:33,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #2,9544400,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+176,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292592?organizationId=342508,62292592,,Facilities,,,Daniel Crawford,2025-07-08 13:55:35,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:35,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 2 ERV #1,9662130,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+177,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292602?organizationId=342508,62292602,,Facilities,,,Daniel Crawford,2025-07-08 13:55:37,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:37,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #2,9544399,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+178,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292606?organizationId=342508,62292606,,Facilities,,,Daniel Crawford,2025-07-08 13:55:40,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:40,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #2,9544402,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+179,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292611?organizationId=342508,62292611,,Facilities,,,Daniel Crawford,2025-07-08 13:55:42,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:42,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 1 ERV #1,9662207,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+180,Clean and inspect,OPEN,MEDIUM,PREVENTIVE,"Open the cover and take a small vacuum and clean any debris out of the unit. Then remove the filters and clean out in the sink. Allow them to dry and then reinstall. If the filters are too dirty, replace with new filters.",https://app.getmaintainx.com/workorders/62292615?organizationId=342508,62292615,,Facilities,,,Daniel Crawford,2025-07-08 13:55:44,2025-07-10 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:55:44,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room 3 ERV #1,9662223,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+181,Monthly Emergency Light Inspection,DONE,,PREVENTIVE,"To ensure emergency lighting systems are operational, properly maintained, and meet regulatory requirements for safe egress during power failures.
+Scope
+
+Applies to all battery-powered emergency lights and exit signs in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees compliance and maintenance.
+
+    Designated Inspector: Conducts monthly inspections.
+
+    Maintenance Team: Repairs or replaces faulty units.
+
+Procedure
+1. Visual Inspection
+
+a. Physical Condition
+
+    Check for visible damage (cracks, corrosion, loose wiring, or missing covers).
+
+    Ensure lenses are clean and free of obstructions.
+
+    Verify that units are securely mounted.
+
+b. Power Indicator
+
+    Confirm the ""power on"" LED (if present) is illuminated (indicates AC power is supplied).
+
+2. Functional Test
+
+Manual Activation (30-Second Test)
+
+    Simulate Power Failure:
+
+        For units with a test button: Press and hold for 10 seconds.
+
+        For hardwired units: Switch off the circuit breaker or unplug the unit.
+
+    Verify Illumination:
+
+        Emergency lights must activate immediately and remain lit for at least 30 seconds.
+
+        Exit signs must stay illuminated (if battery-backed).
+
+    Restore Power:
+
+        Reactivate the circuit breaker/release the test button.
+
+        Confirm the unit returns to charging mode (charging indicator LED on, if equipped).
+
+
+3. Documentation
+
+    Record results on the Emergency Light Inspection Tag (date, inspector initials, pass/fail).
+
+    Update the Emergency Light Inspection Log (include unit location, test results, and actions taken).
+
+4. Corrective Actions
+
+    Failed Test/Defects: Tag the unit, report to maintenance, and replace batteries or bulbs within 24 hours.
+
+    Chronic Issues: Schedule a full system inspection by a licensed electrician.
+
+5. Annual Requirements
+
+    Conduct a 90-minute full discharge test (per NFPA 101) to confirm battery capacity.",https://app.getmaintainx.com/workorders/62292898?organizationId=342508,62292898,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:57:47,2025-07-17 12:00:00,2025-07-23,1:00:00,2025-07-29 10:49:26,2025-07-29 10:49:26,Daniel Crawford,2025-07-29 10:49:26,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Emergency Light Checklist,2538917,0,0,0,,286:49:26,286:49:26,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,,,Farmhouse,,Extraction / 1906 / Hash Lab,,Processing / Warehouse,,Distribution,,Carbon,,,,,,,,,,,,,,,,,,,
+182,Monthly Fire Extinguisher Inspection,DONE,,PREVENTIVE,"Compliant with OSHA Standards (29 CFR 1910.157)
+Purpose
+
+To ensure all fire extinguishers are properly maintained, accessible, and in good working condition per OSHA regulations.
+Scope
+
+Applies to all portable fire extinguishers in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees the program and ensures compliance.
+
+    Designated Inspector: Trained personnel conducting monthly checks.
+
+    Maintenance Team: Addresses issues identified during inspections.
+
+Procedure
+1. Visual Inspection
+
+a. Location & Accessibility
+
+    Confirm extinguisher is in its designated location.
+
+    Ensure nothing obstructs access (min. 36” clearance per OSHA).
+
+    Verify visibility of signage or markings.
+
+b. Physical Condition
+
+    Check for obvious damage (dents, corrosion, leaks, clogged nozzles).
+
+    Inspect hose/tube for cracks or detachment.
+
+    Verify the locking pin is intact and tamper seal unbroken.
+
+c. Pressure & Gauge
+
+    For gauge-type extinguishers:
+
+        Needle must be in the ""green"" zone (proper pressure).
+
+    For cartridge-operated units:
+
+        Verify the cartridge is securely seated and undamaged.
+
+d. Labeling & Tags
+
+    Ensure legible operating instructions and NFPA rating label.
+
+    Verify monthly inspection tag is present and up-to-date.
+
+2. Documentation
+
+    Record inspection results on the Fire Extinguisher Inspection Tag (date, initials, condition).
+
+    Log findings in the Fire Safety Inspection Checklist.
+
+3. Corrective Actions
+
+    Minor Issues (e.g., obstructed access): Correct immediately.
+
+    Major Issues (e.g., damage/low pressure): Tag as ""DEFECTIVE,"" remove from service, and notify maintenance for repair/replacement.
+
+4. Reporting
+
+    Submit inspection reports to the Facilities Manager.
+
+    Schedule annual professional maintenance (per NFPA 10).",https://app.getmaintainx.com/workorders/62292916?organizationId=342508,62292916,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:57:56,2025-07-17 12:00:00,2025-07-23,1:00:00,2025-07-29 10:49:23,2025-07-29 10:49:23,Daniel Crawford,2025-07-29 10:49:23,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Monthly Fire Extinguisher Checks,,0,0,0,,286:49:24,286:49:24,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Date of inspection,,Farmhouse,,Extraction/1906,,Processing / Warehouse,,Distribution,,Carbon Building,,Outdoor / Outbuildings,,Comments / Flags,,,,,,,,,,,,,,,
+183,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292933?organizationId=342508,62292933,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:58:03,2025-06-28 13:00:00,2025-08-04,1:00:00,2025-07-08 13:58:06,2025-07-08 13:58:06,Daniel Crawford,2025-07-08 13:58:06,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #1,9662285,,,,,,0,0,0,,0:00:03,0:00:03,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+184,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292943?organizationId=342508,62292943,,Facilities,,,Daniel Crawford,2025-07-08 13:58:06,2025-07-26 13:00:00,2025-09-01,1:00:00,,,,2025-07-08 13:58:06,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #1,9662285,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+185,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292945?organizationId=342508,62292945,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:58:09,2025-06-28 13:00:00,2025-08-04,1:00:00,2025-07-08 13:58:11,2025-07-08 13:58:11,Daniel Crawford,2025-07-08 13:58:11,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #2,9662323,,,,,,0,0,0,,0:00:02,0:00:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+186,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292950?organizationId=342508,62292950,,Facilities,,,Daniel Crawford,2025-07-08 13:58:11,2025-07-26 13:00:00,2025-09-01,1:00:00,,,,2025-07-08 13:58:11,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #2 HVAC #2,9662323,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+187,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292961?organizationId=342508,62292961,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:58:19,2025-06-28 13:00:00,2025-08-04,1:00:00,2025-07-08 13:58:22,2025-07-08 13:58:22,Daniel Crawford,2025-07-08 13:58:22,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #1,9662290,,,,,,0,0,0,,0:00:02,0:00:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+188,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292967?organizationId=342508,62292967,,Facilities,,,Daniel Crawford,2025-07-08 13:58:22,2025-07-26 13:00:00,2025-09-01,1:00:00,,,,2025-07-08 13:58:22,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #1,9662290,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+189,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292974?organizationId=342508,62292974,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:58:25,2025-06-28 13:00:00,2025-08-04,1:00:00,2025-07-08 13:58:28,2025-07-08 13:58:28,Daniel Crawford,2025-07-08 13:58:28,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #2,9662334,,,,,,0,0,0,,0:00:02,0:00:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+190,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292979?organizationId=342508,62292979,,Facilities,,,Daniel Crawford,2025-07-08 13:58:28,2025-07-26 13:00:00,2025-09-01,1:00:00,,,,2025-07-08 13:58:28,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #1 HVAC #2,9662334,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+191,Inspect and change filter,DONE,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292992?organizationId=342508,62292992,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-08 13:58:32,2025-06-28 13:00:00,2025-08-04,1:00:00,2025-07-08 13:58:34,2025-07-08 13:58:34,Daniel Crawford,2025-07-08 13:58:34,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #2,9662272,,,,,,0,0,0,,0:00:02,0:00:02,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+192,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62292997?organizationId=342508,62292997,,Facilities,,,Daniel Crawford,2025-07-08 13:58:34,2025-07-26 13:00:00,2025-09-01,1:00:00,,,,2025-07-08 13:58:34,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #2,9662272,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+193,Inspect and change filter,OPEN,,PREVENTIVE,"Open the door and take a small vacuum and vacuum any debris. Inspect the filter for cleanliness, if equipment hasn't been run or it's in the off-season skip until next cycle. If the filter appears dirty, change it out.",https://app.getmaintainx.com/workorders/62293009?organizationId=342508,62293009,,Facilities,,,Daniel Crawford,2025-07-08 13:58:40,2025-06-28 13:00:00,2025-08-04,1:00:00,,,,2025-07-08 13:58:40,MonthlyByWeekday|1|First_Mon,General,2648754,Dry Room #3 HVAC #1,9662254,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+194,Change Filters Packaged Unit,DONE,,PREVENTIVE,Change the filters on the Daikin 10 ton packaged unit,https://app.getmaintainx.com/workorders/62363666?organizationId=342508,62363666,Daniel Crawford,Facilities,,,Daniel Crawford,2025-07-09 07:34:00,2025-08-01 00:00:00,2025-08-01,1:00:00,2025-07-29 10:38:45,2025-07-29 10:38:45,Daniel Crawford,2025-07-29 10:38:45,Weekly|6|Monday|Wednesday,Processing,2648780,Daikin 10 Ton Heat Pump,9441921,Preventive,,,,,0,0,0,,,0,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+195,Change Filters,OPEN,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/64447567?organizationId=342508,64447567,Daniel Crawford,,,,Daniel Crawford,2025-07-29 10:37:44,2025-08-25 12:00:00,2025-08-25,1:00:00,,,,2025-07-29 10:37:44,Weekly|6|Monday,Hash Lab,2661286,Willows Air Hash Lab,7738793,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+196,Change Filters,OPEN,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/64447575?organizationId=342508,64447575,Daniel Crawford,,,,Daniel Crawford,2025-07-29 10:37:47,2025-08-25 12:00:00,2025-08-25,1:00:00,,,,2025-07-29 10:37:47,Weekly|6|Monday,Processing,2648780,Willow Air #2 - Processing,7851714,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+197,Change Filters,OPEN,,PREVENTIVE,Change Filters on Willow Air unit.  Report filters remaining in stock.,https://app.getmaintainx.com/workorders/64447591?organizationId=342508,64447591,Daniel Crawford,,,,Daniel Crawford,2025-07-29 10:37:52,2025-08-25 12:00:00,2025-08-25,1:00:00,,,,2025-07-29 10:37:52,Weekly|6|Monday,Processing,2648780,Willow Air,7741256,,,,,,,,,,,,,,,,,,,,,,,,false,$0.00,$0.00,0,$0.00,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+205,Monthly Fire Extinguisher Inspection,OPEN,,PREVENTIVE,"Compliant with OSHA Standards (29 CFR 1910.157)
+Purpose
+
+To ensure all fire extinguishers are properly maintained, accessible, and in good working condition per OSHA regulations.
+Scope
+
+Applies to all portable fire extinguishers in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees the program and ensures compliance.
+
+    Designated Inspector: Trained personnel conducting monthly checks.
+
+    Maintenance Team: Addresses issues identified during inspections.
+
+Procedure
+1. Visual Inspection
+
+a. Location & Accessibility
+
+    Confirm extinguisher is in its designated location.
+
+    Ensure nothing obstructs access (min. 36” clearance per OSHA).
+
+    Verify visibility of signage or markings.
+
+b. Physical Condition
+
+    Check for obvious damage (dents, corrosion, leaks, clogged nozzles).
+
+    Inspect hose/tube for cracks or detachment.
+
+    Verify the locking pin is intact and tamper seal unbroken.
+
+c. Pressure & Gauge
+
+    For gauge-type extinguishers:
+
+        Needle must be in the ""green"" zone (proper pressure).
+
+    For cartridge-operated units:
+
+        Verify the cartridge is securely seated and undamaged.
+
+d. Labeling & Tags
+
+    Ensure legible operating instructions and NFPA rating label.
+
+    Verify monthly inspection tag is present and up-to-date.
+
+2. Documentation
+
+    Record inspection results on the Fire Extinguisher Inspection Tag (date, initials, condition).
+
+    Log findings in the Fire Safety Inspection Checklist.
+
+3. Corrective Actions
+
+    Minor Issues (e.g., obstructed access): Correct immediately.
+
+    Major Issues (e.g., damage/low pressure): Tag as ""DEFECTIVE,"" remove from service, and notify maintenance for repair/replacement.
+
+4. Reporting
+
+    Submit inspection reports to the Facilities Manager.
+
+    Schedule annual professional maintenance (per NFPA 10).",https://app.getmaintainx.com/workorders/64449317?organizationId=342508,64449317,,Facilities,,,Daniel Crawford,2025-07-29 10:49:23,2025-08-21 12:00:00,2025-08-27,1:00:00,,,,2025-07-29 10:49:23,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Monthly Fire Extinguisher Checks,,,,,,,,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,Date of inspection,,Farmhouse,,Extraction/1906,,Processing / Warehouse,,Distribution,,Carbon Building,,Outdoor / Outbuildings,,Comments / Flags,,,,,,,,,,,,,,,
+206,Monthly Emergency Light Inspection,OPEN,,PREVENTIVE,"To ensure emergency lighting systems are operational, properly maintained, and meet regulatory requirements for safe egress during power failures.
+Scope
+
+Applies to all battery-powered emergency lights and exit signs in the facility.
+Responsibilities
+
+    Facilities Manager: Oversees compliance and maintenance.
+
+    Designated Inspector: Conducts monthly inspections.
+
+    Maintenance Team: Repairs or replaces faulty units.
+
+Procedure
+1. Visual Inspection
+
+a. Physical Condition
+
+    Check for visible damage (cracks, corrosion, loose wiring, or missing covers).
+
+    Ensure lenses are clean and free of obstructions.
+
+    Verify that units are securely mounted.
+
+b. Power Indicator
+
+    Confirm the ""power on"" LED (if present) is illuminated (indicates AC power is supplied).
+
+2. Functional Test
+
+Manual Activation (30-Second Test)
+
+    Simulate Power Failure:
+
+        For units with a test button: Press and hold for 10 seconds.
+
+        For hardwired units: Switch off the circuit breaker or unplug the unit.
+
+    Verify Illumination:
+
+        Emergency lights must activate immediately and remain lit for at least 30 seconds.
+
+        Exit signs must stay illuminated (if battery-backed).
+
+    Restore Power:
+
+        Reactivate the circuit breaker/release the test button.
+
+        Confirm the unit returns to charging mode (charging indicator LED on, if equipped).
+
+
+3. Documentation
+
+    Record results on the Emergency Light Inspection Tag (date, inspector initials, pass/fail).
+
+    Update the Emergency Light Inspection Log (include unit location, test results, and actions taken).
+
+4. Corrective Actions
+
+    Failed Test/Defects: Tag the unit, report to maintenance, and replace batteries or bulbs within 24 hours.
+
+    Chronic Issues: Schedule a full system inspection by a licensed electrician.
+
+5. Annual Requirements
+
+    Conduct a 90-minute full discharge test (per NFPA 101) to confirm battery capacity.",https://app.getmaintainx.com/workorders/64449325?organizationId=342508,64449325,,Facilities,,,Daniel Crawford,2025-07-29 10:49:26,2025-08-21 12:00:00,2025-08-27,1:00:00,,,,2025-07-29 10:49:26,MonthlyByWeekday|1|Fourth_Wed,Main Campus,2661743,,,,Sausbiers,818171,Emergency Light Checklist,2538917,,,,,,,,,,,https://app.getmaintainx.com/api/s3/uploads/ff4f37a7-a446-448f-9a5b-1eda1fa54503_Group-PDF-Export12.pdf,,,,,,,,false,$0.00,$0.00,0,$0.00,,,Farmhouse,,Extraction / 1906 / Hash Lab,,Processing / Warehouse,,Distribution,,Carbon,,,,,,,,,,,,,,,,,,,
