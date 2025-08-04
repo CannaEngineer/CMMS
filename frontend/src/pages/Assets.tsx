@@ -67,7 +67,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { statusColors } from '../theme/theme';
 import AssetForm from '../components/Forms/AssetForm';
-import { assetService } from '../services/api';
+import { assetsService } from '../services/api';
 
 interface Asset {
   id: number;
@@ -137,12 +137,12 @@ export default function Assets() {
     refetch 
   } = useQuery({
     queryKey: ['assets'],
-    queryFn: assetService.getAll,
+    queryFn: assetsService.getAll,
   });
 
   // Mutations
   const createAssetMutation = useMutation({
-    mutationFn: assetService.create,
+    mutationFn: assetsService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setOpenDialog(false);
@@ -151,7 +151,7 @@ export default function Assets() {
   });
 
   const updateAssetMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => assetService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => assetsService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setOpenDialog(false);
@@ -160,7 +160,7 @@ export default function Assets() {
   });
 
   const deleteAssetMutation = useMutation({
-    mutationFn: assetService.delete,
+    mutationFn: assetsService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
     },

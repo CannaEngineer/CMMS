@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
 import {
   Table,
   TableBody,
@@ -26,6 +26,10 @@ import {
   CardContent,
   Stack,
   Collapse,
+  Skeleton,
+  Fade,
+  Button,
+  Alert,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -34,6 +38,11 @@ import {
   MoreVert as MoreVertIcon,
   ViewModule as CardViewIcon,
   ViewList as ListViewIcon,
+  CheckCircle as CompleteIcon,
+  PlayArrow as StartIcon,
+  TouchApp as TouchIcon,
+  Schedule as ScheduleIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 interface Column {
@@ -45,6 +54,24 @@ interface Column {
   width?: number | string;
   hideOnMobile?: boolean;
   priority?: 'high' | 'medium' | 'low';
+}
+
+interface SwipeAction {
+  key: string;
+  label: string;
+  icon: React.ReactElement;
+  color: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info';
+  direction: 'left' | 'right';
+  onAction: (row: any) => void | Promise<void>;
+  confirmMessage?: string;
+}
+
+interface SwipeState {
+  id: string | null;
+  direction: 'left' | 'right' | null;
+  distance: number;
+  isDragging: boolean;
+  startX: number;
 }
 
 interface DataTableProps {
@@ -59,9 +86,14 @@ interface DataTableProps {
   emptyMessage?: string;
   mobileCardView?: boolean;
   onViewModeChange?: (mode: 'table' | 'cards') => void;
+  swipeActions?: SwipeAction[];
+  enableSwipeToRefresh?: boolean;
+  onRefresh?: () => void | Promise<void>;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-export default function DataTable({
+const DataTable = memo(function DataTable({
   title,
   columns,
   data,
@@ -73,6 +105,11 @@ export default function DataTable({
   emptyMessage = "No data available",
   mobileCardView = true,
   onViewModeChange,
+  swipeActions = [],
+  enableSwipeToRefresh = false,
+  onRefresh,
+  error = null,
+  onRetry,
 }: DataTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -86,6 +123,104 @@ export default function DataTable({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile && mobileCardView ? 'cards' : 'table');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Swipe state management
+  const [swipeState, setSwipeState] = useState<SwipeState>({
+    id: null,
+    direction: null,
+    distance: 0,
+    isDragging: false,
+    startX: 0,
+  });
+  
+  const swipeRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  // Swipe gesture handlers
+  const handleTouchStart = useCallback((event: React.TouchEvent, rowId: string) => {
+    if (!isMobile || swipeActions.length === 0) return;
+    
+    const touch = event.touches[0];
+    setSwipeState({
+      id: rowId,
+      direction: null,
+      distance: 0,
+      isDragging: true,
+      startX: touch.clientX,
+    });
+  }, [isMobile, swipeActions]);
+
+  const handleTouchMove = useCallback((event: React.TouchEvent) => {
+    if (!swipeState.isDragging || !swipeState.id) return;
+    
+    const touch = event.touches[0];
+    const distance = touch.clientX - swipeState.startX;
+    const direction = distance > 0 ? 'right' : 'left';
+    
+    // Only update if significant movement
+    if (Math.abs(distance) > 10) {
+      const maxDistance = 120; // Maximum swipe distance
+      const clampedDistance = Math.max(-maxDistance, Math.min(maxDistance, distance));
+      
+      setSwipeState(prev => ({
+        ...prev,
+        direction,
+        distance: clampedDistance,
+      }));
+
+      // Apply transform to the card
+      const element = swipeRefs.current.get(swipeState.id);
+      if (element) {
+        element.style.transform = `translateX(${clampedDistance}px)`;
+        element.style.transition = 'none';
+      }
+    }
+  }, [swipeState]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!swipeState.isDragging || !swipeState.id) return;
+    
+    const element = swipeRefs.current.get(swipeState.id);
+    const threshold = 80; // Minimum distance to trigger action
+    
+    if (element) {
+      if (Math.abs(swipeState.distance) >= threshold) {
+        // Find the appropriate action
+        const action = swipeActions.find(a => a.direction === swipeState.direction);
+        if (action) {
+          const row = data.find(r => r.id === swipeState.id);
+          if (row) {
+            // Trigger the action
+            action.onAction(row);
+          }
+        }
+      }
+      
+      // Reset the card position
+      element.style.transform = 'translateX(0)';
+      element.style.transition = 'transform 0.3s ease';
+    }
+    
+    // Reset swipe state
+    setSwipeState({
+      id: null,
+      direction: null,
+      distance: 0,
+      isDragging: false,
+      startX: 0,
+    });
+  }, [swipeState, swipeActions, data]);
+
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh || refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [onRefresh, refreshing]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -163,31 +298,303 @@ export default function DataTable({
 
   const visibleColumns = getVisibleColumns();
 
-  // Filter data based on search term
-  const filteredData = data.filter((row) =>
-    Object.values(row).some((value) =>
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  // Sort data
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (!orderBy) return 0;
-    
-    const aValue = a[orderBy];
-    const bValue = b[orderBy];
-    
-    if (order === 'asc') {
-      return aValue > bValue ? 1 : -1;
-    } else {
-      return aValue < bValue ? 1 : -1;
+  // Optimized data processing with useMemo
+  const processedData = useMemo(() => {
+    // Filter data based on search term
+    let filtered = data;
+    if (searchTerm) {
+      filtered = data.filter((row) => {
+        // Optimize search by only checking relevant fields
+        const searchableFields = columns
+          .filter(col => !col.render) // Skip columns with custom renderers
+          .map(col => row[col.key])
+          .filter(Boolean);
+        
+        return searchableFields.some(value =>
+          value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
     }
-  });
 
-  const paginatedData = sortedData.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
+    // Sort data
+    let sorted = filtered;
+    if (orderBy) {
+      sorted = [...filtered].sort((a, b) => {
+        const aValue = a[orderBy];
+        const bValue = b[orderBy];
+        
+        // Handle different data types
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return order === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+        
+        const aStr = String(aValue || '').toLowerCase();
+        const bStr = String(bValue || '').toLowerCase();
+        
+        if (order === 'asc') {
+          return aStr.localeCompare(bStr);
+        } else {
+          return bStr.localeCompare(aStr);
+        }
+      });
+    }
+
+    // Paginate data
+    const paginated = sorted.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+
+    return {
+      filtered,
+      sorted,
+      paginated,
+      totalFiltered: filtered.length,
+    };
+  }, [data, searchTerm, orderBy, order, page, rowsPerPage, columns]);
+
+  const { filtered: filteredData, paginated: paginatedData } = processedData;
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <Box sx={{ p: 2 }}>
+      <Stack spacing={2}>
+        {[...Array(rowsPerPage)].map((_, index) => (
+          <Card key={index}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                <Skeleton variant="circular" width={40} height={40} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Skeleton variant="text" width="60%" height={24} />
+                  <Skeleton variant="text" width="40%" height={20} sx={{ mt: 0.5 }} />
+                </Box>
+                <Skeleton variant="rectangular" width={24} height={24} />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 1 }} />
+                <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+    </Box>
   );
+
+  // Error component
+  const ErrorState = () => (
+    <Box sx={{ p: 2 }}>
+      <Alert
+        severity="error"
+        action={
+          onRetry && (
+            <Button color="inherit" size="small" onClick={onRetry}>
+              Retry
+            </Button>
+          )
+        }
+        sx={{ borderRadius: 2 }}
+      >
+        <Typography variant="body2">
+          {error || 'Failed to load data. Please try again.'}
+        </Typography>
+      </Alert>
+    </Box>
+  );
+
+  // Empty state component
+  const EmptyState = () => (
+    <Box sx={{ p: 2 }}>
+      <Card>
+        <CardContent sx={{ textAlign: 'center', py: 6 }}>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            gap: 2,
+            opacity: 0.6 
+          }}>
+            <Box
+              sx={{
+                p: 3,
+                borderRadius: '50%',
+                bgcolor: theme.palette.grey[100],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <TouchIcon sx={{ fontSize: 48, color: theme.palette.grey[400] }} />
+            </Box>
+            <Typography variant="h6" color="text.secondary">
+              {emptyMessage}
+            </Typography>
+            {searchTerm && (
+              <Typography variant="body2" color="text.secondary">
+                Try adjusting your search criteria
+              </Typography>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+
+  // Memoized card component for better performance
+  const MemoizedCardRow = memo(({ row, isItemSelected, isExpanded, isBeingSwiped }: {
+    row: any;
+    isItemSelected: boolean;
+    isExpanded: boolean;
+    isBeingSwiped: boolean;
+  }) => (
+    <Box
+      sx={{ 
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 2,
+      }}
+    >
+      {/* Swipe Action Background */}
+      {isBeingSwiped && swipeActions.length > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: swipeState.direction === 'right' ? 'flex-start' : 'flex-end',
+            px: 3,
+            bgcolor: swipeActions.find(a => a.direction === swipeState.direction)?.color + '.light' || 'grey.200',
+            zIndex: 0,
+          }}
+        >
+          {swipeActions
+            .filter(a => a.direction === swipeState.direction)
+            .map(action => (
+              <Box key={action.key} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {action.icon}
+                <Typography variant="body2" fontWeight={600} color="white">
+                  {action.label}
+                </Typography>
+              </Box>
+            ))}
+        </Box>
+      )}
+      
+      <Card
+        ref={(el) => {
+          if (el) swipeRefs.current.set(row.id, el);
+        }}
+        sx={{
+          cursor: onRowClick ? 'pointer' : 'default',
+          bgcolor: isItemSelected ? theme.palette.primary.light + '20' : 'background.paper',
+          transition: isBeingSwiped ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          position: 'relative',
+          zIndex: 1,
+          '&:hover': onRowClick && !isBeingSwiped ? {
+            transform: 'translateY(-2px)',
+            boxShadow: theme.shadows[4],
+          } : {},
+          '&:active': {
+            transform: onRowClick ? 'scale(0.98)' : 'none',
+          },
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: swipeActions.length > 0 ? 'pan-y' : 'manipulation',
+        }}
+        onClick={(e) => {
+          if (!isBeingSwiped && onRowClick) {
+            onRowClick(row);
+          }
+        }}
+        onTouchStart={(e) => handleTouchStart(e, row.id)}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+            {selectable && (
+              <Checkbox
+                color="primary"
+                checked={isItemSelected}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleSelect(event, row.id);
+                }}
+                sx={{ mt: -0.5 }}
+              />
+            )}
+            
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              {/* Primary information - first 2 high priority columns */}
+              {visibleColumns.slice(0, 2).map((column) => (
+                <Box key={`${row.id}-${column.key}`} sx={{ mb: 1 }}>
+                  {column.render ? column.render(row[column.key], row) : (
+                    <Typography variant="body1" fontWeight={600} noWrap>
+                      {row[column.key]}
+                    </Typography>
+                  )}
+                </Box>
+              ))}
+            </Box>
+
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                setAnchorEl(event.currentTarget);
+              }}
+              sx={{ mt: -0.5 }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+          </Box>
+
+          {/* Secondary information - show/hide toggle */}
+          {visibleColumns.length > 2 && (
+            <>
+              <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                <Stack spacing={1}>
+                  {visibleColumns.slice(2).map((column) => (
+                    <Box key={`${row.id}-${column.key}-detail`} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 80 }}>
+                        {column.label}:
+                      </Typography>
+                      <Box sx={{ textAlign: 'right', ml: 1 }}>
+                        {column.render ? column.render(row[column.key], row) : (
+                          <Typography variant="body2">
+                            {row[column.key]}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Stack>
+              </Collapse>
+              
+              {visibleColumns.length > 2 && (
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Typography
+                    variant="caption"
+                    color="primary"
+                    sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCardExpansion(row.id);
+                    }}
+                  >
+                    {isExpanded ? 'Show Less' : 'Show More'}
+                  </Typography>
+                </Box>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  ));
 
   return (
     <Paper sx={{ width: '100%', mb: 2 }}>
@@ -274,118 +681,60 @@ export default function DataTable({
 
       {/* Card View for Mobile */}
       {viewMode === 'cards' && (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, position: 'relative' }}>
+          {/* Loading State */}
+          {loading && <LoadingSkeleton />}
+          
+          {/* Error State */}
+          {error && <ErrorState />}
+          
+          {/* Empty State */}
+          {!loading && !error && paginatedData.length === 0 && <EmptyState />}
+          
+          {/* Pull to Refresh Indicator */}
+          {enableSwipeToRefresh && refreshing && (
+            <Box sx={{ 
+              position: 'absolute', 
+              top: -20, 
+              left: '50%', 
+              transform: 'translateX(-50%)',
+              zIndex: 1
+            }}>
+              <Chip
+                icon={<RefreshIcon />}
+                label="Refreshing..."
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+          )}
+          
+          {/* Swipe Instructions */}
+          {!loading && !error && swipeActions.length > 0 && paginatedData.length > 0 && (
+            <Box sx={{ mb: 2, textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                Swipe {swipeActions.map(a => `${a.direction} for ${a.label}`).join(', ')}
+              </Typography>
+            </Box>
+          )}
+          
           <Stack spacing={2}>
-            {paginatedData.map((row) => {
+            {!loading && !error && paginatedData.map((row) => {
               const isItemSelected = isSelected(row.id);
               const isExpanded = expandedCards.has(row.id);
+              const isBeingSwiped = swipeState.id === row.id;
 
               return (
-                <Card
+                <MemoizedCardRow
                   key={row.id}
-                  sx={{
-                    cursor: onRowClick ? 'pointer' : 'default',
-                    bgcolor: isItemSelected ? theme.palette.primary.light + '20' : 'background.paper',
-                    transition: 'all 0.2s ease',
-                    '&:hover': onRowClick ? {
-                      transform: 'translateY(-2px)',
-                      boxShadow: theme.shadows[4],
-                    } : {},
-                  }}
-                  onClick={() => onRowClick && onRowClick(row)}
-                >
-                  <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-                      {selectable && (
-                        <Checkbox
-                          color="primary"
-                          checked={isItemSelected}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleSelect(event, row.id);
-                          }}
-                          sx={{ mt: -0.5 }}
-                        />
-                      )}
-                      
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        {/* Primary information - first 2 high priority columns */}
-                        {visibleColumns.slice(0, 2).map((column) => (
-                          <Box key={`${row.id}-${column.key}`} sx={{ mb: 1 }}>
-                            {column.render ? column.render(row[column.key], row) : (
-                              <Typography variant="body1" fontWeight={600} noWrap>
-                                {row[column.key]}
-                              </Typography>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-
-                      <IconButton
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setAnchorEl(event.currentTarget);
-                        }}
-                        sx={{ mt: -0.5 }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </Box>
-
-                    {/* Secondary information - show/hide toggle */}
-                    {visibleColumns.length > 2 && (
-                      <>
-                        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                          <Stack spacing={1}>
-                            {visibleColumns.slice(2).map((column) => (
-                              <Box key={`${row.id}-${column.key}-detail`} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 80 }}>
-                                  {column.label}:
-                                </Typography>
-                                <Box sx={{ textAlign: 'right', ml: 1 }}>
-                                  {column.render ? column.render(row[column.key], row) : (
-                                    <Typography variant="body2">
-                                      {row[column.key]}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </Box>
-                            ))}
-                          </Stack>
-                        </Collapse>
-                        
-                        {visibleColumns.length > 2 && (
-                          <Box sx={{ textAlign: 'center', mt: 2 }}>
-                            <Typography
-                              variant="caption"
-                              color="primary"
-                              sx={{ cursor: 'pointer', textDecoration: 'underline' }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleCardExpansion(row.id);
-                              }}
-                            >
-                              {isExpanded ? 'Show Less' : 'Show More'}
-                            </Typography>
-                          </Box>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                  row={row}
+                  isItemSelected={isItemSelected}
+                  isExpanded={isExpanded}
+                  isBeingSwiped={isBeingSwiped}
+                />
               );
             })}
-            
-            {paginatedData.length === 0 && (
-              <Card>
-                <CardContent sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    {emptyMessage}
-                  </Typography>
-                </CardContent>
-              </Card>
-            )}
           </Stack>
         </Box>
       )}
@@ -546,7 +895,7 @@ export default function DataTable({
       <TablePagination
         rowsPerPageOptions={isMobile ? [5, 10, 25] : [5, 10, 25, 50]}
         component="div"
-        count={filteredData.length}
+        count={processedData.totalFiltered}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}
@@ -576,4 +925,6 @@ export default function DataTable({
       </Menu>
     </Paper>
   );
-}
+});
+
+export default DataTable;

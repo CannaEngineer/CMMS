@@ -45,7 +45,7 @@ import StatCard from '../components/Common/StatCard';
 import DataTable from '../components/Common/DataTable';
 import PartForm from '../components/Forms/PartForm';
 import { statusColors } from '../theme/theme';
-import { partService } from '../services/api';
+import { partsService } from '../services/api';
 
 interface Part {
   id: number;
@@ -115,18 +115,18 @@ export default function Inventory() {
   // Fetch all parts
   const { data: parts = [], isLoading, error } = useQuery({
     queryKey: ['parts'],
-    queryFn: partService.getAll,
+    queryFn: partsService.getAll,
   });
 
   // Fetch low stock parts
   const { data: lowStockParts = [] } = useQuery({
     queryKey: ['parts', 'low-stock'],
-    queryFn: partService.getLowStock,
+    queryFn: partsService.getLowStock,
   });
 
   // Create part mutation
   const createPartMutation = useMutation({
-    mutationFn: partService.create,
+    mutationFn: partsService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setOpenDialog(false);
@@ -139,7 +139,7 @@ export default function Inventory() {
 
   // Update part mutation
   const updatePartMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => partService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => partsService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setOpenDialog(false);
@@ -152,7 +152,7 @@ export default function Inventory() {
 
   // Delete part mutation
   const deletePartMutation = useMutation({
-    mutationFn: partService.delete,
+    mutationFn: partsService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setSnackbar({ open: true, message: 'Part deleted successfully', severity: 'success' });

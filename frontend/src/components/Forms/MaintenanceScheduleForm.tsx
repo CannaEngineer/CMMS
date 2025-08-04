@@ -58,10 +58,14 @@ const typeOptions = [
 const frequencyOptions = [
   { value: 'DAILY', label: 'Daily' },
   { value: 'WEEKLY', label: 'Weekly' },
+  { value: 'BIWEEKLY', label: 'Every 2 Weeks' },
   { value: 'MONTHLY', label: 'Monthly' },
-  { value: 'QUARTERLY', label: 'Quarterly' },
+  { value: 'BIMONTHLY', label: 'Every 2 Months' },
+  { value: 'QUARTERLY', label: 'Quarterly (Every 3 Months)' },
+  { value: 'SEMIANNUALLY', label: 'Semi-Annually (Every 6 Months)' },
   { value: 'YEARLY', label: 'Yearly' },
-  { value: 'CUSTOM', label: 'Custom' },
+  { value: 'ON_CONDITION', label: 'On Condition' },
+  { value: 'CUSTOM', label: 'Custom Interval' },
 ];
 
 const customFrequencyUnitOptions = [
@@ -110,7 +114,7 @@ export default function MaintenanceScheduleForm({
   const [formData, setFormData] = useState<MaintenanceScheduleFormData>({
     title: '',
     description: '',
-    frequency: 'monthly',
+    frequency: 'MONTHLY',
     nextDue: '',
     assetId: 0,
     ...initialData,
@@ -135,7 +139,7 @@ export default function MaintenanceScheduleForm({
 
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.assetId) newErrors.assetId = 'Asset is required';
-    if (!formData.frequency.trim()) newErrors.frequency = 'Frequency is required';
+    if (!formData.frequency) newErrors.frequency = 'Frequency is required';
     if (!formData.nextDue) newErrors.nextDue = 'Next due date is required';
 
     setErrors(newErrors);
@@ -173,7 +177,9 @@ export default function MaintenanceScheduleForm({
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Frequency</Typography>
-                <Typography variant="body1">{formData.frequency}</Typography>
+                <Typography variant="body1">
+                  {frequencyOptions.find(opt => opt.value === formData.frequency)?.label || formData.frequency}
+                </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Next Due</Typography>
@@ -226,15 +232,16 @@ export default function MaintenanceScheduleForm({
       </Grid>
       <Grid item xs={12} md={6}>
         <FormField
-          type="text"
+          type="select"
           name="frequency"
           label="Frequency"
           value={formData.frequency}
           onChange={handleFieldChange}
+          options={frequencyOptions}
           required
           error={errors.frequency}
           disabled={mode === 'view'}
-          placeholder="e.g., daily, weekly, monthly"
+          helperText="Standardized frequencies enable automatic schedule generation"
         />
       </Grid>
       <Grid item xs={12} md={6}>

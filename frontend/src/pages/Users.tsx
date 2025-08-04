@@ -66,7 +66,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import UserForm from '../components/Forms/UserForm';
-import { userService } from '../services/api';
+import { usersService } from '../services/api';
 
 interface User {
   id: number;
@@ -118,12 +118,12 @@ export default function Users() {
     refetch
   } = useQuery({
     queryKey: ['users'],
-    queryFn: userService.getAll,
+    queryFn: usersService.getAll,
   });
 
   // Mutations
   const createUserMutation = useMutation({
-    mutationFn: userService.create,
+    mutationFn: usersService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setUserFormOpen(false);
@@ -132,7 +132,7 @@ export default function Users() {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => userService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => usersService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       setUserFormOpen(false);
@@ -141,7 +141,7 @@ export default function Users() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: userService.delete,
+    mutationFn: usersService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },

@@ -16,6 +16,7 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import {
   Assignment as WorkOrderIcon,
@@ -24,9 +25,11 @@ import {
   Schedule as ScheduleIcon,
   Warning as PriorityIcon,
 } from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
 import { statusColors } from '../../theme/theme';
+import { assetsService, usersService } from '../../services/api';
 
 // Aligned with WorkOrder model from database schema
 interface WorkOrderFormData {
@@ -74,21 +77,7 @@ const categoryOptions = [
   { value: 'CLEANING', label: 'Cleaning' },
 ];
 
-const assetOptions = [
-  { value: '1', label: 'Water Pump #3 - Building A' },
-  { value: '2', label: 'HVAC Unit #5 - Building B' },
-  { value: '3', label: 'Conveyor System C - Production Floor' },
-  { value: '4', label: 'Generator #2 - Basement' },
-  { value: '5', label: 'Air Compressor #4 - Workshop' },
-];
-
-const userOptions = [
-  { value: '1', label: 'John Doe - Senior Technician' },
-  { value: '2', label: 'Jane Smith - Maintenance Specialist' },
-  { value: '3', label: 'Mike Johnson - Electrician' },
-  { value: '4', label: 'Sarah Wilson - HVAC Technician' },
-  { value: '5', label: 'Unassigned', disabled: false },
-];
+// Remove hardcoded options - will be loaded from API
 
 const steps = ['Basic Information', 'Assignment & Scheduling', 'Additional Details'];
 
@@ -112,6 +101,34 @@ export default function WorkOrderForm({
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch assets for the dropdown
+  const { data: assets, isLoading: assetsLoading } = useQuery({
+    queryKey: ['assets'],
+    queryFn: assetsService.getAll,
+    enabled: open, // Only fetch when dialog is open
+  });
+
+  // Fetch users for assignment dropdown
+  const { data: users, isLoading: usersLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: usersService.getAll,
+    enabled: open, // Only fetch when dialog is open
+  });
+
+  // Transform API data to dropdown options
+  const assetOptions = assets?.map(asset => ({
+    value: asset.id?.toString() || '',
+    label: `${asset.name} - ${asset.location?.name || 'Unknown Location'}`,
+  })) || [];
+
+  const userOptions = [
+    { value: '', label: 'Unassigned' },
+    ...(users?.map(user => ({
+      value: user.id?.toString() || '',
+      label: `${user.name} - ${user.role || 'Technician'}`,
+    })) || [])
+  ];
 
   useEffect(() => {
     if (initialData) {
@@ -196,10 +213,10 @@ export default function WorkOrderForm({
                 type="select"
                 name="assetId"
                 label="Asset"
-                value={formData.assetId}
-                onChange={handleFieldChange}
+                value={formData.assetId?.toString() || ''}
+                onChange={(name, value) => handleFieldChange(name, value ? parseInt(value) : undefined)}
                 options={assetOptions}
-                disabled={mode === 'view'}
+                disabled={mode === 'view' || assetsLoading}
               />
             </Grid>
           </Grid>
@@ -237,10 +254,10 @@ export default function WorkOrderForm({
                 type="select"
                 name="assignedToId"
                 label="Assign To"
-                value={formData.assignedToId}
-                onChange={handleFieldChange}
+                value={formData.assignedToId?.toString() || ''}
+                onChange={(name, value) => handleFieldChange(name, value ? parseInt(value) : undefined)}
                 options={userOptions}
-                disabled={mode === 'view'}
+                disabled={mode === 'view' || usersLoading}
               />
             </Grid>
           </Grid>
@@ -299,14 +316,14 @@ export default function WorkOrderForm({
                 <ListItemIcon><AssetIcon /></ListItemIcon>
                 <ListItemText 
                   primary="Asset" 
-                  secondary={assetOptions.find(a => a.value === formData.assetId)?.label || 'Not selected'} 
+                  secondary={assetOptions.find(a => a.value === formData.assetId?.toString())?.label || 'Not selected'} 
                 />
               </ListItem>
               <ListItem>
                 <ListItemIcon><PersonIcon /></ListItemIcon>
                 <ListItemText 
                   primary="Assigned To" 
-                  secondary={userOptions.find(u => u.value === formData.assignedToId)?.label || 'Unassigned'} 
+                  secondary={userOptions.find(u => u.value === formData.assignedToId?.toString())?.label || 'Unassigned'} 
                 />
               </ListItem>
               <ListItem>

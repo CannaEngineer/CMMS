@@ -74,7 +74,7 @@ import {
   Legend 
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import { dashboardService, workOrderService, assetService } from '../services/api';
+import { dashboardService, workOrdersService, assetsService } from '../services/api';
 import { statusColors } from '../theme/theme';
 
 interface TabPanelProps {

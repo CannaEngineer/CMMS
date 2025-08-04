@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { locationsService } from '../../services/api';
 import {
   Box,
   Grid,
@@ -13,7 +15,8 @@ import {
   ListItemIcon,
   Chip,
 } from '@mui/material';
-import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
+import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import {
   LocationOn as LocationIcon,
   Business as BuildingIcon,
@@ -54,65 +57,10 @@ const locationTypeOptions = [
   { value: 'ZONE', label: 'Zone' },
 ];
 
-// Mock location hierarchy for parent selection
-const mockLocationHierarchy = [
-  {
-    id: '1',
-    name: 'Main Campus',
-    type: 'AREA',
-    children: [
-      {
-        id: '2',
-        name: 'Building A',
-        type: 'BUILDING',
-        children: [
-          { id: '3', name: 'Ground Floor', type: 'FLOOR', children: [] },
-          { id: '4', name: '1st Floor', type: 'FLOOR', children: [] },
-          { id: '5', name: 'Basement', type: 'FLOOR', children: [] },
-        ],
-      },
-      {
-        id: '6',
-        name: 'Building B',
-        type: 'BUILDING',
-        children: [
-          { id: '7', name: 'Ground Floor', type: 'FLOOR', children: [] },
-          { id: '8', name: '1st Floor', type: 'FLOOR', children: [] },
-          { id: '9', name: 'Roof', type: 'FLOOR', children: [] },
-        ],
-      },
-    ],
-  },
-  {
-    id: '10',
-    name: 'Production Facility',
-    type: 'AREA',
-    children: [
-      {
-        id: '11',
-        name: 'Production Floor',
-        type: 'BUILDING',
-        children: [
-          { id: '12', name: 'Line 1', type: 'ZONE', children: [] },
-          { id: '13', name: 'Line 2', type: 'ZONE', children: [] },
-          { id: '14', name: 'Quality Control', type: 'ROOM', children: [] },
-        ],
-      },
-      {
-        id: '15',
-        name: 'Warehouse',
-        type: 'BUILDING',
-        children: [
-          { id: '16', name: 'Storage Area A', type: 'ZONE', children: [] },
-          { id: '17', name: 'Storage Area B', type: 'ZONE', children: [] },
-        ],
-      },
-    ],
-  },
-];
+// Location hierarchy is now built from real data fetched via React Query
 
 const getLocationIcon = (type: string) => {
-  switch (type) {
+  switch (type?.toUpperCase()) {
     case 'BUILDING':
       return <ApartmentIcon />;
     case 'FLOOR':
@@ -120,6 +68,8 @@ const getLocationIcon = (type: string) => {
     case 'AREA':
     case 'ZONE':
       return <FactoryIcon />;
+    case 'ROOM':
+      return <LocationIcon />;
     default:
       return <LocationIcon />;
   }
@@ -157,7 +107,51 @@ export default function LocationForm({
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [expandedNodes, setExpandedNodes] = useState<string[]>(['1', '10']);
+  const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
+
+  // Fetch real locations data
+  const { data: locations, isLoading: locationsLoading } = useQuery({
+    queryKey: ['locations'],
+    queryFn: locationsService.getAll,
+    enabled: open, // Only fetch when dialog is open
+  });
+
+  // Transform flat locations array into hierarchical structure
+  const buildLocationHierarchy = (locations: any[] = []): any[] => {
+    const locationMap = new Map();
+    const roots: any[] = [];
+
+    // First pass: create map of all locations
+    locations.forEach(location => {
+      locationMap.set(location.id, {
+        ...location,
+        children: []
+      });
+    });
+
+    // Second pass: build hierarchy
+    locations.forEach(location => {
+      const locationNode = locationMap.get(location.id);
+      if (location.parentId && locationMap.has(location.parentId)) {
+        const parent = locationMap.get(location.parentId);
+        parent.children.push(locationNode);
+      } else {
+        roots.push(locationNode);
+      }
+    });
+
+    return roots;
+  };
+
+  const locationHierarchy = buildLocationHierarchy(locations || []);
+  
+  // Set initial expanded nodes based on real data
+  useEffect(() => {
+    if (locationHierarchy.length > 0 && expandedNodes.length === 0) {
+      const topLevelIds = locationHierarchy.map(loc => String(loc.id));
+      setExpandedNodes(topLevelIds);
+    }
+  }, [locationHierarchy]);
 
   useEffect(() => {
     if (initialData) {
@@ -190,12 +184,14 @@ export default function LocationForm({
   const renderTreeItem = (node: any) => (
     <TreeItem
       key={node.id}
-      nodeId={node.id}
+      itemId={String(node.id)}
       label={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
-          {getLocationIcon(node.type)}
+          {getLocationIcon(node.type || 'LOCATION')}
           <Typography variant="body2">{node.name}</Typography>
-          <Chip label={node.type} size="small" variant="outlined" />
+          {node.type && (
+            <Chip label={node.type} size="small" variant="outlined" />
+          )}
         </Box>
       }
     >
@@ -264,13 +260,19 @@ export default function LocationForm({
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Location Hierarchy</Typography>
-            <SimpleTreeView
-              expandedItems={expandedNodes}
-              onExpandedItemsChange={(event, itemIds) => setExpandedNodes(itemIds)}
-              selectedItems={formData.id || ''}
-            >
-              {mockLocationHierarchy.map(renderTreeItem)}
-            </SimpleTreeView>
+            {locationHierarchy.length > 0 ? (
+              <SimpleTreeView
+                expandedItems={expandedNodes}
+                onExpandedItemsChange={(event, itemIds) => setExpandedNodes(itemIds)}
+                selectedItems={formData.id ? String(formData.id) : ''}
+              >
+                {locationHierarchy.map(renderTreeItem)}
+              </SimpleTreeView>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                No locations found
+              </Typography>
+            )}
           </CardContent>
         </Card>
       </Grid>
@@ -313,7 +315,7 @@ export default function LocationForm({
               onChange={handleFieldChange}
               options={[
                 { value: '', label: 'No Parent (Top Level)' },
-                ...flattenLocations(mockLocationHierarchy),
+                ...flattenLocations(locationHierarchy),
               ]}
               disabled={mode === 'view'}
             />
@@ -339,14 +341,20 @@ export default function LocationForm({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Select a parent location to organize your locations hierarchically.
             </Typography>
-            <SimpleTreeView
-              expandedItems={expandedNodes}
-              onExpandedItemsChange={(event, itemIds) => setExpandedNodes(itemIds)}
-              selectedItems={formData.parentId}
-              onSelectedItemsChange={(event, itemId) => handleFieldChange('parentId', itemId)}
-            >
-              {mockLocationHierarchy.map(renderTreeItem)}
-            </SimpleTreeView>
+            {locationHierarchy.length > 0 ? (
+              <SimpleTreeView
+                expandedItems={expandedNodes}
+                onExpandedItemsChange={(event, itemIds) => setExpandedNodes(itemIds)}
+                selectedItems={formData.parentId ? String(formData.parentId) : ''}
+                onSelectedItemsChange={(event, itemId) => handleFieldChange('parentId', itemId)}
+              >
+                {locationHierarchy.map(renderTreeItem)}
+              </SimpleTreeView>
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                No locations available for selection
+              </Typography>
+            )}
           </CardContent>
         </Card>
       </Grid>
@@ -364,7 +372,7 @@ export default function LocationForm({
         `Location Details - ${formData.name}`
       }
       submitText={mode === 'view' ? undefined : mode === 'edit' ? 'Update Location' : 'Create Location'}
-      loading={loading}
+      loading={loading || locationsLoading}
       maxWidth="lg"
       hideActions={mode === 'view'}
       submitDisabled={mode === 'view'}
@@ -375,7 +383,15 @@ export default function LocationForm({
         </Alert>
       )}
 
-      {mode === 'view' ? renderViewMode() : renderFormMode()}
+      {locationsLoading ? (
+        <Box display="flex" justifyContent="center" py={4}>
+          <Typography variant="body2" color="text.secondary">
+            Loading locations...
+          </Typography>
+        </Box>
+      ) : (
+        mode === 'view' ? renderViewMode() : renderFormMode()
+      )}
     </FormDialog>
   );
 }

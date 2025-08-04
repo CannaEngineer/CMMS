@@ -24,9 +24,11 @@ import {
   CalendarToday as DateIcon,
   Assessment as HealthIcon,
 } from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
 import { statusColors } from '../../theme/theme';
+import { locationsService } from '../../services/api';
 
 // Aligned with Asset model from database schema
 interface AssetFormData {
@@ -69,14 +71,7 @@ const criticalityOptions = [
   { value: 'IMPORTANT', label: 'Important' },
 ];
 
-const locationOptions = [
-  { value: '1', label: 'Building A - Basement' },
-  { value: '2', label: 'Building A - Floor 1' },
-  { value: '3', label: 'Building B - Roof' },
-  { value: '4', label: 'Production Floor - Line 1' },
-  { value: '5', label: 'Production Floor - Line 2' },
-  { value: '6', label: 'Workshop' },
-];
+// Remove hardcoded location options - will be loaded from API
 
 const categoryOptions = [
   { value: 'PUMP', label: 'Pumps & Compressors' },
@@ -124,6 +119,19 @@ export default function AssetForm({
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch locations for the dropdown
+  const { data: locations, isLoading: locationsLoading } = useQuery({
+    queryKey: ['locations'],
+    queryFn: locationsService.getAll,
+    enabled: open, // Only fetch when dialog is open
+  });
+
+  // Transform API data to dropdown options
+  const locationOptions = locations?.map(location => ({
+    value: location.id?.toString() || '',
+    label: location.name || 'Unknown Location',
+  })) || [];
 
   useEffect(() => {
     if (initialData) {
@@ -276,7 +284,7 @@ export default function AssetForm({
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Location</Typography>
                 <Typography variant="body1">
-                  {locationOptions.find(l => l.value === formData.locationId)?.label}
+                  {locationOptions.find(l => l.value === formData.locationId?.toString())?.label}
                 </Typography>
               </Grid>
             </Grid>
@@ -383,12 +391,12 @@ export default function AssetForm({
           type="select"
           name="locationId"
           label="Location"
-          value={formData.locationId}
-          onChange={handleFieldChange}
+          value={formData.locationId?.toString() || ''}
+          onChange={(name, value) => handleFieldChange(name, value ? parseInt(value) : 1)}
           options={locationOptions}
           required
           error={errors.locationId}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || locationsLoading}
         />
       </Grid>
       <Grid item xs={12} md={6}>

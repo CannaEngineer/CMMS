@@ -42,7 +42,7 @@ import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm
 import { PMCalendar } from '../components/PMCalendar';
 import { statusColors } from '../theme/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { pmScheduleService, dashboardService } from '../services/api';
+import { pmService, dashboardService, assetsService, workOrdersService } from '../services/api';
 import dayjs from 'dayjs';
 
 export default function Maintenance() {
@@ -57,7 +57,7 @@ export default function Maintenance() {
   // Fetch PM Schedules
   const { data: pmSchedules, isLoading: pmSchedulesLoading, error: pmSchedulesError } = useQuery({
     queryKey: ['pmSchedules'],
-    queryFn: pmScheduleService.getAll,
+    queryFn: pmService.getSchedules,
   });
 
   // Fetch Dashboard Stats for KPI cards
@@ -67,16 +67,34 @@ export default function Maintenance() {
   });
 
   const { data: maintenanceScheduleStats, isLoading: maintenanceScheduleStatsLoading } = useQuery({
-    queryKey: ['dashboard', 'maintenance-schedule'],
-    queryFn: dashboardService.getMaintenanceSchedule,
+    queryKey: ['dashboard', 'maintenance-stats'],
+    queryFn: dashboardService.getMaintenanceStats,
+  });
+
+  // Fetch critical assets data
+  const { data: assets, isLoading: assetsLoading } = useQuery({
+    queryKey: ['assets'],
+    queryFn: assetsService.getAll,
+  });
+
+  // Fetch work orders for maintenance analytics
+  const { data: workOrders, isLoading: workOrdersLoading } = useQuery({
+    queryKey: ['work-orders'],
+    queryFn: workOrdersService.getAll,
+  });
+
+  // Fetch monthly trends data
+  const { data: monthlyTrendsData, isLoading: trendsLoading } = useQuery({
+    queryKey: ['dashboard', 'maintenance-trends'],
+    queryFn: () => dashboardService.getTrends(6), // Get last 6 months
   });
 
   // Mutations for PM Schedules
   const createMutation = useMutation({
-    mutationFn: pmScheduleService.create,
+    mutationFn: pmService.createSchedule,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       setOpenScheduleDialog(false);
     },
     onError: (error) => {
@@ -86,10 +104,10 @@ export default function Maintenance() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => pmScheduleService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => pmService.updateSchedule(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       setOpenScheduleDialog(false);
     },
     onError: (error) => {
@@ -99,10 +117,10 @@ export default function Maintenance() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: pmScheduleService.delete,
+    mutationFn: pmService.deleteSchedule,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       handleCloseMenu();
     },
     onError: (error) => {
@@ -169,28 +187,52 @@ export default function Maintenance() {
     return true;
   }) || [];
 
-  // Mock data (will be replaced by real data as more backend APIs are implemented)
+  // Process real data for maintenance analytics
   const maintenanceByType = [
-    { type: 'Preventive', count: stats?.workOrders?.byStatus?.COMPLETED || 0, color: statusColors.ONLINE }, // Using completed WOs as a proxy
-    { type: 'Corrective', count: stats?.workOrders?.total - (stats?.workOrders?.byStatus?.COMPLETED || 0) || 0, color: statusColors.URGENT }, // Using total - completed as proxy
+    { 
+      type: 'Preventive', 
+      count: workOrders?.filter(wo => wo.category === 'PREVENTIVE' || wo.type === 'PREVENTIVE').length || 0, 
+      color: statusColors.ONLINE 
+    },
+    { 
+      type: 'Corrective', 
+      count: workOrders?.filter(wo => wo.category === 'CORRECTIVE' || wo.type === 'CORRECTIVE').length || 0, 
+      color: statusColors.URGENT 
+    },
+    { 
+      type: 'Emergency', 
+      count: workOrders?.filter(wo => wo.category === 'EMERGENCY' || wo.priority === 'URGENT').length || 0, 
+      color: statusColors.CRITICAL 
+    },
   ];
 
-  const monthlyTrend = [
-    { month: 'Jan', scheduled: 40, completed: 35 },
-    { month: 'Feb', scheduled: 45, completed: 42 },
-    { month: 'Mar', scheduled: 42, completed: 40 },
-    { month: 'Apr', scheduled: 48, completed: 45 },
-    { month: 'May', scheduled: 50, completed: 47 },
-    { month: 'Jun', scheduled: 45, completed: 43 },
-  ];
+  // Transform monthly trends data
+  const monthlyTrend = monthlyTrendsData?.map(trend => ({
+    month: new Date(trend.date).toLocaleDateString('en-US', { month: 'short' }),
+    scheduled: trend.created || 0,
+    completed: trend.completed || 0,
+  })) || [];
 
-  const criticalAssets = [
-    { name: 'Production Line 1', nextMaintenance: '2024-08-10', health: 65 },
-    { name: 'Cooling Tower #2', nextMaintenance: '2024-08-12', health: 72 },
-    { name: 'Air Compressor #4', nextMaintenance: '2024-08-15', health: 58 },
-  ];
+  // Get critical assets from real asset data
+  const criticalAssets = assets
+    ?.filter(asset => asset.criticality === 'HIGH' || asset.criticality === 'CRITICAL')
+    ?.sort((a, b) => {
+      // Sort by health score if available, otherwise by criticality
+      const healthA = a.healthScore || (a.criticality === 'CRITICAL' ? 50 : 70);
+      const healthB = b.healthScore || (b.criticality === 'CRITICAL' ? 50 : 70);
+      return healthA - healthB;
+    })
+    ?.slice(0, 5) // Take top 5 most critical
+    ?.map(asset => ({
+      id: asset.id,
+      name: asset.name,
+      nextMaintenance: asset.nextMaintenanceDate || 'Not scheduled',
+      health: asset.healthScore || (asset.criticality === 'CRITICAL' ? 50 : 70),
+      location: asset.location?.name || 'Unknown',
+      criticality: asset.criticality,
+    })) || [];
 
-  if (pmSchedulesLoading || statsLoading || maintenanceScheduleStatsLoading) {
+  if (pmSchedulesLoading || statsLoading || maintenanceScheduleStatsLoading || assetsLoading || workOrdersLoading || trendsLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
@@ -393,7 +435,8 @@ export default function Maintenance() {
                 <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
                   Maintenance by Type
                 </Typography>
-                <ResponsiveContainer width="100%" height={200}>
+                {maintenanceByType.some(item => item.count > 0) ? (
+                  <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={maintenanceByType}>
                     <XAxis dataKey="type" />
                     <YAxis />
@@ -405,6 +448,13 @@ export default function Maintenance() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No maintenance data available
+                    </Typography>
+                  </Box>
+                )}
               </Paper>
             </Grid>
 
@@ -418,15 +468,20 @@ export default function Maintenance() {
                       Critical Assets
                     </Typography>
                   </Box>
-                  <List dense>
+                  {criticalAssets.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                      No critical assets found
+                    </Typography>
+                  ) : (
+                    <List dense>
                     {criticalAssets.map((asset, index) => (
-                      <ListItem key={index} disablePadding sx={{ mb: 2 }}>
+                      <ListItem key={asset.id || index} disablePadding sx={{ mb: 2 }}>
                         <ListItemText
                           primary={asset.name}
                           secondary={
                             <Box>
                               <Typography variant="caption">
-                                Next maintenance: {asset.nextMaintenance}
+{asset.location && `Location: ${asset.location} • `}Next maintenance: {asset.nextMaintenance}
                               </Typography>
                               <LinearProgress
                                 variant="determinate"
@@ -449,7 +504,8 @@ export default function Maintenance() {
                         />
                       </ListItem>
                     ))}
-                  </List>
+                    </List>
+                  )}
                 </CardContent>
               </Card>
             </Grid>
@@ -462,7 +518,14 @@ export default function Maintenance() {
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Maintenance Completion Trend
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
+            {monthlyTrend.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No trend data available
+                </Typography>
+              </Box>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
               <LineChart data={monthlyTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
@@ -483,7 +546,8 @@ export default function Maintenance() {
                   name="Completed"
                 />
               </LineChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            )}
           </Paper>
         </Grid>
       </Grid>

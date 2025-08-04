@@ -72,7 +72,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
-import { workOrderService } from '../services/api';
+import { workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
 
 interface WorkOrder {
@@ -137,14 +137,14 @@ export default function WorkOrders() {
     refetch
   } = useQuery({
     queryKey: ['work-orders'],
-    queryFn: workOrderService.getAll,
+    queryFn: workOrdersService.getAll,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
   // Mutations
   const createWorkOrderMutation = useMutation({
-    mutationFn: workOrderService.create,
+    mutationFn: workOrdersService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
@@ -153,7 +153,7 @@ export default function WorkOrders() {
   });
 
   const updateWorkOrderMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => workOrderService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) => workOrdersService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
@@ -162,7 +162,7 @@ export default function WorkOrders() {
   });
 
   const deleteWorkOrderMutation = useMutation({
-    mutationFn: workOrderService.delete,
+    mutationFn: workOrdersService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
     },

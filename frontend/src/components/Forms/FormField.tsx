@@ -36,6 +36,7 @@ interface FormFieldProps {
   options?: Option[];
   required?: boolean;
   disabled?: boolean;
+  loading?: boolean;
   error?: string;
   helperText?: string;
   fullWidth?: boolean;

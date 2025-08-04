@@ -20,6 +20,7 @@ interface StatCardProps {
   icon?: React.ReactElement;
   color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info';
   loading?: boolean;
+  onClick?: () => void;
 }
 
 export default function StatCard({
@@ -31,6 +32,7 @@ export default function StatCard({
   icon,
   color = 'primary',
   loading = false,
+  onClick,
 }: StatCardProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -53,6 +55,7 @@ export default function StatCard({
 
   return (
     <Card 
+      onClick={onClick}
       sx={{ 
         height: '100%',
         position: 'relative',
@@ -64,7 +67,7 @@ export default function StatCard({
           boxShadow: isMobile ? theme.shadows[4] : theme.shadows[8],
         },
         // Touch-friendly on mobile
-        cursor: 'pointer',
+        cursor: onClick ? 'pointer' : 'default',
         WebkitTapHighlightColor: 'transparent',
       }}
     >

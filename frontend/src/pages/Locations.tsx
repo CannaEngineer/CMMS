@@ -35,6 +35,8 @@ import {
   Map as MapIcon,
 } from '@mui/icons-material';
 import StatCard from '../components/Common/StatCard';
+import StatusIndicator from '../components/Common/StatusIndicator';
+import PageLayout from '../components/Layout/PageLayout';
 import LocationForm from '../components/Forms/LocationForm';
 
 interface Location {
@@ -306,11 +308,10 @@ export default function Locations() {
   const roomCount = allLocations.filter(loc => loc.type === 'ROOM').length;
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Locations
-        </Typography>
+    <PageLayout
+      title="Locations"
+      subtitle="Manage your facility locations and hierarchies"
+      actions={
         <Box sx={{ display: 'flex', gap: 2 }}>
           {!isMobile && (
             <Button
@@ -329,7 +330,8 @@ export default function Locations() {
             Add Location
           </Button>
         </Box>
-      </Box>
+      }
+    >
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -398,7 +400,7 @@ export default function Locations() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => setExpandedNodes(allLocations.map(loc => loc.id))}
+                onClick={() => setExpandedNodes(hierarchicalLocations.map(loc => loc.id))}
               >
                 Expand All
               </Button>
@@ -535,6 +537,6 @@ export default function Locations() {
         initialData={selectedLocation || {}}
         mode={formMode}
       />
-    </Box>
+    </PageLayout>
   );
 }
