@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Grid,
@@ -79,7 +79,6 @@ export default function Dashboard() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedTab, setSelectedTab] = useState(0);
-  const [animationDelay, setAnimationDelay] = useState(0);
   const [showFab, setShowFab] = useState(false);
   
   // Form dialog states
@@ -109,21 +108,33 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: dashboardService.getStats,
+    retry: false, // Disable retries for debugging
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: workOrderTrends, isLoading: trendsLoading, refetch: refetchTrends } = useQuery({
     queryKey: ['dashboard', 'trends'],
     queryFn: () => dashboardService.getTrends(7),
+    retry: false, // Disable retries for debugging
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: recentWorkOrders, isLoading: recentWOLoading, refetch: refetchRecentWO } = useQuery({
     queryKey: ['dashboard', 'recent-work-orders'],
     queryFn: () => dashboardService.getRecentWorkOrders(5),
+    retry: false, // Disable retries for debugging
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const { data: maintenanceScheduleData, isLoading: scheduleLoading, refetch: refetchSchedule } = useQuery({
     queryKey: ['dashboard', 'maintenance-stats'],
     queryFn: dashboardService.getMaintenanceStats,
+    retry: false, // Disable retries for debugging
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch PM schedules for calendar
@@ -170,92 +181,119 @@ export default function Dashboard() {
     },
   });
 
-  // Refresh all dashboard data
-  const refresh = async () => {
+  // Refresh all dashboard data - memoized to prevent re-renders
+  const refresh = useCallback(async () => {
     await Promise.all([
       refetchStats(),
       refetchTrends(),
       refetchRecentWO(),
       refetchSchedule()
     ]);
-  };
+  }, [refetchStats, refetchTrends, refetchRecentWO, refetchSchedule]);
 
   // Transform maintenance schedule data to match expected format
-  const maintenanceSchedule = maintenanceScheduleData || { today: 0, thisWeek: 0 };
+  const maintenanceSchedule = useMemo(() => {
+    return maintenanceScheduleData || { today: 0, thisWeek: 0 };
+  }, [maintenanceScheduleData]);
+
+  // Memoized PM schedules transformation to prevent infinite re-renders
+  const transformedPMSchedules = useMemo(() => {
+    if (!pmSchedules) return [];
+    
+    return pmSchedules.map((schedule: any) => ({
+      id: schedule.id,
+      title: schedule.title,
+      assetName: schedule.asset?.name || 'Unknown Asset',
+      assetId: schedule.assetId || 0,
+      scheduledDate: dayjs(schedule.nextDue).toDate(),
+      estimatedDuration: schedule.estimatedDuration || 60,
+      priority: schedule.priority || 'MEDIUM',
+      criticality: schedule.criticality || 'MEDIUM',
+      taskType: schedule.taskType || 'INSPECTION',
+      assignedTechnician: schedule.assignedTechnician,
+      location: schedule.asset?.location?.name || 'Unknown Location',
+      isOverdue: dayjs(schedule.nextDue).isBefore(dayjs(), 'day'),
+      description: schedule.description,
+      status: 'SCHEDULED',
+    }));
+  }, [pmSchedules]);
 
   // Combined loading and error states
   const isLoading = statsLoading || scheduleLoading;
   const error = statsError;
 
-  // Quick action handlers
-  const handleNewWorkOrder = () => {
+  // Memoized empty initial data to prevent re-renders
+  const emptyInitialData = useMemo(() => ({}), []);
+
+  // Quick action handlers - memoized to prevent re-renders
+  const handleNewWorkOrder = useCallback(() => {
     setWorkOrderFormOpen(true);
-  };
+  }, []);
 
-  const handleNewAsset = () => {
+  const handleNewAsset = useCallback(() => {
     setAssetFormOpen(true);
-  };
+  }, []);
 
-  const handleScheduleMaintenance = () => {
+  const handleScheduleMaintenance = useCallback(() => {
     setMaintenanceFormOpen(true);
-  };
+  }, []);
 
-  // Stat card click handlers
-  const handleTotalWorkOrdersClick = () => {
+  // Stat card click handlers - memoized to prevent re-renders
+  const handleTotalWorkOrdersClick = useCallback(() => {
     navigate('/work-orders');
-  };
+  }, [navigate]);
 
-  const handleActiveTasksClick = () => {
+  const handleActiveTasksClick = useCallback(() => {
     navigate('/work-orders?status=OPEN,IN_PROGRESS');
-  };
+  }, [navigate]);
 
-  const handleAssetsOnlineClick = () => {
+  const handleAssetsOnlineClick = useCallback(() => {
     navigate('/assets?status=ONLINE');
-  };
+  }, [navigate]);
 
-  const handleDueTodayClick = () => {
+  const handleDueTodayClick = useCallback(() => {
     setMaintenanceCalendarOpen(true);
-  };
+  }, []);
 
-  // Quick actions for immediate task execution
-  const quickActions: QuickAction[] = [
+  // Quick actions for immediate task execution - no memoization needed for simple arrays
+  const quickActions = [
     {
       label: 'New Work Order',
       icon: <AddIcon />,
-      color: 'primary',
+      color: 'primary' as const,
       onClick: handleNewWorkOrder,
     },
     {
       label: 'Add Asset',
       icon: <AssetIcon />,
-      color: 'secondary',
+      color: 'secondary' as const,
       onClick: handleNewAsset,
     },
     {
       label: 'Schedule Maintenance',
       icon: <ScheduleIcon />,
-      color: 'success',
+      color: 'success' as const,
       onClick: handleScheduleMaintenance,
     },
   ];
 
-  // Navigate to specific filtered views
-  const handleOverdueTasksClick = () => {
+  // Navigate to specific filtered views - memoized to prevent re-renders
+  const handleOverdueTasksClick = useCallback(() => {
     // Navigate to work orders page with overdue filter
     navigate('/work-orders?filter=overdue');
-  };
+  }, [navigate]);
 
-  const handleOfflineAssetsClick = () => {
+  const handleOfflineAssetsClick = useCallback(() => {
     // Navigate to assets page with offline filter
     navigate('/assets?status=OFFLINE');  
-  };
+  }, [navigate]);
 
-  const handleOutOfStockClick = () => {
+  const handleOutOfStockClick = useCallback(() => {
     // Navigate to inventory/parts page with out of stock filter
     navigate('/inventory?status=out-of-stock');
-  };
+  }, [navigate]);
 
-  // Calculate urgent items with click handlers
+  // Calculate urgent items with click handlers - no memoization needed
   const urgentItems = [
     { 
       count: stats?.workOrders?.overdue || 0, 
@@ -321,11 +359,13 @@ export default function Dashboard() {
         sx={{ 
           mb: 3,
           background: totalUrgent > 0 
-            ? `linear-gradient(135deg, ${theme.palette.error.main}20 0%, ${theme.palette.error.main}08 100%)`
-            : `linear-gradient(135deg, ${theme.palette.success.main}20 0%, ${theme.palette.success.main}08 100%)`,
-          border: totalUrgent > 0 ? `2px solid ${theme.palette.error.main}30` : `2px solid ${theme.palette.success.main}30`,
+            ? `linear-gradient(135deg, ${theme.palette.error.main}30 0%, ${theme.palette.error.main}15 100%)`
+            : `linear-gradient(135deg, ${theme.palette.success.main}30 0%, ${theme.palette.success.main}15 100%)`,
+          border: totalUrgent > 0 ? `3px solid ${theme.palette.error.main}60` : `3px solid ${theme.palette.success.main}60`,
           position: 'relative',
           overflow: 'hidden',
+          // Enhanced contrast for outdoor viewing
+          boxShadow: theme.shadows[6],
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -390,6 +430,10 @@ export default function Dashboard() {
                       fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
                       lineHeight: 1.2,
                       mb: 0.5,
+                      // Enhanced contrast for outdoor viewing
+                      color: theme.palette.text.primary,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                      fontWeight: 800,
                     }}
                   >
                     {totalUrgent > 0 ? `${totalUrgent} Items Need Attention` : 'All Systems Operational'}
@@ -398,8 +442,14 @@ export default function Dashboard() {
                 <Fade in timeout={1200}>
                   <Typography 
                     variant="body1" 
-                    color="text.secondary"
-                    sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                    sx={{ 
+                      fontSize: { xs: '0.875rem', sm: '1rem' },
+                      // Enhanced contrast for outdoor viewing
+                      color: theme.palette.text.primary,
+                      opacity: 0.9,
+                      textShadow: '0 1px 1px rgba(0,0,0,0.05)',
+                      fontWeight: 600,
+                    }}
                   >
                     {totalUrgent > 0 ? 'Immediate action required' : 'Everything looks good'}
                   </Typography>
@@ -484,6 +534,109 @@ export default function Dashboard() {
     </Grow>
   );
 
+  const PriorityTasksSection = () => (
+    <Fade in timeout={800}>
+      <Card sx={{ 
+        mb: 3,
+        border: `3px solid ${theme.palette.error.main}50`,
+        background: `linear-gradient(135deg, ${theme.palette.error.main}15 0%, ${theme.palette.warning.main}15 100%)`,
+        // Enhanced contrast and outdoor visibility
+        boxShadow: theme.shadows[8],
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 6,
+          background: `linear-gradient(90deg, ${theme.palette.error.main}, ${theme.palette.warning.main})`,
+          borderRadius: '8px 8px 0 0',
+        },
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <CardContent sx={{ pb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+            <WarningIcon sx={{ color: theme.palette.error.main, fontSize: 28 }} />
+            <Typography variant="h6" fontWeight={700} sx={{ color: theme.palette.error.main }}>
+              Priority Tasks
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {urgentItems.map((item, index) => (
+              <Grow key={index} in timeout={1000 + (index * 200)}>
+                <Card 
+                  sx={{ 
+                    bgcolor: 'white',
+                    border: `1px solid ${theme.palette[item.color].main}40`,
+                    borderLeft: `4px solid ${theme.palette[item.color].main}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: theme.shadows[4],
+                      bgcolor: `${theme.palette[item.color].main}05`,
+                    },
+                    '&:active': {
+                      transform: 'scale(0.98)',
+                    },
+                    // Enhanced touch targets for field use
+                    minHeight: 72,
+                  }}
+                  onClick={item.onClick}
+                >
+                  <CardContent sx={{ py: 2, px: 3, '&:last-child': { pb: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ 
+                          p: 1, 
+                          borderRadius: '50%', 
+                          bgcolor: `${theme.palette[item.color].main}20`,
+                          display: 'flex',
+                        }}>
+                          {React.cloneElement(item.icon, { 
+                            sx: { color: theme.palette[item.color].main, fontSize: 20 } 
+                          })}
+                        </Box>
+                        <Box>
+                          <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                            {item.count}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                            {item.label}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color={item.color}
+                        sx={{
+                          minWidth: 80,
+                          minHeight: 36,
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          textTransform: 'none',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          item.onClick();
+                        }}
+                      >
+                        View All
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grow>
+            ))}
+          </Box>
+        </CardContent>
+      </Card>
+    </Fade>
+  );
+
   const QuickActionsSection = () => (
     <Fade in timeout={800}>
       <Card sx={{ mb: 3 }}>
@@ -503,28 +656,36 @@ export default function Dashboard() {
                     color={action.color}
                     size="large"
                     sx={{ 
-                      py: { xs: 2, sm: 1.5 },
-                      px: { xs: 2, sm: 3 },
+                      py: { xs: 2.5, sm: 2 },
+                      px: { xs: 3, sm: 3 },
                       justifyContent: 'flex-start',
                       textAlign: 'left',
-                      minHeight: { xs: 56, sm: 48 },
-                      boxShadow: theme.shadows[2],
-                      borderRadius: 2,
+                      // Enhanced touch targets for field use (minimum 48px height)
+                      minHeight: { xs: 64, sm: 56 },
+                      boxShadow: theme.shadows[4],
+                      borderRadius: 3,
                       textTransform: 'none',
-                      fontSize: { xs: '1rem', sm: '0.875rem' },
-                      fontWeight: 600,
+                      fontSize: { xs: '1.1rem', sm: '1rem' },
+                      fontWeight: 700,
+                      // Enhanced contrast gradient
                       background: `linear-gradient(135deg, ${theme.palette[action.color].main}, ${theme.palette[action.color].dark})`,
+                      // Stronger border for outdoor visibility
+                      border: `2px solid ${theme.palette[action.color].main}80`,
+                      color: 'white',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
                       '&:hover': {
-                        transform: 'translateY(-2px) scale(1.02)',
-                        boxShadow: theme.shadows[8],
+                        transform: 'translateY(-3px) scale(1.02)',
+                        boxShadow: `${theme.shadows[12]}, 0 0 20px ${theme.palette[action.color].main}30`,
                         background: `linear-gradient(135deg, ${theme.palette[action.color].dark}, ${theme.palette[action.color].main})`,
+                        border: `2px solid ${theme.palette[action.color].light}`,
                       },
                       '&:active': {
-                        transform: 'scale(0.98)',
+                        transform: 'scale(0.96)',
                       },
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      // Touch optimizations
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      // Enhanced touch optimizations for gloved hands
                       WebkitTapHighlightColor: 'transparent',
+                      touchAction: 'manipulation',
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
@@ -661,9 +822,8 @@ export default function Dashboard() {
             </Box>
           ) : (
             <List sx={{ p: 0 }}>
-              {recentWorkOrders.map((workOrder: any, index: number) => (
-                <React.Fragment key={workOrder.id}>
-                  <Fade in timeout={1200 + (index * 100)}>
+              {recentWorkOrders.map((workOrder: any, index: number) => [
+                  <Fade key={workOrder.id || `workorder-${index}`} in timeout={1200 + (index * 100)}>
                     <ListItem 
                       sx={{ 
                         px: 0,
@@ -679,7 +839,13 @@ export default function Dashboard() {
                         minHeight: 72,
                         WebkitTapHighlightColor: 'transparent',
                       }}
-                      onClick={() => navigate(`/work-orders/${workOrder.id}`)}
+                      onClick={() => {
+                        if (workOrder.id) {
+                          navigate(`/work-orders/${workOrder.id}`);
+                        } else {
+                          console.warn('Work order ID is undefined:', workOrder);
+                        }
+                      }}
                     >
                       <ListItemAvatar>
                         <Avatar 
@@ -711,7 +877,7 @@ export default function Dashboard() {
                           </Typography>
                         }
                         secondary={
-                          <Box sx={{ mt: 0.5 }}>
+                          <Box component="span" sx={{ display: 'block' }}>
                             <Typography 
                               component="span" 
                               variant="body2" 
@@ -720,11 +886,12 @@ export default function Dashboard() {
                                 display: 'block',
                                 fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                 mb: 0.5,
+                                mt: 0.5,
                               }}
                             >
                               {workOrder.asset?.name || 'No asset assigned'}
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                            <Box component="span" sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                               <Chip
                                 label={workOrder.status.replace('_', ' ')}
                                 size="small"
@@ -750,6 +917,7 @@ export default function Dashboard() {
                             </Box>
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: 'div' }}
                       />
                       <ListItemSecondaryAction>
                         <IconButton 
@@ -757,7 +925,11 @@ export default function Dashboard() {
                           size="small"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/work-orders/${workOrder.id}`);
+                            if (workOrder.id) {
+                              navigate(`/work-orders/${workOrder.id}`);
+                            } else {
+                              console.warn('Work order ID is undefined in secondary action:', workOrder);
+                            }
                           }}
                           sx={{
                             minWidth: 36,
@@ -773,12 +945,11 @@ export default function Dashboard() {
                         </IconButton>
                       </ListItemSecondaryAction>
                     </ListItem>
-                  </Fade>
-                  {index < recentWorkOrders.length - 1 && (
-                    <Divider sx={{ my: 0.5, opacity: 0.5 }} />
-                  )}
-                </React.Fragment>
-              ))}
+                  </Fade>,
+                  index < recentWorkOrders.length - 1 && (
+                    <Divider key={`divider-${workOrder.id || index}`} sx={{ my: 0.5, opacity: 0.5 }} />
+                  )
+              ]).flat().filter(Boolean)}
             </List>
           )}
         </CardContent>
@@ -926,14 +1097,44 @@ export default function Dashboard() {
       maxWidth="xl"
     >
       <Box sx={{ position: 'relative' }}>
-        {/* Mobile: Single column layout */}
+        {/* Mobile: Single column layout - Field Technician Focused */}
         {isMobile ? (
           <Container maxWidth="sm" disableGutters>
             <StatusHeroSection />
-            <QuickActionsSection />
-            <KeyMetricsSection />
-            <RecentActivitySection />
-            <TrendsChartSection />
+            {totalUrgent > 0 ? (
+              // Priority-first view when there are urgent items
+              <>
+                <PriorityTasksSection />
+                <QuickActionsSection />
+                {selectedTab === 0 && <KeyMetricsSection />}
+                {selectedTab === 1 && <RecentActivitySection />}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                  <Tabs 
+                    value={selectedTab} 
+                    onChange={handleTabChange}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{
+                      '& .MuiTab-root': {
+                        minHeight: 48,
+                        fontSize: '0.875rem',
+                        fontWeight: 600,
+                      }
+                    }}
+                  >
+                    <Tab label="Overview" />
+                    <Tab label="Recent" />
+                  </Tabs>
+                </Box>
+              </>
+            ) : (
+              // Normal view when all systems operational
+              <>
+                <QuickActionsSection />
+                <KeyMetricsSection />
+                <RecentActivitySection />
+              </>
+            )}
           </Container>
         ) : (
           /* Desktop: Two column layout */
@@ -1034,6 +1235,7 @@ export default function Dashboard() {
         open={workOrderFormOpen}
         onClose={() => setWorkOrderFormOpen(false)}
         onSubmit={(data) => createWorkOrderMutation.mutate(data)}
+        initialData={emptyInitialData}
         mode="create"
         loading={createWorkOrderMutation.isPending}
       />
@@ -1087,22 +1289,7 @@ export default function Dashboard() {
             </Box>
           ) : (
             <PMCalendar
-              pmSchedules={pmSchedules?.map((schedule: any) => ({
-                id: schedule.id,
-                title: schedule.title,
-                assetName: schedule.asset?.name || 'Unknown Asset',
-                assetId: schedule.assetId || 0,
-                scheduledDate: dayjs(schedule.nextDue).toDate(),
-                estimatedDuration: schedule.estimatedDuration || 60,
-                priority: schedule.priority || 'MEDIUM',
-                criticality: schedule.criticality || 'MEDIUM',
-                taskType: schedule.taskType || 'INSPECTION',
-                assignedTechnician: schedule.assignedTechnician,
-                location: schedule.asset?.location?.name || 'Unknown Location',
-                isOverdue: dayjs(schedule.nextDue).isBefore(dayjs(), 'day'),
-                description: schedule.description,
-                status: 'SCHEDULED',
-              })) || []}
+              pmSchedules={transformedPMSchedules}
               onPMClick={(pm) => {
                 console.log('PM clicked:', pm);
                 // Could open maintenance details or edit form

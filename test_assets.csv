@@ -1,0 +1,4 @@
+Asset Name,Description,Serial Number,Location,Status
+Test Pump 1,Main circulation pump,SN123456,Main Building,ONLINE
+Test Compressor,Air compressor unit,SN789012,Main Building,ONLINE
+Test Motor,Electric motor,SN345678,Main Building,OFFLINE

@@ -89,6 +89,70 @@ enum MaintenanceType {
   CALIBRATION
 }
 
+enum PortalType {
+  MAINTENANCE_REQUEST
+  ASSET_REGISTRATION
+  EQUIPMENT_INFO
+  GENERAL_INQUIRY
+  INSPECTION_REPORT
+  SAFETY_INCIDENT
+}
+
+enum PortalStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVIEWED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  ASSIGNED
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  PHONE
+  NUMBER
+  SELECT
+  MULTI_SELECT
+  RADIO
+  CHECKBOX
+  DATE
+  TIME
+  DATETIME
+  FILE
+  IMAGE
+  LOCATION
+  ASSET_PICKER
+  USER_PICKER
+  PRIORITY
+  RATING
+  SIGNATURE
+  URL
+  CURRENCY
+}
+
+enum PortalFieldValidationType {
+  REQUIRED
+  MIN_LENGTH
+  MAX_LENGTH
+  MIN_VALUE
+  MAX_VALUE
+  PATTERN
+  EMAIL_FORMAT
+  PHONE_FORMAT
+  URL_FORMAT
+  FILE_SIZE
+  FILE_TYPE
+}
+
 
 // MODELS
 model User {
@@ -108,6 +172,18 @@ model User {
   meterReadings     MeterReading[]  @relation("MeterReadingRecordedBy")
   maintenancePerformed MaintenanceHistory[] @relation("MaintenancePerformedBy")
   maintenanceSigned    MaintenanceHistory[] @relation("MaintenanceSignedBy")
+  
+  // Portal relationships
+  portalSubmissionsAssigned PortalSubmission[]
+  portalCommunicationsSent  PortalCommunication[]
+  
+  // Comment relationships
+  comments         Comment[] @relation("UserComments")
+  editedComments   Comment[] @relation("CommentEdits")
+
+  // Import relationships
+  importHistory    ImportHistory[] @relation("ImportHistory")
+  rolledBackImports ImportHistory[] @relation("ImportRollback")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -125,6 +201,8 @@ model Organization {
   parts     Part[]
   workOrders WorkOrder[]
   pmTasks   PMTask[]
+  portals   Portal[]
+  importHistory ImportHistory[] @relation("ImportHistory")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,6 +235,9 @@ model Asset {
   // New relationships for PM system
   meterReadings     MeterReading[]     
   maintenanceHistory MaintenanceHistory[]
+  
+  // Portal relationships
+  portalSubmissions PortalSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -174,12 +255,17 @@ model Location {
   name           String
   description    String?
   address        String?
+  barcode        String?      // QR/Bar code from CSV
+  url            String?      // URL from CSV
   organizationId Int
   parentId       Int?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parent         Location?    @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children       Location[]   @relation("LocationHierarchy")
   assets         Asset[]
+  
+  // Portal relationships
+  portalSubmissions PortalSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -202,6 +288,9 @@ model WorkOrder {
   // New relationships for PM system
   tasks             WorkOrderTask[]
   maintenanceHistory MaintenanceHistory[]
+  
+  // Portal relationships
+  portalSubmissions PortalSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -245,6 +334,10 @@ model Part {
   sku            String?   @unique
   stockLevel     Int       @default(0)
   reorderPoint   Int       @default(0)
+  unitCost       Float?    // Unit Cost from CSV
+  totalCost      Float?    // Total Cost from CSV
+  barcode        String?   // QR/Bar code from CSV
+  location       String?   // Location from CSV (as string reference)
   organizationId Int
   supplierId     Int?
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -260,6 +353,8 @@ model Supplier {
   name           String
   contactInfo    String?
   address        String?
+  phone          String?  // Phone number from CSV
+  email          String?  // Email from CSV
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parts          Part[]
@@ -464,4 +559,299 @@ model MaintenanceHistory {
   @@index([performedAt])
   @@index([performedById])
   @@index([isCompleted])
+}
+
+// Portal Models
+model Portal {
+  id                   Int          @id @default(autoincrement())
+  name                 String
+  description          String?
+  type                 PortalType
+  status               PortalStatus @default(ACTIVE)
+  slug                 String       @unique
+  organizationId       Int
+  
+  // Portal Configuration
+  isActive             Boolean      @default(true)
+  allowAnonymous       Boolean      @default(true)
+  requiresApproval     Boolean      @default(false)
+  autoCreateWorkOrders Boolean      @default(true)
+  maxSubmissionsPerDay Int?
+  
+  // URLs and Access
+  publicUrl            String?
+  qrCodeUrl            String?
+  qrEnabled            Boolean      @default(true)
+  
+  // Branding
+  primaryColor         String       @default("#1976d2")
+  secondaryColor       String       @default("#ffffff") 
+  accentColor          String       @default("#f50057")
+  logoUrl              String?
+  backgroundImageUrl   String?
+  customCss            String?
+  
+  // Notifications
+  notificationEmails   String?      // JSON array of email addresses
+  autoResponderEnabled Boolean      @default(true)
+  autoResponderMessage String?
+  
+  // Rate Limiting
+  rateLimitEnabled     Boolean      @default(true)
+  rateLimitRequests    Int          @default(100)
+  rateLimitWindow      Int          @default(3600) // seconds
+  
+  // Organization relationship
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Related models
+  fields               PortalField[]
+  submissions          PortalSubmission[]
+  analytics            PortalAnalytics[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([status])
+  @@index([type])
+  @@index([slug])
+}
+
+model PortalField {
+  id           Int       @id @default(autoincrement())
+  portalId     Int
+  name         String    // Field name/key
+  label        String    // Display label
+  type         FieldType
+  orderIndex   Int       @default(0)
+  isRequired   Boolean   @default(false)
+  placeholder  String?
+  helpText     String?
+  
+  // Field Options (for select, radio, etc.)
+  options      Json?     // Array of options
+  
+  // Validation Rules
+  validations  Json?     // Array of validation rules
+  
+  // Conditional Logic
+  conditionalLogic Json? // Show/hide based on other fields
+  
+  // Styling
+  width        String?   // "full", "half", "third", etc.
+  cssClasses   String?
+  
+  // Relationships
+  portal       Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([portalId])
+  @@index([orderIndex])
+}
+
+model PortalSubmission {
+  id               Int              @id @default(autoincrement())
+  portalId         Int
+  trackingCode     String           @unique
+  status           SubmissionStatus @default(SUBMITTED)
+  
+  // Submission Data
+  submissionData   Json             // The actual form data
+  attachments      Json?            // File uploads
+  
+  // Submitter Information
+  submitterName    String?
+  submitterEmail   String?
+  submitterPhone   String?
+  submitterIp      String?
+  userAgent        String?
+  
+  // Processing Information
+  assignedToId     Int?
+  reviewNotes      String?
+  internalNotes    String?
+  reviewedAt       DateTime?
+  completedAt      DateTime?
+  
+  // Integration
+  workOrderId      Int?             // Created work order
+  assetId          Int?             // Related asset
+  locationId       Int?             // Related location
+  
+  // Priority and Classification
+  priority         WorkOrderPriority @default(MEDIUM)
+  category         String?
+  tags             String?          // Comma-separated tags
+  
+  // Relationships
+  portal           Portal           @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  assignedTo       User?            @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  workOrder        WorkOrder?       @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  asset            Asset?           @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  location         Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  communications   PortalCommunication[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([portalId])
+  @@index([status])
+  @@index([trackingCode])
+  @@index([assignedToId])
+  @@index([workOrderId])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model PortalCommunication {
+  id                 Int               @id @default(autoincrement())
+  submissionId       Int
+  message            String
+  messageType        String            @default("MESSAGE") // MESSAGE, STATUS_UPDATE, INTERNAL_NOTE
+  isInternal         Boolean           @default(false)
+  sentById           Int?
+  recipientEmail     String?
+  emailSent          Boolean           @default(false)
+  emailSentAt        DateTime?
+  
+  // Relationships
+  submission         PortalSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  sentBy             User?             @relation(fields: [sentById], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([submissionId])
+  @@index([messageType])
+  @@index([isInternal])
+}
+
+model PortalAnalytics {
+  id               Int      @id @default(autoincrement())
+  portalId         Int
+  date             DateTime @default(now())
+  
+  // Daily Metrics
+  views            Int      @default(0)
+  submissions      Int      @default(0)
+  completions      Int      @default(0)
+  bounceRate       Float?   // Percentage who left without submitting
+  avgCompletionTime Int?    // Seconds
+  
+  // Device/Browser Data
+  mobileViews      Int      @default(0)
+  desktopViews     Int      @default(0)
+  tabletViews      Int      @default(0)
+  
+  // Traffic Sources
+  qrCodeScans      Int      @default(0)
+  directAccess     Int      @default(0)
+  referralAccess   Int      @default(0)
+  
+  // Geographic Data (optional)
+  country          String?
+  region           String?
+  city             String?
+  
+  // Relationships
+  portal           Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([portalId, date])
+  @@index([portalId])
+  @@index([date])
+}
+
+// Comment System - Universal comments for all entities
+model Comment {
+  id           Int      @id @default(autoincrement())
+  
+  // Polymorphic association - allows linking to any entity
+  entityType   String   // "workOrder", "asset", "location", "part", "pmSchedule"
+  entityId     Int      // ID of the related entity
+  
+  // Comment content
+  content      String   
+  isInternal   Boolean  @default(false) // Internal notes vs visible to all
+  isPinned     Boolean  @default(false) // Pinned/important comments
+  
+  // User who created the comment
+  userId       Int
+  user         User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Optional parent for threaded comments
+  parentId     Int?
+  parent       Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[] @relation("CommentReplies")
+  
+  // Attachments (optional)
+  attachments  Json?    // Array of file URLs
+  
+  // Metadata
+  editedAt     DateTime?
+  editedById   Int?
+  editedBy     User?    @relation("CommentEdits", fields: [editedById], references: [id], onDelete: SetNull)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([parentId])
+}
+
+// Import History - Track CSV imports for audit and rollback
+model ImportHistory {
+  id               Int      @id @default(autoincrement())
+  importId         String   @unique // Unique identifier for the import batch
+  
+  // Import metadata
+  entityType       String   // Type of entity imported (assets, workorders, etc.)
+  fileName         String?  // Original CSV filename
+  totalRows        Int      // Total rows in CSV
+  importedCount    Int      // Successfully imported records
+  skippedCount     Int      // Skipped records due to errors
+  
+  // Import status
+  status           String   @default("COMPLETED") // COMPLETED, FAILED, PARTIAL
+  errors           Json?    // Array of error messages
+  warnings         Json?    // Array of warning messages
+  duplicates       Json?    // Array of duplicate records found
+  
+  // Column mappings used for import
+  columnMappings   Json     // Array of ColumnMapping objects
+  
+  // User and organization
+  userId           Int
+  organizationId   Int
+  user             User     @relation("ImportHistory", fields: [userId], references: [id], onDelete: Cascade)
+  organization     Organization @relation("ImportHistory", fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Rollback information
+  canRollback      Boolean  @default(true)
+  rolledBack       Boolean  @default(false)
+  rolledBackAt     DateTime?
+  rolledBackById   Int?
+  rolledBackBy     User?    @relation("ImportRollback", fields: [rolledBackById], references: [id], onDelete: SetNull)
+  
+  // Import execution time
+  startedAt        DateTime @default(now())
+  completedAt      DateTime?
+  durationMs       Int?     // Import duration in milliseconds
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([importId])
 }

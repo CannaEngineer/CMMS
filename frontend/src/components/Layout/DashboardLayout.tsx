@@ -34,6 +34,8 @@ import {
   AccountCircle as AccountCircleIcon,
   Sync as SyncIcon,
   SyncDisabled as SyncDisabledIcon,
+  FileDownload as ExportIcon,
+  QrCode as PortalIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -53,7 +55,8 @@ const navItems: NavItem[] = [
   { text: 'Maintenance', icon: <SettingsIcon />, path: '/maintenance' },
   { text: 'Inventory', icon: <InventoryIcon />, path: '/inventory' },
   { text: 'Locations', icon: <LocationIcon />, path: '/locations' },
-  { text: 'Reports', icon: <AssessmentIcon />, path: '/reports' },
+  { text: 'Portals', icon: <PortalIcon />, path: '/portals' },
+  { text: 'Export Center', icon: <ExportIcon />, path: '/exports' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },
 ];
 
@@ -268,7 +271,7 @@ export default function DashboardLayout() {
           </ListItemIcon>
           Profile
         </MenuItem>
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={() => { handleMenuClose(); navigate('/settings'); }}>
           <ListItemIcon>
             <SettingsIcon fontSize="small" />
           </ListItemIcon>

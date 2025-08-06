@@ -2,8 +2,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getAllLocations = async () => {
-  return prisma.location.findMany();
+export const getAllLocations = async (organizationId: number) => {
+  return prisma.location.findMany({
+    where: {
+      organizationId,
+    },
+  });
 };
 
 export const getLocationById = async (id: number) => {

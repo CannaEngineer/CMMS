@@ -5,7 +5,27 @@
       "Bash(npx ts-node:*)",
       "Bash(npm install:*)",
       "Bash(curl:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(node:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_install",
+      "mcp__playwright__browser_resize",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_wait_for",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "mcp__playwright__browser_evaluate",
+      "Bash(npx prisma migrate reset:*)",
+      "mcp__playwright__browser_handle_dialog",
+      "mcp__playwright__browser_file_upload"
     ],
     "deny": []
   }

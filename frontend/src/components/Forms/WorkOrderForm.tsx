@@ -48,7 +48,7 @@ interface WorkOrderFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: WorkOrderFormData) => void;
-  initialData?: Partial<WorkOrderFormData>;
+  initialData: Partial<WorkOrderFormData>;
   mode: 'create' | 'edit' | 'view';
   loading?: boolean;
 }
@@ -85,12 +85,12 @@ export default function WorkOrderForm({
   open,
   onClose,
   onSubmit,
-  initialData = {},
+  initialData,
   mode,
   loading = false,
 }: WorkOrderFormProps) {
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<WorkOrderFormData>({
+  const [formData, setFormData] = useState<WorkOrderFormData>(() => ({
     title: '',
     description: '',
     status: 'OPEN',
@@ -99,7 +99,7 @@ export default function WorkOrderForm({
     assignedToId: undefined,
     organizationId: 1,
     ...initialData,
-  });
+  }));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch assets for the dropdown
@@ -131,8 +131,8 @@ export default function WorkOrderForm({
   ];
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...formData, ...initialData });
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
 

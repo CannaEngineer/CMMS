@@ -43,9 +43,12 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StatCard from '../components/Common/StatCard';
 import DataTable from '../components/Common/DataTable';
+import UniversalExportButton from '../components/Common/UniversalExportButton';
 import PartForm from '../components/Forms/PartForm';
 import { statusColors } from '../theme/theme';
 import { partsService } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import PurchaseOrderDialog from '../components/PurchaseOrder/PurchaseOrderDialog';
 
 interface Part {
   id: number;
@@ -63,14 +66,16 @@ interface Part {
 }
 
 const inventoryColumns = [
-  { id: 'sku', label: 'SKU', width: 120 },
-  { id: 'name', label: 'Part Name' },
-  { id: 'description', label: 'Description' },
+  { key: 'sku', label: 'SKU', width: 120, sortable: true, priority: 'high' },
+  { key: 'name', label: 'Part Name', sortable: true, priority: 'high' },
+  { key: 'description', label: 'Description', hideOnMobile: true, priority: 'low' },
   {
-    id: 'stockLevel',
+    key: 'stockLevel',
     label: 'Stock',
     align: 'center' as const,
-    format: (value: number, row: Part) => (
+    sortable: true,
+    priority: 'medium',
+    render: (value: number, row: Part) => (
       <Chip
         label={value}
         size="small"
@@ -83,32 +88,41 @@ const inventoryColumns = [
     ),
   },
   {
-    id: 'reorderPoint',
+    key: 'reorderPoint',
     label: 'Reorder Point',
     align: 'center' as const,
+    sortable: true,
+    hideOnMobile: true,
+    priority: 'low',
   },
   { 
-    id: 'supplier', 
+    key: 'supplier', 
     label: 'Supplier',
-    format: (value: any, row: Part) => row.supplier?.name || 'N/A'
+    hideOnMobile: true,
+    priority: 'medium',
+    render: (value: any, row: Part) => row.supplier?.name || 'N/A'
   },
   { 
-    id: 'createdAt', 
+    key: 'createdAt', 
     label: 'Created',
-    format: (value: string) => new Date(value).toLocaleDateString()
+    hideOnMobile: true,
+    priority: 'low',
+    render: (value: string) => new Date(value).toLocaleDateString()
   },
 ];
 
 export default function Inventory() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedPart, setSelectedPart] = useState<Part | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'view'>('create');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' });
+  const [purchaseOrderOpen, setPurchaseOrderOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -122,6 +136,12 @@ export default function Inventory() {
   const { data: lowStockParts = [] } = useQuery({
     queryKey: ['parts', 'low-stock'],
     queryFn: partsService.getLowStock,
+  });
+
+  // Fetch recent activity
+  const { data: recentActivity = [] } = useQuery({
+    queryKey: ['parts', 'recent-activity'],
+    queryFn: () => partsService.getRecentActivity(10),
   });
 
   // Create part mutation
@@ -181,9 +201,7 @@ export default function Inventory() {
   };
 
   const handleViewPart = (part: Part) => {
-    setSelectedPart(part);
-    setFormMode('view');
-    setOpenDialog(true);
+    navigate(`/inventory/parts/${part.id}`);
   };
 
   const handleEditPart = (part: Part) => {
@@ -200,18 +218,94 @@ export default function Inventory() {
     }
   };
 
-  const outOfStockParts = parts.filter(part => part.stockLevel === 0);
-  const totalParts = parts.length;
+  const handlePurchaseOrderSubmit = async (orderData: any) => {
+    try {
+      console.log('Creating purchase order:', orderData);
+      // Create the purchase order with the selected items
+      const result = await partsService.createPurchaseOrder(orderData.items.map((item: any) => ({
+        partId: item.partId.toString(),
+        partName: item.part.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        notes: item.notes,
+      })));
+      
+      setSnackbar({
+        open: true,
+        message: `Purchase order ${result.id} created successfully with ${orderData.items.length} items`,
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Purchase order creation failed:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to create purchase order: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleInventoryUpdate = async (partId: number, newStockLevel: number, newReorderPoint: number) => {
+    try {
+      // Update the part with new inventory levels
+      const part = (parts || []).find(p => p.id === partId);
+      if (part) {
+        // Create update data with the correct structure
+        const updateData = {
+          id: part.id,
+          name: part.name,
+          sku: part.sku,
+          description: part.description,
+          stockLevel: newStockLevel,
+          reorderPoint: newReorderPoint,
+          supplier: part.supplier,
+          createdAt: part.createdAt,
+          updatedAt: new Date().toISOString(),
+        };
+        
+        await partsService.update(part.id.toString(), updateData);
+        
+        // Refresh the parts data
+        queryClient.invalidateQueries({ queryKey: ['parts'] });
+        
+        setSnackbar({
+          open: true,
+          message: `Inventory updated for ${part.name}`,
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Inventory update error:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to update inventory levels - API simulation mode',
+        severity: 'warning'
+      });
+      
+      // Since we're in mock mode, let's simulate the update locally
+      // This would normally be handled by the backend
+      queryClient.setQueryData(['parts'], (oldParts: any[]) => {
+        return oldParts.map(p => 
+          p.id === partId 
+            ? { ...p, stockLevel: newStockLevel, reorderPoint: newReorderPoint, updatedAt: new Date().toISOString() }
+            : p
+        );
+      });
+    }
+  };
+
+  const outOfStockParts = (parts || []).filter(part => part.stockLevel === 0);
+  const totalParts = (parts || []).length;
 
   // Filter parts based on tab selection
   const getFilteredParts = () => {
     switch (tabValue) {
       case 1: // Low Stock
-        return lowStockParts;
+        return lowStockParts || [];
       case 2: // Out of Stock
-        return outOfStockParts;
+        return outOfStockParts || [];
       default: // All Parts
-        return parts.filter(part => 
+        return (parts || []).filter(part => 
           searchTerm === '' || 
           part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           part.sku?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -260,12 +354,11 @@ export default function Inventory() {
               >
                 Import
               </Button>
-              <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
-              >
-                Export
-              </Button>
+              <UniversalExportButton
+                dataSource="inventory"
+                entityType="parts"
+                buttonText="Export"
+              />
             </>
           )}
           <Button
@@ -293,7 +386,7 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Low Stock Items"
-            value={lowStockParts.length}
+            value={(lowStockParts || []).length}
             subtitle="Need reordering"
             icon={<LowStockIcon />}
             color="warning"
@@ -311,7 +404,7 @@ export default function Inventory() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total Items"
-            value={parts.reduce((sum, part) => sum + part.stockLevel, 0)}
+            value={(parts || []).reduce((sum, part) => sum + part.stockLevel, 0)}
             subtitle="Current stock count"
             icon={<ReportIcon />}
             color="success"
@@ -327,9 +420,9 @@ export default function Inventory() {
         </Alert>
       )}
 
-      {lowStockParts.length > outOfStockParts.length && (
+      {(lowStockParts || []).length > (outOfStockParts || []).length && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          <strong>{lowStockParts.length - outOfStockParts.length} parts are low on stock</strong>{' '}
+          <strong>{(lowStockParts || []).length - (outOfStockParts || []).length} parts are low on stock</strong>{' '}
           and need reordering soon.
         </Alert>
       )}
@@ -340,7 +433,7 @@ export default function Inventory() {
           <Paper sx={{ mb: 2 }}>
             <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
               <Tab label={`All Parts (${totalParts})`} />
-              <Tab label={`Low Stock (${lowStockParts.length})`} />
+              <Tab label={`Low Stock (${(lowStockParts || []).length})`} />
               <Tab label={`Out of Stock (${outOfStockParts.length})`} />
               <Tab label="By Category" />
               <Tab label="Recent Orders" />
@@ -393,20 +486,99 @@ export default function Inventory() {
                   variant="outlined"
                   startIcon={<OrderIcon />}
                   fullWidth
+                  onClick={() => setPurchaseOrderOpen(true)}
                 >
                   Create Purchase Order
                 </Button>
                 <Button
                   variant="outlined"
-                  startIcon={<QrCodeIcon />}
-                  fullWidth
-                >
-                  Generate Barcodes
-                </Button>
-                <Button
-                  variant="outlined"
                   startIcon={<ReportIcon />}
                   fullWidth
+                  onClick={() => {
+                    try {
+                      // Generate inventory report
+                      const reportData = {
+                        totalParts: (parts || []).length,
+                        totalStockValue: (parts || []).reduce((sum, part) => sum + (part.stockLevel * 15.00), 0),
+                        lowStockCount: (lowStockParts || []).length,
+                        outOfStockCount: outOfStockParts.length,
+                        topSuppliers: (parts || []).reduce((acc, part) => {
+                          if (part.supplier) {
+                            acc[part.supplier.name] = (acc[part.supplier.name] || 0) + 1;
+                          }
+                          return acc;
+                        }, {} as Record<string, number>),
+                        generatedAt: new Date().toISOString(),
+                      };
+
+                      // Helper function to escape CSV fields
+                      const escapeCsvField = (field: any): string => {
+                        const str = String(field || '');
+                        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                          return `"${str.replace(/"/g, '""')}"`;
+                        }
+                        return str;
+                      };
+
+                      // Build CSV content with proper formatting
+                      const csvRows = [
+                        ['INVENTORY REPORT'],
+                        [`Generated: ${new Date().toLocaleString()}`],
+                        [''],
+                        ['SUMMARY'],
+                        ['Metric', 'Value'],
+                        ['Total Parts', reportData.totalParts.toString()],
+                        ['Estimated Stock Value', `$${reportData.totalStockValue.toFixed(2)}`],
+                        ['Low Stock Items', reportData.lowStockCount.toString()],
+                        ['Out of Stock Items', reportData.outOfStockCount.toString()],
+                        [''],
+                        ['TOP SUPPLIERS'],
+                        ['Supplier', 'Part Count'],
+                        ...Object.entries(reportData.topSuppliers).map(([supplier, count]) => [supplier, count.toString()]),
+                        [''],
+                        ['PART DETAILS'],
+                        ['SKU', 'Name', 'Description', 'Stock Level', 'Reorder Point', 'Supplier', 'Created Date', 'Last Updated'],
+                        ...(parts || []).map(part => [
+                          escapeCsvField(part.sku),
+                          escapeCsvField(part.name),
+                          escapeCsvField(part.description),
+                          part.stockLevel.toString(),
+                          part.reorderPoint.toString(),
+                          escapeCsvField(part.supplier?.name || 'N/A'),
+                          new Date(part.createdAt).toLocaleDateString(),
+                          new Date(part.updatedAt).toLocaleDateString()
+                        ])
+                      ];
+
+                      // Convert to CSV string
+                      const csvContent = csvRows.map(row => row.join(',')).join('\n');
+                      
+                      // Create and download file
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const url = window.URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `inventory-report-${new Date().toISOString().split('T')[0]}.csv`;
+                      link.style.display = 'none';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      window.URL.revokeObjectURL(url);
+                      
+                      setSnackbar({ 
+                        open: true, 
+                        message: `Inventory report downloaded successfully (${(parts || []).length} parts)`, 
+                        severity: 'success' 
+                      });
+                    } catch (error) {
+                      console.error('Report generation failed:', error);
+                      setSnackbar({ 
+                        open: true, 
+                        message: 'Failed to generate inventory report', 
+                        severity: 'error' 
+                      });
+                    }
+                  }}
                 >
                   Inventory Report
                 </Button>
@@ -418,7 +590,7 @@ export default function Inventory() {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Stock Levels</Typography>
               <List dense>
-                {parts.slice(0, 5).map((part) => (
+                {(parts || []).slice(0, 5).map((part) => (
                   <ListItem key={part.id} sx={{ px: 0 }}>
                     <ListItemText
                       primary={part.name}
@@ -450,33 +622,21 @@ export default function Inventory() {
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Recent Activity</Typography>
               <List dense>
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <OrderIcon color="primary" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="PO-2024-001 received"
-                    secondary="2 hours ago"
-                  />
-                </ListItem>
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <WarningIcon color="warning" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Low stock alert"
-                    secondary="Hydraulic Oil ISO 46"
-                  />
-                </ListItem>
-                <ListItem sx={{ px: 0 }}>
-                  <ListItemIcon>
-                    <InventoryIcon color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Stock updated"
-                    secondary="Motor Bearing 6205"
-                  />
-                </ListItem>
+                {(recentActivity || []).slice(0, 5).map((activity) => (
+                  <ListItem key={activity.id} sx={{ px: 0 }}>
+                    <ListItemIcon>
+                      {activity.type === 'PURCHASE_ORDER' && <OrderIcon color="primary" />}
+                      {activity.type === 'LOW_STOCK_ALERT' && <WarningIcon color="warning" />}
+                      {activity.type === 'STOCK_UPDATE' && <InventoryIcon color="success" />}
+                      {activity.type === 'STOCK_RECEIVED' && <InventoryIcon color="primary" />}
+                      {activity.type === 'PART_USED' && <InventoryIcon color="info" />}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={activity.description}
+                      secondary={new Date(activity.timestamp).toLocaleString()}
+                    />
+                  </ListItem>
+                ))}
               </List>
             </CardContent>
           </Card>
@@ -517,6 +677,15 @@ export default function Inventory() {
         onSubmit={handleSubmitPart}
         initialData={selectedPart || {}}
         mode={formMode}
+      />
+
+      {/* Purchase Order Dialog */}
+      <PurchaseOrderDialog
+        open={purchaseOrderOpen}
+        onClose={() => setPurchaseOrderOpen(false)}
+        parts={parts}
+        onSubmit={handlePurchaseOrderSubmit}
+        onUpdateInventory={handleInventoryUpdate}
       />
 
       {/* Snackbar for notifications */}

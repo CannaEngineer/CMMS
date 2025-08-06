@@ -11,7 +11,8 @@ const locationSchema = z.object({
 });
 
 export const getAllLocations = async (req: Request, res: Response) => {
-  const locations = await locationService.getAllLocations();
+  const { organizationId } = req.user;
+  const locations = await locationService.getAllLocations(organizationId);
   res.status(200).json(locations);
 };
 

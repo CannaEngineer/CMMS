@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import * as authService from './auth.service';
@@ -21,7 +20,11 @@ export const register = async (req: Request, res: Response) => {
     const user = await authService.register(data);
     res.status(201).json(user);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+    } else {
+        res.status(400).json({ error: 'An unknown error occurred' });
+    }
   }
 };
 
@@ -33,6 +36,10 @@ export const login = async (req: Request, res: Response) => {
     res.status(200).json({ user, token });
   } catch (error) {
     console.error("Login error:", error); // Added console.error
-    res.status(400).json({ error: error.message });
+    if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+    } else {
+        res.status(400).json({ error: 'An unknown error occurred' });
+    }
   }
 };

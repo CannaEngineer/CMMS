@@ -1,0 +1,5 @@
+Name,Description,Serial Number,Location,Status,Criticality,Manufacturer
+Production Line A,Main production equipment,PL-001,Factory Floor,ONLINE,HIGH,Manufacturing Co
+Backup Generator,Emergency power backup,GEN-002,Basement,OFFLINE,IMPORTANT,Power Corp
+Quality Check Station,Final quality inspection,QC-003,QA Department,ONLINE,MEDIUM,QA Systems
+Material Handler,Automated material handling,MH-004,Warehouse,ONLINE,LOW,Automation Ltd

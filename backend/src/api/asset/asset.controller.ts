@@ -21,12 +21,14 @@ const assetSchema = z.object({
 });
 
 export const getAllAssets = async (req: Request, res: Response) => {
-  const assets = await assetService.getAllAssets();
+  const { organizationId } = req.user;
+  const assets = await assetService.getAllAssets(organizationId);
   res.status(200).json(assets);
 };
 
 export const getAssetById = async (req: Request, res: Response) => {
-  const asset = await assetService.getAssetById(Number(req.params.id));
+  const { organizationId } = req.user;
+  const asset = await assetService.getAssetById(Number(req.params.id), organizationId);
   if (asset) {
     res.status(200).json(asset);
   } else {
@@ -46,8 +48,9 @@ export const createAsset = async (req: Request, res: Response) => {
 
 export const updateAsset = async (req: Request, res: Response) => {
   try {
+    const { organizationId } = req.user;
     const data = assetSchema.partial().parse(req.body);
-    const asset = await assetService.updateAsset(Number(req.params.id), data);
+    const asset = await assetService.updateAsset(Number(req.params.id), data, organizationId);
     res.status(200).json(asset);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -55,6 +58,7 @@ export const updateAsset = async (req: Request, res: Response) => {
 };
 
 export const deleteAsset = async (req: Request, res: Response) => {
-  await assetService.deleteAsset(Number(req.params.id));
+  const { organizationId } = req.user;
+  await assetService.deleteAsset(Number(req.params.id), organizationId);
   res.status(204).send();
 };

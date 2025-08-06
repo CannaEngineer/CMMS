@@ -41,15 +41,26 @@ import {
   OutlinedInput,
   Skeleton,
   alpha,
+  Collapse,
+  BottomNavigation,
+  BottomNavigationAction,
+  Slide,
+  Fade,
+  Grow,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  QrCode as QrCodeIcon,
+  QrCodeScanner as QrScannerIcon,
+  Print as PrintIcon,
   MoreVert as MoreVertIcon,
   Build as BuildIcon,
   CheckCircle as OnlineIcon,
+  CheckCircle,
   Cancel as OfflineIcon,
   Warning as WarningIcon,
   NavigateNext as NavigateNextIcon,
@@ -63,11 +74,28 @@ import {
   Refresh as RefreshIcon,
   Clear as ClearIcon,
   ArrowBack as ArrowBackIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  LocationOn as LocationIcon,
+  Schedule as ScheduleIcon,
+  Assignment as WorkOrderIcon,
+  CheckBox as CheckBoxIcon,
+  CheckBoxOutlineBlank as CheckBoxBlankIcon,
+  GridView as GridViewIcon,
+  ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { statusColors } from '../theme/theme';
 import AssetForm from '../components/Forms/AssetForm';
+import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { assetsService } from '../services/api';
+import { useSwipeable } from 'react-swipeable';
+import QRScanner from '../components/QR/QRScanner';
+import QRActionHandler from '../components/QR/QRActionHandler';
+import { QRScanResult } from '../types/qr';
+import { qrService } from '../services/qrService';
+import { useNavigate } from 'react-router-dom';
+import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 
 interface Asset {
   id: number;
@@ -108,6 +136,7 @@ export default function Assets() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // State management
   const [searchTerm, setSearchTerm] = useState('');
@@ -119,15 +148,33 @@ export default function Assets() {
   
   // Mobile-specific state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [activeFilters, setActiveFilters] = useState<{
+    status: string[];
+    criticality: string[];
+    location: string[];
+  }>({
+    status: [],
+    criticality: [],
+    location: [],
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
+  const [selectedDetailAsset, setSelectedDetailAsset] = useState<Asset | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'criticality' | 'updated'>('name');
+  const [quickActionMenuOpen, setQuickActionMenuOpen] = useState(false);
   
-  // Refs for swipe functionality
-  const containerRef = useRef<HTMLElement>(null);
-  const startY = useRef<number>(0);
-  const currentY = useRef<number>(0);
+  // QR-related state
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [qrScanResult, setQrScanResult] = useState<QRScanResult | null>(null);
+  
+  // Refs for scroll and touch functionality
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const pullIndicatorRef = useRef<HTMLDivElement>(null);
 
   // Query for assets data
   const { 
@@ -140,9 +187,41 @@ export default function Assets() {
     queryFn: assetsService.getAll,
   });
 
+  // Helper function to generate QR code for asset
+  const generateAssetQRCode = useCallback(async (assetData: any) => {
+    try {
+      const qrData = qrService.createQRCodeData('asset', assetData.id?.toString() || 'temp', {
+        name: assetData.name,
+        location: assetData.location?.name,
+        serialNumber: assetData.serialNumber,
+      });
+      const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
+      return qrCodeUrl;
+    } catch (error) {
+      console.error('Failed to generate QR code for asset:', error);
+      return null;
+    }
+  }, []);
+
   // Mutations
   const createAssetMutation = useMutation({
-    mutationFn: assetsService.create,
+    mutationFn: async (assetData: any) => {
+      // Create the asset first
+      const createdAsset = await assetsService.create(assetData);
+      
+      // Generate QR code with the actual asset ID
+      const qrCodeUrl = await generateAssetQRCode({ ...assetData, id: createdAsset.id });
+      
+      // Update the asset with the QR code if generation succeeded
+      if (qrCodeUrl && createdAsset.id) {
+        await assetsService.update(createdAsset.id.toString(), {
+          ...createdAsset,
+          barcode: qrCodeUrl
+        });
+      }
+      
+      return createdAsset;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setOpenDialog(false);
@@ -151,7 +230,15 @@ export default function Assets() {
   });
 
   const updateAssetMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => assetsService.update(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // If the asset doesn't have a QR code (barcode), generate one
+      if (!data.barcode) {
+        const qrCodeUrl = await generateAssetQRCode({ ...data, id });
+        data = { ...data, barcode: qrCodeUrl };
+      }
+      
+      return assetsService.update(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setOpenDialog(false);
@@ -166,7 +253,7 @@ export default function Assets() {
     },
   });
 
-  // Pull to refresh functionality
+  // Pull to refresh with visual indicator
   const handlePullToRefresh = useCallback(async () => {
     if (isRefreshing) return;
     
@@ -178,51 +265,132 @@ export default function Assets() {
     }
   }, [refetch, isRefreshing]);
 
-  // Touch handlers for pull to refresh
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startY.current = e.touches[0].clientY;
-  };
+  // Swipe handlers using react-swipeable
+  const swipeHandlers = useSwipeable({
+    onSwipedDown: (event) => {
+      if (scrollContainerRef.current?.scrollTop === 0) {
+        handlePullToRefresh();
+      }
+    },
+    onSwipedLeft: (event) => {
+      // Handle swipe left for quick actions
+      const assetCard = event.event.target as HTMLElement;
+      const assetId = assetCard.closest('[data-asset-id]')?.getAttribute('data-asset-id');
+      if (assetId && !multiSelectMode) {
+        const asset = assets.find(a => a.id === parseInt(assetId));
+        if (asset) {
+          handleQuickEdit(asset);
+        }
+      }
+    },
+    onSwipedRight: (event) => {
+      // Handle swipe right for details
+      const assetCard = event.event.target as HTMLElement;
+      const assetId = assetCard.closest('[data-asset-id]')?.getAttribute('data-asset-id');
+      if (assetId && !multiSelectMode) {
+        const asset = assets.find(a => a.id === parseInt(assetId));
+        if (asset) {
+          handleShowDetails(asset);
+        }
+      }
+    },
+    trackMouse: false,
+    trackTouch: true,
+  });
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!containerRef.current) return;
+  // Filter assets based on search and filters
+  const filteredAssets = (assets || []).filter((asset: Asset) => {
+    const matchesSearch = asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         asset.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         asset.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    currentY.current = e.touches[0].clientY;
-    const scrollTop = containerRef.current.scrollTop;
+    const matchesStatus = activeFilters.status.length === 0 || 
+                         activeFilters.status.includes(asset.status);
     
-    if (scrollTop === 0 && currentY.current > startY.current + 50) {
-      e.preventDefault();
+    const matchesCriticality = activeFilters.criticality.length === 0 || 
+                              activeFilters.criticality.includes(asset.criticality);
+    
+    const matchesLocation = activeFilters.location.length === 0 || 
+                           (asset.location && activeFilters.location.includes(asset.location.name));
+    
+    return matchesSearch && matchesStatus && matchesCriticality && matchesLocation;
+  });
+
+  // Sort filtered assets
+  const sortedAssets = [...filteredAssets].sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'status':
+        return a.status.localeCompare(b.status);
+      case 'criticality':
+        const criticalityOrder = { 'IMPORTANT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+        return criticalityOrder[a.criticality] - criticalityOrder[b.criticality];
+      case 'updated':
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      default:
+        return 0;
     }
+  });
+
+  // Get unique locations for filter
+  const uniqueLocations = Array.from(new Set((assets || []).map((a: Asset) => a.location?.name).filter(Boolean)));
+
+  // Enhanced handlers
+  const handleShowDetails = (asset: Asset) => {
+    navigate(`/assets/${asset.id}`);
   };
 
-  const handleTouchEnd = () => {
-    if (!containerRef.current) return;
-    
-    const scrollTop = containerRef.current.scrollTop;
-    const pullDistance = currentY.current - startY.current;
-    
-    if (scrollTop === 0 && pullDistance > 80) {
-      handlePullToRefresh();
-    }
-  };
-
-  // Filter management
-  const handleFilterToggle = (filter: string) => {
-    setActiveFilters(prev => 
-      prev.includes(filter) 
-        ? prev.filter(f => f !== filter)
-        : [...prev, filter]
-    );
-  };
-
-  const clearAllFilters = () => {
-    setActiveFilters([]);
-    setSearchTerm('');
-  };
-
-  const handleAssetClick = (asset: Asset) => {
+  const handleQuickEdit = (asset: Asset) => {
     setSelectedAsset(asset);
-    setFormMode('view');
+    setFormMode('edit');
     setOpenDialog(true);
+  };
+
+  const handleCardClick = (asset: Asset) => {
+    if (multiSelectMode) {
+      handleSelectCard(asset.id);
+    } else {
+      handleShowDetails(asset);
+    }
+  };
+
+  const handleSelectCard = (assetId: number) => {
+    setSelectedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(assetId)) {
+        newSet.delete(assetId);
+        if (newSet.size === 0) {
+          setMultiSelectMode(false);
+        }
+      } else {
+        newSet.add(assetId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleLongPress = useCallback((assetId: number) => {
+    if (!multiSelectMode) {
+      setMultiSelectMode(true);
+      setSelectedCards(new Set([assetId]));
+      // Haptic feedback if available
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }
+  }, [multiSelectMode]);
+
+  const exitMultiSelectMode = () => {
+    setMultiSelectMode(false);
+    setSelectedCards(new Set());
+  };
+
+  const handleBatchDelete = async () => {
+    const selectedIds = Array.from(selectedCards);
+    // Implementation for batch delete
+    console.log('Batch delete:', selectedIds);
+    exitMultiSelectMode();
   };
 
   const handleCreateAsset = () => {
@@ -239,1120 +407,1058 @@ export default function Assets() {
     }
   };
 
-  const handleEditAsset = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setFormMode('edit');
-    setOpenDialog(true);
-    setAnchorEl(null);
-  };
-
-  const handleViewAsset = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setFormMode('view');
-    setOpenDialog(true);
-    setAnchorEl(null);
-  };
-
   const handleDeleteAsset = (asset: Asset) => {
-    if (window.confirm(`Are you sure you want to delete asset "${asset.name}"?`)) {
+    if (window.confirm(`Are you sure you want to delete ${asset.name}?`)) {
       deleteAssetMutation.mutate(asset.id.toString());
     }
-    setAnchorEl(null);
   };
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, asset: Asset) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedAssetId(asset.id);
-  };
+  // QR-related handlers
+  const handleQRScan = useCallback((result: QRScanResult) => {
+    setQrScanResult(result);
+    setQrScannerOpen(false);
+  }, []);
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setSelectedAssetId(null);
-  };
 
-  // Calculate health score based on work orders and maintenance schedule
-  const calculateHealthScore = (asset: Asset): number => {
-    let score = 100;
+  const handleQRActionClose = useCallback(() => {
+    setQrScanResult(null);
+  }, []);
+
+  // Mobile-optimized Asset Card Component
+  const MobileAssetCard = ({ asset }: { asset: Asset }) => {
+    const isExpanded = expandedCards.has(asset.id);
+    const isSelected = selectedCards.has(asset.id);
+    const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
     
-    // Reduce score based on recent work orders
-    if (asset.workOrders) {
-      const recentWorkOrders = asset.workOrders.filter(wo => {
-        const workOrderDate = new Date(wo.createdAt);
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        return workOrderDate > thirtyDaysAgo;
-      });
-      score -= recentWorkOrders.length * 15;
-    }
+    const handleTouchStart = () => {
+      const timer = setTimeout(() => {
+        handleLongPress(asset.id);
+      }, 500);
+      setTouchTimer(timer);
+    };
     
-    // Reduce score if asset is offline
-    if (asset.status === 'OFFLINE') {
-      score -= 50;
-    }
-    
-    // Reduce score if maintenance is overdue
-    if (asset.pmSchedules && asset.pmSchedules.length > 0) {
-      const nextDue = new Date(asset.pmSchedules[0].nextDue);
-      const now = new Date();
-      if (nextDue < now) {
-        const daysOverdue = Math.floor((now.getTime() - nextDue.getTime()) / (1000 * 60 * 60 * 24));
-        score -= Math.min(daysOverdue * 2, 30);
+    const handleTouchEnd = () => {
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        setTouchTimer(null);
       }
-    }
-    
-    return Math.max(0, Math.min(100, score));
-  };
+    };
 
-  // Enhanced filter logic
-  const filteredAssets = assets.filter((asset: Asset) => {
-    const matchesSearch = searchTerm === '' || 
-      asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.location?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!matchesSearch) return false;
-    
-    // Apply active filters
-    if (activeFilters.length === 0) return true;
-    
-    return activeFilters.some(filter => {
-      switch (filter) {
-        case 'online':
-          return asset.status === 'ONLINE';
-        case 'offline':
-          return asset.status === 'OFFLINE';
-        case 'critical':
-          return asset.criticality === 'HIGH' || asset.criticality === 'IMPORTANT';
-        case 'maintenance-due':
-          if (!asset.pmSchedules || asset.pmSchedules.length === 0) return false;
-          const nextDue = new Date(asset.pmSchedules[0].nextDue);
-          const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-          return nextDue <= oneWeekFromNow;
-        case 'low-health':
-          return calculateHealthScore(asset) < 60;
+    const getStatusIcon = () => {
+      switch (asset.status) {
+        case 'ONLINE':
+          return <OnlineIcon sx={{ color: theme.palette.success.main, fontSize: 20 }} />;
+        case 'OFFLINE':
+          return <OfflineIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />;
         default:
-          return false;
+          return <WarningIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />;
       }
-    });
-  });
+    };
 
-  // Enhanced stats calculation
-  const assetStats = {
-    total: assets.length,
-    online: assets.filter((asset: Asset) => asset.status === 'ONLINE').length,
-    offline: assets.filter((asset: Asset) => asset.status === 'OFFLINE').length,
-    maintenanceDue: assets.filter((asset: Asset) => {
-      if (!asset.pmSchedules || asset.pmSchedules.length === 0) return false;
-      const nextDue = new Date(asset.pmSchedules[0].nextDue);
-      const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-      return nextDue <= oneWeekFromNow;
-    }).length,
-    critical: assets.filter((asset: Asset) => 
-      asset.criticality === 'HIGH' || asset.criticality === 'IMPORTANT'
-    ).length,
-    lowHealth: assets.filter((asset: Asset) => calculateHealthScore(asset) < 60).length,
-  };
-
-  // Stats cards data for mobile
-  const statsCards = [
-    {
-      id: 'total',
-      label: 'Total Assets',
-      value: assetStats.total,
-      icon: BuildIcon,
-      color: theme.palette.primary.main,
-      bgColor: alpha(theme.palette.primary.main, 0.1),
-    },
-    {
-      id: 'online',
-      label: 'Online',
-      value: assetStats.online,
-      icon: OnlineIcon,
-      color: theme.palette.success.main,
-      bgColor: alpha(theme.palette.success.main, 0.1),
-      filter: 'online',
-    },
-    {
-      id: 'offline',
-      label: 'Offline',
-      value: assetStats.offline,
-      icon: OfflineIcon,
-      color: theme.palette.error.main,
-      bgColor: alpha(theme.palette.error.main, 0.1),
-      filter: 'offline',
-    },
-    {
-      id: 'maintenance',
-      label: 'Maintenance Due',
-      value: assetStats.maintenanceDue,
-      icon: WarningIcon,
-      color: theme.palette.warning.main,
-      bgColor: alpha(theme.palette.warning.main, 0.1),
-      filter: 'maintenance-due',
-    },
-    {
-      id: 'critical',
-      label: 'Critical',
-      value: assetStats.critical,
-      icon: WarningIcon,
-      color: theme.palette.secondary.main,
-      bgColor: alpha(theme.palette.secondary.main, 0.1),
-      filter: 'critical',
-    },
-    {
-      id: 'lowHealth',
-      label: 'Low Health',
-      value: assetStats.lowHealth,
-      icon: WarningIcon,
-      color: theme.palette.error.dark,
-      bgColor: alpha(theme.palette.error.main, 0.1),
-      filter: 'low-health',
-    },
-  ];
-
-  const getHealthColor = (score: number) => {
-    if (score >= 80) return theme.palette.success.main;
-    if (score >= 60) return theme.palette.warning.main;
-    return theme.palette.error.main;
-  };
-
-  if (error) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Alert 
-          severity="error" 
-          action={
-            <Button color="inherit" size="small" onClick={() => refetch()}>
-              Retry
-            </Button>
-          }
-        >
-          Error loading assets: {error.message}
-        </Alert>
-      </Container>
-    );
-  }
-
-  // Enhanced mobile-first asset card component
-  const AssetCard = ({ asset }: { asset: Asset }) => {
-    const healthScore = calculateHealthScore(asset);
-    const isLowHealth = healthScore < 60;
-    const isMaintenanceDue = asset.pmSchedules && asset.pmSchedules.length > 0 && 
-      new Date(asset.pmSchedules[0].nextDue) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const getCriticalityColor = () => {
+      switch (asset.criticality) {
+        case 'IMPORTANT':
+          return theme.palette.error.main;
+        case 'HIGH':
+          return theme.palette.warning.main;
+        case 'MEDIUM':
+          return theme.palette.info.main;
+        case 'LOW':
+          return theme.palette.success.main;
+        default:
+          return theme.palette.grey[500];
+      }
+    };
 
     return (
-      <Card 
-        sx={{ 
-          height: '100%', 
-          cursor: 'pointer',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      <Card
+        data-asset-id={asset.id}
+        sx={{
+          mb: 1.5,
           position: 'relative',
-          borderLeft: `4px solid ${asset.status === 'ONLINE' ? theme.palette.success.main : theme.palette.error.main}`,
-          minHeight: { xs: 280, sm: 320 },
-          '&:hover': { 
-            transform: isMobile ? 'none' : 'translateY(-4px)',
-            boxShadow: isMobile ? theme.shadows[2] : theme.shadows[8],
-          },
+          transition: 'all 0.3s ease',
+          transform: isSelected ? 'scale(0.95)' : 'scale(1)',
+          boxShadow: isSelected ? theme.shadows[8] : theme.shadows[1],
+          border: isSelected ? `2px solid ${theme.palette.primary.main}` : 'none',
           '&:active': {
-            transform: isMobile ? 'scale(0.98)' : 'none',
+            transform: 'scale(0.98)',
           },
-          // Status indicator background
-          backgroundColor: isLowHealth || isMaintenanceDue ? 
-            alpha(theme.palette.warning.main, 0.02) : 'background.paper',
         }}
-        onClick={() => handleAssetClick(asset)}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => handleCardClick(asset)}
       >
-        {/* Urgent status indicator */}
-        {(isLowHealth || isMaintenanceDue) && (
+        {/* Selection checkbox for multi-select mode */}
+        {multiSelectMode && (
           <Box
             sx={{
               position: 'absolute',
               top: 8,
               left: 8,
-              zIndex: 1,
-              backgroundColor: theme.palette.warning.main,
-              borderRadius: '50%',
-              p: 0.5,
-              animation: 'pulse 2s infinite',
-              '@keyframes pulse': {
-                '0%': { opacity: 1, transform: 'scale(1)' },
-                '50%': { opacity: 0.7, transform: 'scale(1.1)' },
-                '100%': { opacity: 1, transform: 'scale(1)' },
-              },
+              zIndex: 2,
             }}
           >
-            <WarningIcon sx={{ fontSize: 16, color: 'white' }} />
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelectCard(asset.id);
+              }}
+            >
+              {isSelected ? <CheckBoxIcon color="primary" /> : <CheckBoxBlankIcon />}
+            </IconButton>
           </Box>
         )}
 
-        <CardMedia
-          component="div"
-          sx={{
-            height: { xs: 120, sm: 140 },
-            backgroundColor: alpha(theme.palette.primary.main, 0.05),
-            backgroundImage: asset.imageUrl ? `url(${asset.imageUrl})` : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
-        >
-          {!asset.imageUrl && (
-            <Avatar
-              sx={{
-                width: { xs: 48, sm: 60 },
-                height: { xs: 48, sm: 60 },
-                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-              }}
-            >
-              <BuildIcon sx={{ 
-                fontSize: { xs: 24, sm: 30 }, 
-                color: theme.palette.primary.main 
-              }} />
-            </Avatar>
-          )}
-        </CardMedia>
+        <CardContent sx={{ pb: 1.5, pt: multiSelectMode ? 4 : 2 }}>
+          {/* Primary info - always visible */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '1.1rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  mb: 0.5,
+                }}
+              >
+                {asset.name}
+              </Typography>
+              
+              {/* Status and criticality chips */}
+              <Stack direction="row" spacing={0.5} sx={{ mb: 1 }}>
+                <Chip
+                  icon={getStatusIcon()}
+                  label={asset.status}
+                  size="small"
+                  sx={{
+                    height: 24,
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                  }}
+                />
+                <Chip
+                  label={asset.criticality}
+                  size="small"
+                  sx={{
+                    height: 24,
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    bgcolor: alpha(getCriticalityColor(), 0.1),
+                    color: getCriticalityColor(),
+                    border: `1px solid ${alpha(getCriticalityColor(), 0.3)}`,
+                  }}
+                />
+              </Stack>
 
-        <CardContent sx={{ p: { xs: 2, sm: 2 }, '&:last-child': { pb: { xs: 2, sm: 2 } } }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-            <Typography 
-              variant="h6" 
-              component="div" 
-              sx={{ 
-                fontWeight: 600,
-                fontSize: { xs: '1rem', sm: '1.125rem' },
-                lineHeight: 1.3,
-                flex: 1,
-                pr: 1,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
-              {asset.name}
-            </Typography>
-            <IconButton 
-              size={isMobile ? 'medium' : 'small'}
-              sx={{
-                minWidth: { xs: 44, sm: 32 },
-                minHeight: { xs: 44, sm: 32 },
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                },
-              }}
+              {/* Location info */}
+              {asset.location && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                  <LocationIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    {asset.location.name}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Expand/collapse button */}
+            <IconButton
+              size="small"
               onClick={(e) => {
                 e.stopPropagation();
-                handleMenuClick(e, asset);
+                setExpandedCards(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(asset.id)) {
+                    newSet.delete(asset.id);
+                  } else {
+                    newSet.add(asset.id);
+                  }
+                  return newSet;
+                });
+              }}
+              sx={{
+                ml: 1,
+                transition: 'transform 0.3s',
+                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
             >
-              <MoreVertIcon sx={{ fontSize: { xs: 20, sm: 18 } }} />
+              <ExpandMoreIcon />
             </IconButton>
           </Box>
 
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ 
-              mb: 2,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              minHeight: '2.5em',
-              lineHeight: 1.25,
-            }}
-          >
-            {asset.description || 'No description available'}
-          </Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 0.5 }}>
-            <Chip
-              icon={asset.status === 'ONLINE' ? 
-                <OnlineIcon sx={{ fontSize: { xs: 16, sm: 14 } }} /> : 
-                <OfflineIcon sx={{ fontSize: { xs: 16, sm: 14 } }} />
-              }
-              label={asset.status}
-              size={isMobile ? 'medium' : 'small'}
-              color={asset.status === 'ONLINE' ? 'success' : 'error'}
-              sx={{
-                height: { xs: 32, sm: 24 },
-                '& .MuiChip-label': {
-                  fontSize: { xs: '0.75rem', sm: '0.6875rem' },
-                  fontWeight: 600,
-                },
-              }}
-            />
-            <Chip
-              label={asset.criticality}
-              size={isMobile ? 'medium' : 'small'}
-              sx={{
-                backgroundColor: statusColors[asset.criticality] + '20',
-                color: statusColors[asset.criticality],
-                fontWeight: 600,
-                height: { xs: 32, sm: 24 },
-                '& .MuiChip-label': {
-                  fontSize: { xs: '0.75rem', sm: '0.6875rem' },
-                  fontWeight: 600,
-                },
-              }}
-            />
-          </Stack>
-
-          <Box sx={{ mb: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-              <Typography 
-                variant="caption" 
-                color="text.secondary"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.6875rem' } }}
-              >
-                Health Score
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <Typography 
-                  variant="caption" 
-                  fontWeight={700}
-                  sx={{
-                    color: getHealthColor(healthScore),
-                    fontSize: { xs: '0.875rem', sm: '0.75rem' },
-                  }}
-                >
-                  {healthScore}%
+          {/* Collapsible details */}
+          <Collapse in={isExpanded} timeout="auto">
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ pt: 1 }}>
+              {asset.serialNumber && (
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <strong>Serial:</strong> {asset.serialNumber}
                 </Typography>
-                {healthScore < 60 && (
-                  <WarningIcon 
-                    sx={{ 
-                      fontSize: 12, 
-                      color: theme.palette.warning.main,
-                      ml: 0.5,
-                    }} 
-                  />
-                )}
-              </Box>
+              )}
+              {asset.manufacturer && (
+                <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <strong>Manufacturer:</strong> {asset.manufacturer}
+                </Typography>
+              )}
+              
+              {/* Quick stats */}
+              <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <WorkOrderIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {asset.workOrders?.length || 0} WOs
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {asset.pmSchedules?.length || 0} PMs
+                  </Typography>
+                </Box>
+              </Stack>
+
+              {/* Quick actions */}
+              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<EditIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleQuickEdit(asset);
+                  }}
+                  sx={{ flex: 1 }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<ViewIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowDetails(asset);
+                  }}
+                  sx={{ flex: 1 }}
+                >
+                  Details
+                </Button>
+              </Stack>
             </Box>
-            <LinearProgress 
-              variant="determinate" 
-              value={healthScore} 
-              sx={{
-                height: { xs: 8, sm: 6 },
-                borderRadius: 4,
-                backgroundColor: alpha(theme.palette.grey[400], 0.2),
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: getHealthColor(healthScore),
-                  borderRadius: 4,
-                  transition: 'all 0.3s ease',
-                },
-              }}
-            />
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-            <Typography 
-              variant="caption" 
-              color="text.secondary"
-              sx={{ fontSize: { xs: '0.75rem', sm: '0.6875rem' } }}
-            >
-              Location: {asset.location?.name || 'Unknown'}
-            </Typography>
-            {asset.pmSchedules && asset.pmSchedules.length > 0 && (
-              <Typography 
-                variant="caption" 
-                sx={{
-                  color: isMaintenanceDue ? theme.palette.warning.main : 'text.secondary',
-                  fontWeight: isMaintenanceDue ? 600 : 400,
-                  fontSize: { xs: '0.75rem', sm: '0.6875rem' },
-                }}
-              >
-                Next maintenance: {new Date(asset.pmSchedules[0].nextDue).toLocaleDateString()}
-                {isMaintenanceDue && ' (Due Soon!)'}
-              </Typography>
-            )}
-            {asset.serialNumber && (
-              <Typography 
-                variant="caption" 
-                color="text.secondary"
-                sx={{ fontSize: { xs: '0.75rem', sm: '0.6875rem' } }}
-              >
-                S/N: {asset.serialNumber}
-              </Typography>
-            )}
-          </Box>
+          </Collapse>
         </CardContent>
       </Card>
     );
   };
 
-  // Mobile stats card component
-  const StatsCard = ({ stat, onClick }: { stat: any; onClick: () => void }) => {
-    const IconComponent = stat.icon;
-    const isActive = activeFilters.includes(stat.filter);
-    
-    return (
-      <Card
-        onClick={onClick}
-        sx={{
-          minWidth: { xs: 120, sm: 140 },
-          cursor: stat.filter ? 'pointer' : 'default',
-          transition: 'all 0.2s ease',
-          backgroundColor: isActive ? stat.bgColor : 'background.paper',
-          borderColor: isActive ? stat.color : 'transparent',
-          borderWidth: 2,
-          borderStyle: 'solid',
-          '&:hover': {
-            transform: stat.filter ? 'translateY(-2px)' : 'none',
-            boxShadow: stat.filter ? theme.shadows[4] : theme.shadows[1],
-          },
-          '&:active': {
-            transform: stat.filter ? 'scale(0.95)' : 'none',
-          },
-        }}
-      >
-        <CardContent sx={{ p: { xs: 1.5, sm: 2 }, textAlign: 'center', '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mb: 1,
-              p: 1,
-              borderRadius: '50%',
-              backgroundColor: stat.bgColor,
-              width: { xs: 48, sm: 56 },
-              height: { xs: 48, sm: 56 },
-              mx: 'auto',
-            }}
-          >
-            <IconComponent sx={{ fontSize: { xs: 24, sm: 28 }, color: stat.color }} />
-          </Box>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              fontWeight: 700,
-              color: stat.color,
-              fontSize: { xs: '1.25rem', sm: '1.375rem' },
-              mb: 0.5,
-            }}
-          >
-            {isLoading ? '-' : stat.value}
-          </Typography>
-          <Typography 
-            variant="caption" 
-            color="text.secondary"
-            sx={{
-              fontSize: { xs: '0.6875rem', sm: '0.75rem' },
-              fontWeight: 500,
-              lineHeight: 1.2,
-            }}
-          >
-            {stat.label}
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Filter drawer for mobile
+  // Filter Drawer Component
   const FilterDrawer = () => (
     <SwipeableDrawer
       anchor="bottom"
       open={filterDrawerOpen}
       onClose={() => setFilterDrawerOpen(false)}
       onOpen={() => setFilterDrawerOpen(true)}
-      sx={{
-        '& .MuiDrawer-paper': {
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
+      swipeAreaWidth={20}
+      disableSwipeToOpen={false}
+      PaperProps={{
+        sx: {
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
           maxHeight: '80vh',
         },
       }}
     >
-      <Box sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6" fontWeight={600}>
-            Filter Assets
+      <Box sx={{ p: 2 }}>
+        {/* Drag handle */}
+        <Box
+          sx={{
+            width: 40,
+            height: 4,
+            bgcolor: 'grey.300',
+            borderRadius: 2,
+            mx: 'auto',
+            mb: 2,
+          }}
+        />
+
+        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+          Filter Assets
+        </Typography>
+
+        {/* Sort options */}
+        <FormControl fullWidth sx={{ mb: 3 }}>
+          <InputLabel>Sort By</InputLabel>
+          <Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            label="Sort By"
+          >
+            <MenuItem value="name">Name</MenuItem>
+            <MenuItem value="status">Status</MenuItem>
+            <MenuItem value="criticality">Criticality</MenuItem>
+            <MenuItem value="updated">Recently Updated</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Status filters */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Status
           </Typography>
-          <IconButton onClick={() => setFilterDrawerOpen(false)}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-          {[
-            { id: 'online', label: 'Online', icon: OnlineIcon, color: 'success' },
-            { id: 'offline', label: 'Offline', icon: OfflineIcon, color: 'error' },
-            { id: 'critical', label: 'Critical', icon: WarningIcon, color: 'secondary' },
-            { id: 'maintenance-due', label: 'Maintenance Due', icon: WarningIcon, color: 'warning' },
-            { id: 'low-health', label: 'Low Health', icon: WarningIcon, color: 'error' },
-          ].map((filter) => {
-            const IconComponent = filter.icon;
-            const isActive = activeFilters.includes(filter.id);
-            
-            return (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {['ONLINE', 'OFFLINE'].map(status => (
               <Chip
-                key={filter.id}
-                icon={<IconComponent />}
-                label={filter.label}
-                onClick={() => handleFilterToggle(filter.id)}
-                color={isActive ? filter.color as any : 'default'}
-                variant={isActive ? 'filled' : 'outlined'}
-                sx={{
-                  height: 40,
-                  '& .MuiChip-label': { fontWeight: 500 },
+                key={status}
+                label={status}
+                onClick={() => {
+                  setActiveFilters(prev => ({
+                    ...prev,
+                    status: prev.status.includes(status)
+                      ? prev.status.filter(s => s !== status)
+                      : [...prev.status, status]
+                  }));
                 }}
+                color={activeFilters.status.includes(status) ? 'primary' : 'default'}
+                variant={activeFilters.status.includes(status) ? 'filled' : 'outlined'}
               />
-            );
-          })}
+            ))}
+          </Stack>
         </Box>
-        
-        <Box sx={{ display: 'flex', gap: 2 }}>
+
+        {/* Criticality filters */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Criticality
+          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {['IMPORTANT', 'HIGH', 'MEDIUM', 'LOW'].map(criticality => (
+              <Chip
+                key={criticality}
+                label={criticality}
+                onClick={() => {
+                  setActiveFilters(prev => ({
+                    ...prev,
+                    criticality: prev.criticality.includes(criticality)
+                      ? prev.criticality.filter(c => c !== criticality)
+                      : [...prev.criticality, criticality]
+                  }));
+                }}
+                color={activeFilters.criticality.includes(criticality) ? 'primary' : 'default'}
+                variant={activeFilters.criticality.includes(criticality) ? 'filled' : 'outlined'}
+              />
+            ))}
+          </Stack>
+        </Box>
+
+        {/* Location filters */}
+        {uniqueLocations.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              Location
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {uniqueLocations.map(location => (
+                <Chip
+                  key={location}
+                  label={location}
+                  onClick={() => {
+                    setActiveFilters(prev => ({
+                      ...prev,
+                      location: prev.location.includes(location)
+                        ? prev.location.filter(l => l !== location)
+                        : [...prev.location, location]
+                    }));
+                  }}
+                  color={activeFilters.location.includes(location) ? 'primary' : 'default'}
+                  variant={activeFilters.location.includes(location) ? 'filled' : 'outlined'}
+                  size="small"
+                />
+              ))}
+            </Stack>
+          </Box>
+        )}
+
+        {/* Action buttons */}
+        <Stack direction="row" spacing={2}>
           <Button
             variant="outlined"
-            onClick={clearAllFilters}
-            startIcon={<ClearIcon />}
             fullWidth
+            onClick={() => {
+              setActiveFilters({ status: [], criticality: [], location: [] });
+              setSortBy('name');
+            }}
           >
             Clear All
           </Button>
           <Button
             variant="contained"
-            onClick={() => setFilterDrawerOpen(false)}
             fullWidth
+            onClick={() => setFilterDrawerOpen(false)}
           >
-            Apply Filters
+            Apply
           </Button>
-        </Box>
+        </Stack>
       </Box>
     </SwipeableDrawer>
   );
 
-  return (
-    <Box
-      ref={containerRef}
-      onTouchStart={isMobile ? handleTouchStart : undefined}
-      onTouchMove={isMobile ? handleTouchMove : undefined}
-      onTouchEnd={isMobile ? handleTouchEnd : undefined}
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: 'background.default',
-        pb: { xs: 10, md: 4 }, // Extra padding for mobile FAB
+  // Asset Details Bottom Sheet
+  const AssetDetailsDrawer = () => (
+    <SwipeableDrawer
+      anchor="bottom"
+      open={detailsDrawerOpen}
+      onClose={() => setDetailsDrawerOpen(false)}
+      onOpen={() => setDetailsDrawerOpen(true)}
+      PaperProps={{
+        sx: {
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          maxHeight: '90vh',
+        },
       }}
     >
-      {/* Pull to refresh indicator */}
-      {isRefreshing && (
-        <Box
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1300,
-            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-            p: 1,
-            textAlign: 'center',
-          }}
-        >
-          <CircularProgress size={20} sx={{ mr: 1 }} />
-          <Typography variant="caption">Refreshing...</Typography>
-        </Box>
-      )}
-      
-      <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
-        {/* Header Section */}
-        <Box sx={{ mb: { xs: 2, md: 3 } }}>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 2, sm: 0 },
-            mb: 2
-          }}>
-            <Box>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 700, 
-                  mb: 1,
-                  fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                  color: 'text.primary',
-                }}
-              >
-                Assets
+      {selectedDetailAsset && (
+        <Box sx={{ pb: 2 }}>
+          {/* Header with close button */}
+          <AppBar position="sticky" color="default" elevation={0}>
+            <Toolbar>
+              <Typography variant="h6" sx={{ flex: 1 }}>
+                {selectedDetailAsset.name}
               </Typography>
-              <Breadcrumbs 
-                separator={<NavigateNextIcon fontSize="small" />}
-                sx={{ 
-                  '& .MuiBreadcrumbs-li': {
-                    fontSize: { xs: '0.875rem', sm: '1rem' }
-                  }
+              <IconButton edge="end" onClick={() => setDetailsDrawerOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Toolbar>
+          </AppBar>
+
+          <Box sx={{ p: 2 }}>
+            {/* Asset image placeholder */}
+            {selectedDetailAsset.imageUrl ? (
+              <CardMedia
+                component="img"
+                height="200"
+                image={selectedDetailAsset.imageUrl}
+                alt={selectedDetailAsset.name}
+                sx={{ borderRadius: 2, mb: 2 }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  height: 200,
+                  bgcolor: 'grey.200',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mb: 2,
                 }}
-              > 
-                <Link href="#" color="inherit">
-                  All Assets
-                </Link>
-                <Typography color="text.primary">Production Equipment</Typography>
-              </Breadcrumbs>
-            </Box>
-            
-            {/* Desktop Action Buttons */}
-            <Box sx={{ 
-              display: { xs: 'none', md: 'flex' },
-              gap: 2,
-            }}>
-              <Button
-                variant="outlined"
-                startIcon={<QrCodeIcon />}
-                sx={{ minHeight: 48 }}
               >
-                Scan QR
-              </Button>
+                <BuildIcon sx={{ fontSize: 64, color: 'grey.400' }} />
+              </Box>
+            )}
+
+            {/* Status and criticality */}
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+              <Chip
+                icon={selectedDetailAsset.status === 'ONLINE' ? <OnlineIcon /> : <OfflineIcon />}
+                label={selectedDetailAsset.status}
+                color={selectedDetailAsset.status === 'ONLINE' ? 'success' : 'error'}
+              />
+              <Chip
+                label={selectedDetailAsset.criticality}
+                variant="outlined"
+              />
+            </Stack>
+
+            {/* Details sections */}
+            <List>
+              {selectedDetailAsset.serialNumber && (
+                <ListItem>
+                  <ListItemText
+                    primary="Serial Number"
+                    secondary={selectedDetailAsset.serialNumber}
+                  />
+                </ListItem>
+              )}
+              {selectedDetailAsset.manufacturer && (
+                <ListItem>
+                  <ListItemText
+                    primary="Manufacturer"
+                    secondary={selectedDetailAsset.manufacturer}
+                  />
+                </ListItem>
+              )}
+              {selectedDetailAsset.modelNumber && (
+                <ListItem>
+                  <ListItemText
+                    primary="Model"
+                    secondary={selectedDetailAsset.modelNumber}
+                  />
+                </ListItem>
+              )}
+              {selectedDetailAsset.location && (
+                <ListItem>
+                  <ListItemIcon>
+                    <LocationIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Location"
+                    secondary={selectedDetailAsset.location.name}
+                  />
+                </ListItem>
+              )}
+            </List>
+
+            {/* Action buttons */}
+            <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
               <Button
                 variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleCreateAsset}
-                sx={{ minHeight: 48 }}
+                fullWidth
+                startIcon={<EditIcon />}
+                onClick={() => {
+                  setDetailsDrawerOpen(false);
+                  handleQuickEdit(selectedDetailAsset);
+                }}
               >
-                Add Asset
+                Edit Asset
               </Button>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Search and Filter Section */}
-        <Paper 
-          elevation={0}
-          sx={{ 
-            p: { xs: 2, sm: 3 }, 
-            mb: 3,
-            backgroundColor: 'background.paper',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          }}
-        >
-          <Stack spacing={2}>
-            {/* Search Bar */}
-            <TextField
-              placeholder="Search assets by name, description, location..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              fullWidth
-              size={isMobile ? 'medium' : 'small'}
-              sx={{
-                '& .MuiInputBase-root': {
-                  height: { xs: 48, sm: 44 },
-                  borderRadius: 2,
-                },
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: 'text.secondary' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <IconButton
-                      size="small"
-                      onClick={() => setSearchTerm('')}
-                      sx={{ mr: -1 }}
-                    >
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            
-            {/* Filter Controls */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 1,
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                {/* Desktop Filter Chips */}
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexWrap: 'wrap' }}>
-                  {[
-                    { id: 'online', label: 'Online', icon: OnlineIcon, color: 'success' },
-                    { id: 'offline', label: 'Offline', icon: OfflineIcon, color: 'error' },
-                    { id: 'critical', label: 'Critical', icon: WarningIcon, color: 'secondary' },
-                    { id: 'maintenance-due', label: 'Maintenance Due', icon: WarningIcon, color: 'warning' },
-                  ].map((filter) => {
-                    const IconComponent = filter.icon;
-                    const isActive = activeFilters.includes(filter.id);
-                    
-                    return (
-                      <Chip
-                        key={filter.id}
-                        icon={<IconComponent sx={{ fontSize: 16 }} />}
-                        label={filter.label}
-                        onClick={() => handleFilterToggle(filter.id)}
-                        color={isActive ? filter.color as any : 'default'}
-                        variant={isActive ? 'filled' : 'outlined'}
-                        size="small"
-                        sx={{
-                          '& .MuiChip-label': { 
-                            fontWeight: isActive ? 600 : 400,
-                            fontSize: '0.75rem',
-                          },
-                        }}
-                      />
-                    );
-                  })}
-                </Box>
-                
-                {/* Mobile Filter Button */}
-                <Button
-                  variant="outlined"
-                  startIcon={<TuneIcon />}
-                  onClick={() => setFilterDrawerOpen(true)}
-                  sx={{ 
-                    display: { xs: 'flex', md: 'none' },
-                    minHeight: 40,
-                  }}
-                  endIcon={
-                    activeFilters.length > 0 ? (
-                      <Badge 
-                        badgeContent={activeFilters.length} 
-                        color="primary"
-                        sx={{
-                          '& .MuiBadge-badge': {
-                            fontSize: '0.6875rem',
-                            minWidth: 16,
-                            height: 16,
-                          },
-                        }}
-                      />
-                    ) : null
-                  }
-                >
-                  Filters
-                </Button>
-              </Box>
-              
-              {/* Clear Filters */}
-              {(activeFilters.length > 0 || searchTerm) && (
-                <Button
-                  size="small"
-                  onClick={clearAllFilters}
-                  startIcon={<ClearIcon />}
-                  sx={{ color: 'text.secondary' }}
-                >
-                  Clear
-                </Button>
-              )}
-            </Box>
-          </Stack>
-        </Paper>
-
-        {/* Stats Section */}
-        <Box sx={{ mb: 3 }}>
-          {/* Mobile Horizontal Scrollable Stats */}
-          <Box 
-            sx={{ 
-              display: { xs: 'block', md: 'none' },
-              overflowX: 'auto',
-              pb: 1,
-              '&::-webkit-scrollbar': {
-                height: 4,
-              },
-              '&::-webkit-scrollbar-track': {
-                backgroundColor: alpha(theme.palette.grey[300], 0.5),
-                borderRadius: 2,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                backgroundColor: theme.palette.primary.main,
-                borderRadius: 2,
-              },
-            }}
-          >
-            <Stack 
-              direction="row" 
-              spacing={2} 
-              sx={{ 
-                minWidth: 'fit-content',
-                px: 0.5,
-              }}
-            >
-              {statsCards.map((stat) => (
-                <StatsCard
-                  key={stat.id}
-                  stat={stat}
-                  onClick={() => stat.filter && handleFilterToggle(stat.filter)}
-                />
-              ))}
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<WorkOrderIcon />}
+                onClick={() => {
+                  // Navigate to work orders for this asset
+                  console.log('View work orders for', selectedDetailAsset.id);
+                }}
+              >
+                View WOs
+              </Button>
             </Stack>
           </Box>
         </Box>
+      )}
+    </SwipeableDrawer>
+  );
+
+  // Mobile Header Component
+  const MobileHeader = () => (
+    <AppBar 
+      position="sticky" 
+      color="default" 
+      elevation={0}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <Toolbar sx={{ px: 2 }}>
+        <Typography variant="h6" sx={{ flex: 1, fontWeight: 600 }}>
+          Assets
+        </Typography>
         
-        <Grid container spacing={{ xs: 2, sm: 3 }}>
-          {/* Desktop Sidebar Stats */}
-          <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Paper 
-              elevation={0}
-              sx={{ 
-                p: 3,
-                backgroundColor: 'background.paper',
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        {multiSelectMode ? (
+          <>
+            <Typography variant="body2" sx={{ mr: 2 }}>
+              {selectedCards.size} selected
+            </Typography>
+            <IconButton onClick={exitMultiSelectMode}>
+              <CloseIcon />
+            </IconButton>
+          </>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <IconButton onClick={() => setQrScannerOpen(true)} title="Scan QR Code">
+              <QrScannerIcon />
+            </IconButton>
+            <IconButton onClick={() => setViewMode(viewMode === 'card' ? 'list' : 'card')}>
+              {viewMode === 'card' ? <ViewListIcon /> : <GridViewIcon />}
+            </IconButton>
+            <IconButton onClick={() => setFilterDrawerOpen(true)}>
+              <Badge
+                badgeContent={
+                  activeFilters.status.length + 
+                  activeFilters.criticality.length + 
+                  activeFilters.location.length
+                }
+                color="primary"
+              >
+                <FilterIcon />
+              </Badge>
+            </IconButton>
+          </Stack>
+        )}
+      </Toolbar>
+    </AppBar>
+  );
+
+  // Search Bar Component
+  const SearchBar = () => (
+    <Box
+      sx={{
+        p: 2,
+        pb: 1,
+        bgcolor: 'background.paper',
+        position: 'sticky',
+        top: 56,
+        zIndex: 1,
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      <TextField
+        ref={searchInputRef}
+        fullWidth
+        placeholder="Search assets..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+          endAdornment: searchTerm && (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => setSearchTerm('')}>
+                <ClearIcon />
+              </IconButton>
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 2,
+          },
+        }}
+      />
+      
+      {/* Active filters display */}
+      {(activeFilters.status.length > 0 || 
+        activeFilters.criticality.length > 0 || 
+        activeFilters.location.length > 0) && (
+        <Box sx={{ mt: 1, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          {[...activeFilters.status, ...activeFilters.criticality, ...activeFilters.location].map((filter, index) => (
+            <Chip
+              key={`${filter}-${index}`}
+              label={filter}
+              size="small"
+              onDelete={() => {
+                // Remove specific filter
+                setActiveFilters(prev => ({
+                  status: prev.status.filter(f => f !== filter),
+                  criticality: prev.criticality.filter(f => f !== filter),
+                  location: prev.location.filter(f => f !== filter),
+                }));
               }}
-            >
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                Quick Stats
+            />
+          ))}
+          <Chip
+            label="Clear all"
+            size="small"
+            onClick={() => setActiveFilters({ status: [], criticality: [], location: [] })}
+            variant="outlined"
+          />
+        </Box>
+      )}
+    </Box>
+  );
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Box sx={{ height: '100vh', bgcolor: 'background.default' }}>
+        {isMobile && <MobileHeader />}
+        <Box sx={{ p: 2 }}>
+          {[1, 2, 3, 4].map((item) => (
+            <Card key={item} sx={{ mb: 2 }}>
+              <CardContent>
+                <Skeleton variant="text" width="60%" height={28} />
+                <Skeleton variant="text" width="40%" height={20} sx={{ mt: 1 }} />
+                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                  <Skeleton variant="rounded" width={60} height={24} />
+                  <Skeleton variant="rounded" width={80} height={24} />
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Alert severity="error">
+          Failed to load assets. Please try again.
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+        <MobileHeader />
+        <SearchBar />
+        
+        {/* Pull to refresh indicator */}
+        {isRefreshing && (
+          <LinearProgress 
+            sx={{ 
+              position: 'absolute',
+              top: 56,
+              left: 0,
+              right: 0,
+              zIndex: 2,
+            }}
+          />
+        )}
+
+        {/* Assets list */}
+        <Box
+          ref={scrollContainerRef}
+          {...swipeHandlers}
+          sx={{
+            flex: 1,
+            overflowY: 'auto',
+            px: 2,
+            pt: 2,
+            pb: 10, // Space for FAB and bottom nav
+          }}
+        >
+          {sortedAssets.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+              <BuildIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">
+                No assets found
               </Typography>
-              {isLoading ? (
-                <Box display="flex" justifyContent="center" p={2}>
-                  <CircularProgress size={24} />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                {searchTerm || activeFilters.status.length > 0 || activeFilters.criticality.length > 0
+                  ? 'Try adjusting your filters'
+                  : 'Add your first asset to get started'}
+              </Typography>
+            </Box>
+          ) : (
+            <Box>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {sortedAssets.length} assets found
+              </Typography>
+              
+              {viewMode === 'card' ? (
+                <Box>
+                  {sortedAssets.map((asset) => (
+                    <MobileAssetCard key={asset.id} asset={asset} />
+                  ))}
                 </Box>
               ) : (
-                <Stack spacing={2}>
-                  {statsCards.slice(0, 5).map((stat) => {
-                    const IconComponent = stat.icon;
-                    const isActive = activeFilters.includes(stat.filter);
-                    
-                    return (
-                      <Box
-                        key={stat.id}
-                        onClick={() => stat.filter && handleFilterToggle(stat.filter)}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          p: 2,
-                          borderRadius: 2,
-                          cursor: stat.filter ? 'pointer' : 'default',
-                          backgroundColor: isActive ? stat.bgColor : 'transparent',
-                          border: `1px solid ${isActive ? stat.color : 'transparent'}`,
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            backgroundColor: stat.filter ? stat.bgColor : 'transparent',
-                            transform: stat.filter ? 'translateX(4px)' : 'none',
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            backgroundColor: stat.bgColor,
-                            mr: 2,
-                          }}
-                        >
-                          <IconComponent sx={{ fontSize: 20, color: stat.color }} />
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                            {stat.label}
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 700, color: stat.color, fontSize: '1.25rem' }}>
-                            {stat.value}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Stack>
+                <List>
+                  {sortedAssets.map((asset, index) => [
+                    <ListItem
+                      key={asset.id}
+                      onClick={() => handleCardClick(asset)}
+                      sx={{
+                        borderRadius: 1,
+                        mb: 0.5,
+                        '&:active': {
+                          bgcolor: 'action.selected',
+                        },
+                      }}
+                    >
+                      {multiSelectMode && (
+                        <ListItemIcon>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectCard(asset.id);
+                            }}
+                          >
+                            {selectedCards.has(asset.id) ? 
+                              <CheckBoxIcon color="primary" /> : 
+                              <CheckBoxBlankIcon />
+                            }
+                          </IconButton>
+                        </ListItemIcon>
+                      )}
+                      <ListItemText
+                        primary={asset.name}
+                        secondary={
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              {asset.location?.name || 'No location'}
+                            </Typography>
+                            <Box sx={{ mt: 0.5 }}>
+                              <Chip
+                                label={asset.status}
+                                size="small"
+                                sx={{ height: 20, fontSize: '0.7rem' }}
+                                color={asset.status === 'ONLINE' ? 'success' : 'error'}
+                              />
+                            </Box>
+                          </Box>
+                        }
+                      />
+                    </ListItem>,
+                    index < sortedAssets.length - 1 && <Divider key={`divider-${asset.id}`} />
+                  ]).flat().filter(Boolean)}
+                </List>
               )}
-            </Paper>
-          </Grid>
+            </Box>
+          )}
+        </Box>
 
-          {/* Assets Grid */}
-          <Grid item xs={12} md={9}>
-            {/* Results Summary */}
-            {!isLoading && (
-              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
-                  {filteredAssets.length} asset{filteredAssets.length !== 1 ? 's' : ''} found
-                  {activeFilters.length > 0 && ` (${activeFilters.length} filter${activeFilters.length !== 1 ? 's' : ''} active)`}
+        {/* Floating Action Button */}
+        {!multiSelectMode && (
+          <Fab
+            color="primary"
+            onClick={handleCreateAsset}
+            sx={{
+              position: 'fixed',
+              bottom: 80,
+              right: 16,
+              zIndex: 10,
+            }}
+          >
+            <AddIcon />
+          </Fab>
+        )}
+
+        {/* Multi-select actions */}
+        {multiSelectMode && (
+          <Paper
+            elevation={8}
+            sx={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              p: 2,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+            }}
+          >
+            <Stack direction="row" spacing={2}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={exitMultiSelectMode}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                color="error"
+                onClick={handleBatchDelete}
+                disabled={selectedCards.size === 0}
+              >
+                Delete ({selectedCards.size})
+              </Button>
+            </Stack>
+          </Paper>
+        )}
+
+        {/* Drawers */}
+        <FilterDrawer />
+        <AssetDetailsDrawer />
+
+        {/* Asset Form Dialog */}
+        <AssetForm
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setSelectedAsset(null);
+          }}
+          onSubmit={handleSubmitAsset}
+          initialData={selectedAsset}
+          mode={formMode}
+          loading={createAssetMutation.isPending || updateAssetMutation.isPending}
+        />
+
+        {/* QR Components */}
+        <QRScanner
+          open={qrScannerOpen}
+          onClose={() => setQrScannerOpen(false)}
+          onScan={handleQRScan}
+        />
+
+
+        <QRActionHandler
+          scanResult={qrScanResult}
+          onClose={handleQRActionClose}
+        />
+      </Box>
+    );
+  }
+
+  // Desktop/Tablet Layout (keeping existing functionality)
+  return (
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
+          Assets
+        </Typography>
+        
+        {/* Desktop search and filters */}
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+          <TextField
+            fullWidth
+            placeholder="Search assets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 400 }}
+          />
+          
+          <Button
+            variant="outlined"
+            startIcon={<QrScannerIcon />}
+            onClick={() => setQrScannerOpen(true)}
+          >
+            Scan QR
+          </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<FilterIcon />}
+            onClick={() => setFilterDrawerOpen(true)}
+          >
+            Filters
+          </Button>
+
+          <UniversalExportButton
+            data={sortedAssets}
+            dataSource="assets"
+            entityType="assets"
+            showBadge={sortedAssets.length > 0}
+            badgeContent={sortedAssets.length}
+            buttonText="Export"
+          />
+          
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateAsset}
+          >
+            Add Asset
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* Desktop grid view */}
+      <Grid container spacing={3}>
+        {sortedAssets.map((asset) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={asset.id}>
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: theme.shadows[4],
+                },
+              }}
+              onClick={() => handleCardClick(asset)}
+            >
+              <CardContent sx={{ flex: 1 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  {asset.name}
                 </Typography>
-                {filteredAssets.length > 0 && (
-                  <Typography variant="caption" color="text.secondary">
-                    Updated {new Date().toLocaleTimeString()}
+                
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                  <Chip
+                    label={asset.status}
+                    size="small"
+                    color={asset.status === 'ONLINE' ? 'success' : 'error'}
+                  />
+                  <Chip
+                    label={asset.criticality}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Stack>
+                
+                {asset.location && (
+                  <Typography variant="body2" color="text.secondary">
+                    {asset.location.name}
                   </Typography>
                 )}
-              </Box>
-            )}
-
-            {isLoading ? (
-              <Grid container spacing={{ xs: 2, sm: 3 }}>
-                {Array.from({ length: isMobile ? 2 : 6 }).map((_, index) => (
-                  <Grid item xs={12} sm={6} lg={4} key={index}>
-                    <Card sx={{ height: { xs: 280, sm: 320 } }}>
-                      <Skeleton variant="rectangular" height={isMobile ? 120 : 140} />
-                      <CardContent>
-                        <Skeleton variant="text" height={32} width="80%" sx={{ mb: 1 }} />
-                        <Skeleton variant="text" height={20} width="100%" sx={{ mb: 2 }} />
-                        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                          <Skeleton variant="rounded" width={60} height={24} />
-                          <Skeleton variant="rounded" width={80} height={24} />
-                        </Box>
-                        <Skeleton variant="rounded" height={8} width="100%" sx={{ mb: 2 }} />
-                        <Skeleton variant="text" height={16} width="60%" />
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : filteredAssets.length === 0 ? (
-              <Box 
-                sx={{ 
-                  textAlign: 'center', 
-                  py: 8,
-                  px: 3,
-                }}
-              >
-                <BuildIcon 
-                  sx={{ 
-                    fontSize: 80, 
-                    color: 'text.disabled',
-                    mb: 2,
-                  }} 
-                />
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  No assets found
-                </Typography>
-                <Typography variant="body2" color="text.disabled" sx={{ mb: 3 }}>
-                  {searchTerm || activeFilters.length > 0 
-                    ? 'Try adjusting your search or filters'
-                    : 'Get started by adding your first asset'
-                  }
-                </Typography>
-                {(!searchTerm && activeFilters.length === 0) && (
+              </CardContent>
+              
+              <Box sx={{ p: 2, pt: 0 }}>
+                <Stack direction="row" spacing={1}>
                   <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleCreateAsset}
-                    size="large"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleQuickEdit(asset);
+                    }}
                   >
-                    Add First Asset
+                    Edit
                   </Button>
-                )}
-              </Box>
-            ) : (
-              <Grid container spacing={{ xs: 2, sm: 3 }}>
-                {filteredAssets.map((asset) => (
-                  <Grid 
-                    item 
-                    xs={12} 
-                    sm={isTablet ? 12 : 6} 
-                    md={12}
-                    lg={4} 
-                    key={asset.id}
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteAsset(asset);
+                    }}
                   >
-                    <AssetCard asset={asset} />
-                  </Grid>
-                ))}
-              </Grid>
-            )}
+                    Delete
+                  </Button>
+                </Stack>
+              </Box>
+            </Card>
           </Grid>
-        </Grid>
-      </Container>
-      
-      {/* Filter Drawer for Mobile */}
-      <FilterDrawer />
+        ))}
+      </Grid>
 
-      {/* Action Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem
-          onClick={() => {
-            const asset = assets.find((a: Asset) => a.id === selectedAssetId);
-            if (asset) handleViewAsset(asset);
-          }}
-        >
-          <ListItemIcon>
-            <ViewIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>View Details</ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const asset = assets.find((a: Asset) => a.id === selectedAssetId);
-            if (asset) handleEditAsset(asset);
-          }}
-        >
-          <ListItemIcon>
-            <EditIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Edit Asset</ListItemText>
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const asset = assets.find((a: Asset) => a.id === selectedAssetId);
-            if (asset) handleDeleteAsset(asset);
-          }}
-          sx={{ color: 'error.main' }}
-        >
-          <ListItemIcon>
-            <DeleteIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText>Delete Asset</ListItemText>
-        </MenuItem>
-      </Menu>
+      {/* Desktop filter drawer */}
+      <FilterDrawer />
 
       {/* Asset Form Dialog */}
       <AssetForm
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={() => {
+          setOpenDialog(false);
+          setSelectedAsset(null);
+        }}
         onSubmit={handleSubmitAsset}
-        initialData={selectedAsset || {}}
+        initialData={selectedAsset}
         mode={formMode}
         loading={createAssetMutation.isPending || updateAssetMutation.isPending}
       />
 
-      {/* Enhanced FAB for mobile */}
-      {isMobile && (
-        <Fab
-          color="primary"
-          onClick={handleCreateAsset}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            width: 64,
-            height: 64,
-            zIndex: 1200,
-            boxShadow: theme.shadows[8],
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            '&:hover': {
-              transform: 'scale(1.1)',
-              boxShadow: theme.shadows[12],
-            },
-            '&:active': {
-              transform: 'scale(0.95)',
-            },
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: '50%',
-              background: 'inherit',
-              opacity: 0,
-              transform: 'scale(0.8)',
-              transition: 'all 0.3s ease',
-            },
-            '&:hover::before': {
-              opacity: 0.1,
-              transform: 'scale(1.2)',
-            },
-          }}
-        >
-          <AddIcon sx={{ fontSize: 28, color: 'white' }} />
-        </Fab>
-      )}
-    </Box>
+      {/* QR Scanner */}
+      <QRScanner
+        open={qrScannerOpen}
+        onClose={() => setQrScannerOpen(false)}
+        onScan={handleQRScan}
+        title="Scan Asset QR Code"
+      />
+
+      {/* QR Action Handler */}
+      <QRActionHandler
+        scanResult={qrScanResult}
+        onClose={() => {
+          setQrScanResult(null);
+        }}
+      />
+    </Container>
   );
 }

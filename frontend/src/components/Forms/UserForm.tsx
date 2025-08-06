@@ -145,8 +145,8 @@ export default function UserForm({
   const [showPasswordFields, setShowPasswordFields] = useState(mode === 'create');
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...formData, ...initialData });
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
 
@@ -199,7 +199,25 @@ export default function UserForm({
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit(formData);
+      // Only send the required fields that match the backend schema
+      const sanitizedData: UserFormData = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        organizationId: formData.organizationId || 1,
+      };
+      
+      // Include ID for edit mode
+      if (mode === 'edit' && formData.id) {
+        sanitizedData.id = formData.id;
+      }
+      
+      // Include password only for create mode
+      if (mode === 'create' && formData.password) {
+        sanitizedData.password = formData.password;
+      }
+      
+      onSubmit(sanitizedData);
     }
   };
 

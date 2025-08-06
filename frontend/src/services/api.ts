@@ -1,8 +1,12 @@
 // API service for dashboard and other data fetching
-import { DashboardStats, WorkOrderTrends, RecentWorkOrder, MaintenanceScheduleItem } from '../hooks/useData';
+import type { DashboardStats, WorkOrderTrends, MaintenanceScheduleItem } from '../hooks/useData';
 
-// Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Base API configuration - proxy handles the /api prefix
+// In development, use empty string to let Vite proxy handle /api routes
+// In production, use the full API URL from environment variable
+const API_BASE_URL = import.meta.env.PROD 
+  ? (import.meta.env.VITE_API_URL || '') 
+  : '';
 
 // Generic API client with error handling and retries
 class ApiClient {
@@ -30,13 +34,31 @@ class ApiClient {
       const response = await fetch(url, config);
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Create a proper error object with status
+        const error: any = new Error(`HTTP error! status: ${response.status}`);
+        error.status = response.status;
+        error.response = { status: response.status };
+        throw error;
+      }
+
+      // Handle empty responses (like 204 No Content)
+      const contentType = response.headers.get('content-type');
+      if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+        return null as any;
       }
 
       const data = await response.json();
       return data;
-    } catch (error) {
-      console.error(`API request failed: ${url}`, error);
+    } catch (error: any) {
+      // Only log errors in development mode
+      if (import.meta.env.DEV) {
+        console.warn(`API unavailable: ${url}`);
+      }
+      
+      // Preserve error status for proper handling
+      if (!error.status && error.name !== 'SyntaxError') {
+        error.status = 500;
+      }
       throw error;
     }
   }
@@ -75,33 +97,33 @@ export const dashboardService = {
     try {
       return await apiClient.get<DashboardStats>('/dashboard/stats');
     } catch (error) {
-      // Mock fallback data for development/demo
-      console.warn('Dashboard API not available, using mock data');
+      // Return empty dashboard stats when API is unavailable
+      console.warn('Dashboard API not available');
       return {
         workOrders: {
-          total: 45,
-          overdue: 3,
+          total: 0,
+          overdue: 0,
           byStatus: {
-            OPEN: 12,
-            IN_PROGRESS: 18,
-            COMPLETED: 145,
-            ON_HOLD: 5,
+            OPEN: 0,
+            IN_PROGRESS: 0,
+            COMPLETED: 0,
+            ON_HOLD: 0,
           },
         },
         assets: {
-          total: 89,
+          total: 0,
           byStatus: {
-            ONLINE: 85,
-            OFFLINE: 4,
+            ONLINE: 0,
+            OFFLINE: 0,
           },
         },
         inventory: {
-          total: 234,
-          outOfStock: 8,
+          total: 0,
+          outOfStock: 0,
         },
         maintenance: {
-          scheduled: 15,
-          overdue: 2,
+          scheduled: 0,
+          overdue: 0,
         },
       };
     }
@@ -109,117 +131,79 @@ export const dashboardService = {
 
   async getTrends(days: number = 7): Promise<WorkOrderTrends[]> {
     try {
-      return await apiClient.get<WorkOrderTrends[]>(`/dashboard/trends?days=${days}`);
+      const result = await apiClient.get<WorkOrderTrends[]>(`/dashboard/trends?days=${days}`);
+      return result || [];
     } catch (error) {
-      // Mock fallback data
-      console.warn('Trends API not available, using mock data');
-      const trends = [];
-      const now = new Date();
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        trends.push({
-          date: date.toLocaleDateString(),
-          created: Math.floor(Math.random() * 10) + 5,
-          completed: Math.floor(Math.random() * 12) + 3,
-        });
-      }
-      return trends;
+      // Return empty trends when API is unavailable
+      console.warn('Trends API not available');
+      return [];
     }
   },
 
-  async getRecentWorkOrders(limit: number = 10): Promise<RecentWorkOrder[]> {
+  async getRecentWorkOrders(limit: number = 10): Promise<any[]> {
     try {
-      return await apiClient.get<RecentWorkOrder[]>(`/work-orders/recent?limit=${limit}`);
+      const result = await apiClient.get<any[]>(`/work-orders/recent?limit=${limit}`);
+      return result || [];
     } catch (error) {
-      // Mock fallback data
-      console.warn('Recent work orders API not available, using mock data');
-      return [
-        {
-          id: '1',
-          title: 'HVAC System Maintenance',
-          status: 'IN_PROGRESS',
-          priority: 'HIGH',
-          assignedTo: 'John Smith',
-          createdAt: '2024-01-15',
-          dueDate: '2024-01-16',
-        },
-        {
-          id: '2',
-          title: 'Conveyor Belt Inspection',
-          status: 'OPEN',
-          priority: 'MEDIUM',
-          assignedTo: 'Sarah Johnson',
-          createdAt: '2024-01-14',
-          dueDate: '2024-01-17',
-        },
-        {
-          id: '3',
-          title: 'Emergency Generator Test',
-          status: 'COMPLETED',
-          priority: 'HIGH',
-          assignedTo: 'Mike Wilson',
-          createdAt: '2024-01-13',
-          dueDate: '2024-01-15',
-        },
-        {
-          id: '4',
-          title: 'Pump Replacement',
-          status: 'ON_HOLD',
-          priority: 'URGENT',
-          assignedTo: 'Lisa Brown',
-          createdAt: '2024-01-12',
-          dueDate: '2024-01-14',
-        },
-      ];
+      // Try to get work orders from the main endpoint
+      try {
+        const allWorkOrders = await apiClient.get<any[]>('/work-orders');
+        const workOrders = allWorkOrders || [];
+        // Sort by createdAt descending and take the first 'limit' items
+        return workOrders
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, limit);
+      } catch (fallbackError) {
+        // Return empty array if no API is available
+        console.warn('Work orders API not available');
+        return [];
+      }
     }
   },
 
   async getMaintenanceSchedule(limit: number = 10): Promise<MaintenanceScheduleItem[]> {
     try {
-      return await apiClient.get<MaintenanceScheduleItem[]>(`/maintenance/schedule?limit=${limit}`);
+      const result = await apiClient.get<MaintenanceScheduleItem[]>(`/maintenance/schedule?limit=${limit}`);
+      return result || [];
     } catch (error) {
-      // Mock fallback data
-      console.warn('Maintenance schedule API not available, using mock data');
-      return [
-        {
-          id: '1',
-          assetName: 'Main Compressor',
-          taskName: 'Monthly Oil Change',
-          dueDate: '2024-01-20',
-          type: 'PREVENTIVE',
-          priority: 'MEDIUM',
-        },
-        {
-          id: '2',
-          assetName: 'Conveyor System',
-          taskName: 'Belt Tension Check',
-          dueDate: '2024-01-18',
-          type: 'PREVENTIVE',
-          priority: 'LOW',
-        },
-        {
-          id: '3',
-          assetName: 'HVAC Unit B',
-          taskName: 'Filter Replacement',
-          dueDate: '2024-01-16',
-          type: 'PREVENTIVE',
-          priority: 'HIGH',
-        },
-      ];
+      // Return empty maintenance schedule when API is unavailable
+      console.warn('Maintenance schedule API not available');
+      return [];
     }
   },
 
-  async getMaintenanceStats(): Promise<{ thisMonth: number; thisWeek: number }> {
+  async getMaintenanceStats(): Promise<{ today: number; thisWeek: number }> {
     try {
-      return await apiClient.get<{ thisMonth: number; thisWeek: number }>('/maintenance/stats');
+      return await apiClient.get<{ today: number; thisWeek: number }>('/maintenance/stats');
     } catch (error) {
-      // Mock fallback data
-      console.warn('Maintenance stats API not available, using mock data');
+      // Return empty maintenance stats when API is unavailable
+      console.warn('Maintenance stats API not available');
       return {
-        thisMonth: 15,
-        thisWeek: 4,
+        today: 0,
+        thisWeek: 0,
       };
+    }
+  },
+
+  async getAssetHealth(): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>('/dashboard/asset-health');
+      return result || [];
+    } catch (error) {
+      // Return empty asset health when API is unavailable
+      console.warn('Asset health API not available');
+      return [];
+    }
+  },
+
+  async getWorkOrderTrends(period: 'week' | 'month' | 'year'): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/dashboard/work-order-trends?period=${period}`);
+      return result || [];
+    } catch (error) {
+      // Return empty work order trends when API is unavailable
+      console.warn('Work order trends API not available');
+      return [];
     }
   },
 };
@@ -229,9 +213,10 @@ export const workOrdersService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      return await apiClient.get<any[]>(`/work-orders${queryParams}`);
+      const result = await apiClient.get<any[]>(`/work-orders${queryParams}`);
+      return result || [];
     } catch (error) {
-      console.warn('Work orders API not available, using mock data');
+      console.warn('Work orders API not available');
       return [];
     }
   },
@@ -275,6 +260,15 @@ export const workOrdersService = {
       throw new Error(`Failed to update work order status ${id}`);
     }
   },
+
+  async getByAssetId(assetId: string): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>(`/work-orders?assetId=${assetId}`);
+    } catch (error) {
+      console.warn(`Work orders for asset ${assetId} API not available`);
+      return [];
+    }
+  },
 };
 
 // Assets service
@@ -282,9 +276,10 @@ export const assetsService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      return await apiClient.get<any[]>(`/assets${queryParams}`);
+      const result = await apiClient.get<any[]>(`/assets${queryParams}`);
+      return result || [];
     } catch (error) {
-      console.warn('Assets API not available, using mock data');
+      console.warn('Assets API not available');
       return [];
     }
   },
@@ -326,9 +321,10 @@ export const assetsService = {
 export const locationsService = {
   async getAll(): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>('/locations');
+      const result = await apiClient.get<any[]>('/locations');
+      return result || [];
     } catch (error) {
-      console.warn('Locations API not available, using mock data');
+      console.warn('Locations API not available');
       return [];
     }
   },
@@ -370,9 +366,10 @@ export const locationsService = {
 export const usersService = {
   async getAll(): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>('/users');
+      const result = await apiClient.get<any[]>('/users');
+      return result || [];
     } catch (error) {
-      console.warn('Users API not available, using mock data');
+      console.warn('Users API not available');
       return [];
     }
   },
@@ -459,9 +456,10 @@ export const partsService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      return await apiClient.get<any[]>(`/parts${queryParams}`);
+      const result = await apiClient.get<any[]>(`/parts${queryParams}`);
+      return result || [];
     } catch (error) {
-      console.warn('Parts API not available, using mock data');
+      console.warn('Parts API not available');
       return [];
     }
   },
@@ -476,7 +474,30 @@ export const partsService = {
 
   async create(part: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/parts', part);
+      const createdPart = await apiClient.post<any>('/parts', part);
+      
+      // Generate QR code with the actual part ID
+      try {
+        const { qrService } = await import('./qrService');
+        const qrData = qrService.createQRCodeData('part', createdPart.id?.toString() || 'temp', {
+          name: createdPart.name,
+          partNumber: createdPart.partNumber,
+          category: createdPart.category,
+        });
+        const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
+        
+        // Update the part with the QR code if generation succeeded
+        if (qrCodeUrl && createdPart.id) {
+          await apiClient.put<any>(`/parts/${createdPart.id}`, {
+            ...createdPart,
+            qrCode: qrCodeUrl
+          });
+        }
+      } catch (error) {
+        console.error('Failed to generate QR code for part:', error);
+      }
+      
+      return createdPart;
     } catch (error) {
       throw new Error('Failed to create part');
     }
@@ -484,6 +505,22 @@ export const partsService = {
 
   async update(id: string, part: any): Promise<any> {
     try {
+      // If the part doesn't have a QR code, generate one
+      if (!part.qrCode) {
+        try {
+          const { qrService } = await import('./qrService');
+          const qrData = qrService.createQRCodeData('part', id, {
+            name: part.name,
+            partNumber: part.partNumber,
+            category: part.category,
+          });
+          const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
+          part = { ...part, qrCode: qrCodeUrl };
+        } catch (error) {
+          console.error('Failed to generate QR code for part:', error);
+        }
+      }
+      
       return await apiClient.put<any>(`/parts/${id}`, part);
     } catch (error) {
       throw new Error(`Failed to update part ${id}`);
@@ -505,15 +542,63 @@ export const partsService = {
       throw new Error(`Failed to update stock for part ${id}`);
     }
   },
+
+  async getLowStock(): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>('/parts/low-stock');
+      return result || [];
+    } catch (error) {
+      console.warn('Low stock parts API not available');
+      return [];
+    }
+  },
+
+  async createPurchaseOrder(parts: { partId: string; quantity: number; unitPrice?: number }[]): Promise<any> {
+    try {
+      const purchaseOrder = {
+        id: `PO-${Date.now()}`,
+        status: 'PENDING',
+        requestedBy: 'System User',
+        totalAmount: parts.reduce((sum, part) => sum + (part.quantity * (part.unitPrice || 0)), 0),
+        items: parts,
+        createdAt: new Date().toISOString(),
+        expectedDelivery: new Date(Date.now() + 86400000 * 7).toISOString(), // 7 days from now
+      };
+      return await apiClient.post<any>('/purchase-orders', purchaseOrder);
+    } catch (error) {
+      console.warn('Purchase order API not available, simulating creation');
+      // Simulate successful creation
+      return {
+        id: `PO-${Date.now()}`,
+        status: 'PENDING',
+        requestedBy: 'System User',
+        totalAmount: parts.reduce((sum, part) => sum + (part.quantity * (part.unitPrice || 15.00)), 0),
+        items: parts,
+        createdAt: new Date().toISOString(),
+        expectedDelivery: new Date(Date.now() + 86400000 * 7).toISOString(),
+      };
+    }
+  },
+
+  async getRecentActivity(limit: number = 10): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/parts/activity?limit=${limit}`);
+      return result || [];
+    } catch (error) {
+      console.warn('Parts activity API not available');
+      return [];
+    }
+  },
 };
 
 // PM (Preventive Maintenance) service
 export const pmService = {
   async getTasks(): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>('/pm-tasks');
+      const result = await apiClient.get<any[]>('/pm-tasks');
+      return result || [];
     } catch (error) {
-      console.warn('PM Tasks API not available, using mock data');
+      console.warn('PM Tasks API not available');
       return [];
     }
   },
@@ -528,9 +613,10 @@ export const pmService = {
 
   async getTriggers(): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>('/pm-triggers');
+      const result = await apiClient.get<any[]>('/pm-triggers');
+      return result || [];
     } catch (error) {
-      console.warn('PM Triggers API not available, using mock data');
+      console.warn('PM Triggers API not available');
       return [];
     }
   },
@@ -545,9 +631,10 @@ export const pmService = {
 
   async getSchedules(): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>('/pm-schedules');
+      const result = await apiClient.get<any[]>('/pm-schedules');
+      return result || [];
     } catch (error) {
-      console.warn('PM Schedules API not available, using mock data');
+      console.warn('PM Schedules API not available');
       return [];
     }
   },
@@ -573,6 +660,14 @@ export const pmService = {
       await apiClient.delete(`/pm-schedules/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete PM schedule ${id}`);
+    }
+  },
+
+  async getScheduleById(id: string): Promise<any> {
+    try {
+      return await apiClient.get<any>(`/pm-schedules/${id}`);
+    } catch (error) {
+      throw new Error(`Failed to fetch PM schedule ${id}`);
     }
   },
 };

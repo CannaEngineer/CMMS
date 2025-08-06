@@ -13,8 +13,8 @@
     "type-check": "tsc --noEmit",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "test": "echo 'No tests yet'",
-    "vercel-build": "npm run build:prod"
+    "test": "vitest",
+    "test:e2e": "cypress run"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,25 +24,39 @@
     "@mui/x-date-pickers": "^8.9.2",
     "@mui/x-tree-view": "^8.9.2",
     "@tanstack/react-query": "^5.84.1",
+    "@types/papaparse": "^5.3.16",
     "axios": "^1.11.0",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "fuse.js": "^7.1.0",
+    "jsqr": "^1.4.0",
+    "papaparse": "^5.5.3",
+    "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-dropzone": "^14.3.8",
     "react-router-dom": "^7.7.1",
+    "react-swipeable": "^7.0.2",
     "recharts": "^3.1.0",
     "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "cypress": "^14.5.3",
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "jsdom": "^26.1.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
-    "vite": "^4.0.0"
+    "vite": "^4.0.0",
+    "vitest": "^3.2.4"
   }
 }

@@ -134,8 +134,8 @@ export default function AssetForm({
   })) || [];
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...formData, ...initialData });
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
 
@@ -418,16 +418,6 @@ export default function AssetForm({
           value={formData.status}
           onChange={handleFieldChange}
           options={statusOptions}
-          disabled={mode === 'view'}
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormField
-          type="text"
-          name="barcode"
-          label="Barcode/QR Code"
-          value={formData.barcode}
-          onChange={handleFieldChange}
           disabled={mode === 'view'}
         />
       </Grid>

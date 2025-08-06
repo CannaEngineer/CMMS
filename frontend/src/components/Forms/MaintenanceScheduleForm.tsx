@@ -122,8 +122,8 @@ export default function MaintenanceScheduleForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...formData, ...initialData });
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
 

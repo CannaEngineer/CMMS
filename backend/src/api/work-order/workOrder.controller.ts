@@ -13,7 +13,8 @@ const workOrderSchema = z.object({
 });
 
 export const getAllWorkOrders = async (req: Request, res: Response) => {
-  const workOrders = await workOrderService.getAllWorkOrders();
+  const { organizationId } = req.user;
+  const workOrders = await workOrderService.getAllWorkOrders(organizationId);
   res.status(200).json(workOrders);
 };
 

@@ -2,8 +2,11 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getAllWorkOrders = async () => {
+export const getAllWorkOrders = async (organizationId: number) => {
   return prisma.workOrder.findMany({
+    where: {
+      organizationId,
+    },
     include: { asset: true, assignedTo: true },
   });
 };

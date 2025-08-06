@@ -51,6 +51,20 @@ class OfflineStorageService {
           const mediaStore = db.createObjectStore('mediaCache', { keyPath: 'url' });
           mediaStore.createIndex('workOrderId', 'workOrderId', { unique: false });
         }
+
+        // QR Scans store for offline QR functionality
+        if (!db.objectStoreNames.contains('qrScans')) {
+          const qrScansStore = db.createObjectStore('qrScans', { keyPath: 'id' });
+          qrScansStore.createIndex('timestamp', 'timestamp', { unique: false });
+          qrScansStore.createIndex('entityType', 'data.type', { unique: false });
+        }
+
+        // QR Actions store for offline QR actions
+        if (!db.objectStoreNames.contains('qrActions')) {
+          const qrActionsStore = db.createObjectStore('qrActions', { keyPath: 'id' });
+          qrActionsStore.createIndex('status', 'status', { unique: false });
+          qrActionsStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
       };
     });
   }
@@ -274,9 +288,84 @@ class OfflineStorageService {
     };
   }
 
+  // QR-specific operations
+  async storeQRScan(scanResult: any): Promise<void> {
+    const scanEntry = {
+      id: `scan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...scanResult,
+      storedAt: new Date().toISOString(),
+      synced: false,
+    };
+
+    await this.performOperation('qrScans', 'readwrite', (store) => 
+      store.put(scanEntry)
+    );
+  }
+
+  async getPendingQRScans(): Promise<any[]> {
+    return this.performOperation('qrScans', 'readonly', (store) => {
+      const index = store.index('timestamp');
+      return index.getAll();
+    });
+  }
+
+  async storeQRAction(action: any): Promise<void> {
+    const actionEntry = {
+      id: `action_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...action,
+      storedAt: new Date().toISOString(),
+      status: 'pending',
+    };
+
+    await this.performOperation('qrActions', 'readwrite', (store) => 
+      store.put(actionEntry)
+    );
+  }
+
+  async getPendingQRActions(): Promise<any[]> {
+    return this.performOperation('qrActions', 'readonly', (store) => {
+      const index = store.index('status');
+      return index.getAll('pending');
+    });
+  }
+
+  async markQRActionCompleted(actionId: string): Promise<void> {
+    const existing = await this.performOperation('qrActions', 'readonly', (store) => 
+      store.get(actionId)
+    );
+
+    if (existing) {
+      const updated = { 
+        ...existing, 
+        status: 'completed',
+        completedAt: new Date().toISOString()
+      };
+      
+      await this.performOperation('qrActions', 'readwrite', (store) => 
+        store.put(updated)
+      );
+    }
+  }
+
+  async clearCompletedQRActions(): Promise<void> {
+    await this.performOperation('qrActions', 'readwrite', (store) => {
+      const request = store.openCursor();
+      request.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          if (cursor.value.status === 'completed') {
+            cursor.delete();
+          }
+          cursor.continue();
+        }
+      };
+      return request;
+    });
+  }
+
   // Clear all offline data
   async clearAllData(): Promise<void> {
-    const storeNames = ['workOrders', 'assets', 'queryCache', 'pendingOperations', 'mediaCache'];
+    const storeNames = ['workOrders', 'assets', 'queryCache', 'pendingOperations', 'mediaCache', 'qrScans', 'qrActions'];
     
     for (const storeName of storeNames) {
       await this.performOperation(storeName, 'readwrite', (store) => store.clear());

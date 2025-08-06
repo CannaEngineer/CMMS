@@ -18,6 +18,8 @@ import {
   useTheme,
   useMediaQuery,
   Fab,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import { SimpleTreeView, TreeItem } from '@mui/x-tree-view';
 import {
@@ -33,140 +35,31 @@ import {
   Edit as EditIcon,
   MoreVert as MoreVertIcon,
   Map as MapIcon,
+  Assessment as AssessmentIcon,
 } from '@mui/icons-material';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StatCard from '../components/Common/StatCard';
 import StatusIndicator from '../components/Common/StatusIndicator';
 import PageLayout from '../components/Layout/PageLayout';
 import LocationForm from '../components/Forms/LocationForm';
+import AssetDistributionDialog from '../components/Location/AssetDistributionDialog';
+import SiteMapDialog from '../components/Location/SiteMapDialog';
+import { locationsService } from '../services/api';
 
 interface Location {
-  id: string;
+  id: number;
   name: string;
   type: 'BUILDING' | 'FLOOR' | 'ROOM' | 'AREA' | 'ZONE';
   description?: string;
-  parentId?: string;
+  parentId?: number;
   assetCount: number;
+  address?: string;
+  coordinates?: { lat: number; lng: number };
+  createdAt?: string;
+  updatedAt?: string;
   children?: Location[];
 }
 
-const mockLocations: Location[] = [
-  {
-    id: '1',
-    name: 'Main Campus',
-    type: 'AREA',
-    description: 'Primary manufacturing facility',
-    assetCount: 89,
-    children: [
-      {
-        id: '2',
-        name: 'Building A',
-        type: 'BUILDING',
-        parentId: '1',
-        assetCount: 45,
-        children: [
-          {
-            id: '3',
-            name: 'Ground Floor',
-            type: 'FLOOR',
-            parentId: '2',
-            assetCount: 25,
-            children: [
-              { id: '4', name: 'Reception Area', type: 'ROOM', parentId: '3', assetCount: 5 },
-              { id: '5', name: 'Main Hall', type: 'ROOM', parentId: '3', assetCount: 8 },
-              { id: '6', name: 'Conference Room', type: 'ROOM', parentId: '3', assetCount: 12 },
-            ],
-          },
-          {
-            id: '7',
-            name: '1st Floor',
-            type: 'FLOOR',
-            parentId: '2',
-            assetCount: 15,
-            children: [
-              { id: '8', name: 'Office Area', type: 'ROOM', parentId: '7', assetCount: 10 },
-              { id: '9', name: 'Server Room', type: 'ROOM', parentId: '7', assetCount: 5 },
-            ],
-          },
-          {
-            id: '10',
-            name: 'Basement',
-            type: 'FLOOR',
-            parentId: '2',
-            assetCount: 5,
-            children: [
-              { id: '11', name: 'Utility Room', type: 'ROOM', parentId: '10', assetCount: 3 },
-              { id: '12', name: 'Storage', type: 'ROOM', parentId: '10', assetCount: 2 },
-            ],
-          },
-        ],
-      },
-      {
-        id: '13',
-        name: 'Building B',
-        type: 'BUILDING',
-        parentId: '1',
-        assetCount: 44,
-        children: [
-          {
-            id: '14',
-            name: 'Ground Floor',
-            type: 'FLOOR',
-            parentId: '13',
-            assetCount: 20,
-          },
-          {
-            id: '15',
-            name: '1st Floor',
-            type: 'FLOOR',
-            parentId: '13',
-            assetCount: 18,
-          },
-          {
-            id: '16',
-            name: 'Roof',
-            type: 'FLOOR',
-            parentId: '13',
-            assetCount: 6,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: '17',
-    name: 'Production Facility',
-    type: 'AREA',
-    description: 'Main production and manufacturing area',
-    assetCount: 128,
-    children: [
-      {
-        id: '18',
-        name: 'Production Floor',
-        type: 'BUILDING',
-        parentId: '17',
-        assetCount: 95,
-        children: [
-          { id: '19', name: 'Line 1', type: 'ZONE', parentId: '18', assetCount: 35 },
-          { id: '20', name: 'Line 2', type: 'ZONE', parentId: '18', assetCount: 30 },
-          { id: '21', name: 'Line 3', type: 'ZONE', parentId: '18', assetCount: 25 },
-          { id: '22', name: 'Quality Control', type: 'ROOM', parentId: '18', assetCount: 5 },
-        ],
-      },
-      {
-        id: '23',
-        name: 'Warehouse',
-        type: 'BUILDING',
-        parentId: '17',
-        assetCount: 33,
-        children: [
-          { id: '24', name: 'Storage Area A', type: 'ZONE', parentId: '23', assetCount: 15 },
-          { id: '25', name: 'Storage Area B', type: 'ZONE', parentId: '23', assetCount: 12 },
-          { id: '26', name: 'Shipping Dock', type: 'ZONE', parentId: '23', assetCount: 6 },
-        ],
-      },
-    ],
-  },
-];
 
 const getLocationIcon = (type: string) => {
   switch (type) {
@@ -217,18 +110,56 @@ export default function Locations() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedNodes, setExpandedNodes] = useState<string[]>(['1', '17']);
+  const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [assetDistributionOpen, setAssetDistributionOpen] = useState(false);
+  const [siteMapOpen, setSiteMapOpen] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  // Fetch locations data
+  const { data: locations = [], isLoading, error } = useQuery({
+    queryKey: ['locations'],
+    queryFn: locationsService.getAll,
+  });
+
+  // Create location mutation
+  const createLocationMutation = useMutation({
+    mutationFn: locationsService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+      setOpenDialog(false);
+      setSelectedLocation(null);
+    },
+  });
+
+  // Update location mutation
+  const updateLocationMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => locationsService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+      setOpenDialog(false);
+      setSelectedLocation(null);
+    },
+  });
+
+  // Delete location mutation
+  const deleteLocationMutation = useMutation({
+    mutationFn: locationsService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['locations'] });
+    },
+  });
 
   const handleNodeToggle = (event: React.SyntheticEvent, nodeIds: string[]) => {
     setExpandedNodes(nodeIds);
   };
 
   const handleNodeSelect = (event: React.SyntheticEvent, nodeId: string) => {
-    const allLocations = flattenLocations(mockLocations);
-    const location = allLocations.find(loc => loc.id === nodeId);
+    const allLocations = flattenLocations(locations);
+    const location = allLocations.find(loc => loc.id.toString() === nodeId);
     if (location) {
       setSelectedLocation(location);
       setFormMode('view');
@@ -249,10 +180,11 @@ export default function Locations() {
   };
 
   const handleSubmitLocation = (data: any) => {
-    console.log('Location Data:', data);
-    // Here you would call your API
-    setOpenDialog(false);
-    setSelectedLocation(null);
+    if (selectedLocation) {
+      updateLocationMutation.mutate({ id: selectedLocation.id.toString(), data });
+    } else {
+      createLocationMutation.mutate(data);
+    }
   };
 
   const renderTreeItem = (node: Location) => {
@@ -264,7 +196,7 @@ export default function Locations() {
     return (
       <TreeItem
         key={node.id}
-        itemId={node.id}
+        itemId={node.id.toString()}
         label={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
             {getLocationIcon(node.type)}
@@ -301,11 +233,34 @@ export default function Locations() {
     );
   };
 
-  const allLocations = flattenLocations(mockLocations);
+  // Calculate statistics from real API data
+  const allLocations = flattenLocations(locations);
   const totalAssets = allLocations.reduce((sum, loc) => sum + loc.assetCount, 0);
   const buildingCount = allLocations.filter(loc => loc.type === 'BUILDING').length;
   const floorCount = allLocations.filter(loc => loc.type === 'FLOOR').length;
   const roomCount = allLocations.filter(loc => loc.type === 'ROOM').length;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <PageLayout title="Locations" subtitle="Loading location data...">
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+          <CircularProgress />
+        </Box>
+      </PageLayout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageLayout title="Locations" subtitle="Error loading locations">
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Failed to load location data. Please try again later.
+        </Alert>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout
@@ -314,12 +269,22 @@ export default function Locations() {
       actions={
         <Box sx={{ display: 'flex', gap: 2 }}>
           {!isMobile && (
-            <Button
-              variant="outlined"
-              startIcon={<MapIcon />}
-            >
-              View Map
-            </Button>
+            <>
+              <Button
+                variant="outlined"
+                startIcon={<MapIcon />}
+                onClick={() => setSiteMapOpen(true)}
+              >
+                View Map
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<AssessmentIcon />}
+                onClick={() => setAssetDistributionOpen(true)}
+              >
+                Asset Distribution
+              </Button>
+            </>
           )}
           <Button
             variant="contained"
@@ -400,7 +365,7 @@ export default function Locations() {
               <Button
                 variant="outlined"
                 size="small"
-                onClick={() => setExpandedNodes(hierarchicalLocations.map(loc => loc.id))}
+                onClick={() => setExpandedNodes(allLocations.map(loc => loc.id.toString()))}
               >
                 Expand All
               </Button>
@@ -412,7 +377,7 @@ export default function Locations() {
               onSelectedItemsChange={(event, itemId) => handleNodeSelect(event, itemId as string)}
               sx={{ flexGrow: 1, maxWidth: '100%', overflowY: 'auto' }}
             >
-              {mockLocations.filter(location => location?.id).map((location) => renderTreeItem(location))}
+              {locations.filter(location => location?.id).map((location) => renderTreeItem(location))}
             </SimpleTreeView>
           </Paper>
         </Grid>
@@ -435,13 +400,15 @@ export default function Locations() {
                   variant="outlined"
                   startIcon={<MapIcon />}
                   fullWidth
+                  onClick={() => setSiteMapOpen(true)}
                 >
                   View Site Map
                 </Button>
                 <Button
                   variant="outlined"
-                  startIcon={<FactoryIcon />}
+                  startIcon={<AssessmentIcon />}
                   fullWidth
+                  onClick={() => setAssetDistributionOpen(true)}
                 >
                   Asset Distribution
                 </Button>
@@ -536,6 +503,20 @@ export default function Locations() {
         onSubmit={handleSubmitLocation}
         initialData={selectedLocation || {}}
         mode={formMode}
+      />
+
+      {/* Asset Distribution Dialog */}
+      <AssetDistributionDialog
+        open={assetDistributionOpen}
+        onClose={() => setAssetDistributionOpen(false)}
+        locations={locations}
+      />
+
+      {/* Site Map Dialog */}
+      <SiteMapDialog
+        open={siteMapOpen}
+        onClose={() => setSiteMapOpen(false)}
+        locations={locations}
       />
     </PageLayout>
   );

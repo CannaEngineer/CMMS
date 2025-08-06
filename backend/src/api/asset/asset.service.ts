@@ -3,8 +3,11 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const getAllAssets = async () => {
+export const getAllAssets = async (organizationId: number) => {
   return prisma.asset.findMany({
+    where: {
+      organizationId,
+    },
     include: {
       location: {
         select: {
@@ -37,9 +40,12 @@ export const getAllAssets = async () => {
   });
 };
 
-export const getAssetById = async (id: number) => {
-  return prisma.asset.findUnique({
-    where: { id },
+export const getAssetById = async (id: number, organizationId: number) => {
+  return prisma.asset.findFirst({
+    where: { 
+      id,
+      organizationId,
+    },
     include: {
       location: {
         select: {
@@ -76,13 +82,21 @@ export const createAsset = async (data: any) => {
   return prisma.asset.create({ data });
 };
 
-export const updateAsset = async (id: number, data: any) => {
-  return prisma.asset.update({
-    where: { id },
+export const updateAsset = async (id: number, data: any, organizationId: number) => {
+  return prisma.asset.updateMany({
+    where: { 
+      id,
+      organizationId,
+    },
     data,
   });
 };
 
-export const deleteAsset = async (id: number) => {
-  return prisma.asset.delete({ where: { id } });
+export const deleteAsset = async (id: number, organizationId: number) => {
+  return prisma.asset.deleteMany({ 
+    where: { 
+      id,
+      organizationId,
+    }
+  });
 };

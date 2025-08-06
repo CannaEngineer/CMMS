@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -38,11 +38,13 @@ import {
 } from '@mui/icons-material';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/Common/StatCard';
+import UniversalExportButton from '../components/Common/UniversalExportButton';
 import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm';
 import { PMCalendar } from '../components/PMCalendar';
 import { statusColors } from '../theme/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pmService, dashboardService, assetsService, workOrdersService } from '../services/api';
+import { qrService } from '../services/qrService';
 import dayjs from 'dayjs';
 
 export default function Maintenance() {
@@ -89,9 +91,41 @@ export default function Maintenance() {
     queryFn: () => dashboardService.getTrends(6), // Get last 6 months
   });
 
+  // Helper function to generate QR code for PM schedule
+  const generatePMScheduleQRCode = useCallback(async (pmData: any) => {
+    try {
+      const qrData = qrService.createQRCodeData('pm-schedule', pmData.id?.toString() || 'temp', {
+        name: pmData.name,
+        frequency: pmData.frequency,
+        assetId: pmData.assetId,
+      });
+      const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
+      return qrCodeUrl;
+    } catch (error) {
+      console.error('Failed to generate QR code for PM schedule:', error);
+      return null;
+    }
+  }, []);
+
   // Mutations for PM Schedules
   const createMutation = useMutation({
-    mutationFn: pmService.createSchedule,
+    mutationFn: async (pmData: any) => {
+      // Create the PM schedule first
+      const createdSchedule = await pmService.createSchedule(pmData);
+      
+      // Generate QR code with the actual schedule ID
+      const qrCodeUrl = await generatePMScheduleQRCode({ ...pmData, id: createdSchedule.id });
+      
+      // Update the schedule with the QR code if generation succeeded
+      if (qrCodeUrl && createdSchedule.id) {
+        await pmService.updateSchedule(createdSchedule.id.toString(), {
+          ...createdSchedule,
+          qrCode: qrCodeUrl
+        });
+      }
+      
+      return createdSchedule;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
@@ -104,7 +138,15 @@ export default function Maintenance() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => pmService.updateSchedule(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // If the PM schedule doesn't have a QR code, generate one
+      if (!data.qrCode) {
+        const qrCodeUrl = await generatePMScheduleQRCode({ ...data, id });
+        data = { ...data, qrCode: qrCodeUrl };
+      }
+      
+      return pmService.updateSchedule(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
@@ -255,13 +297,20 @@ export default function Maintenance() {
         <Typography variant="h4" sx={{ fontWeight: 700 }}>
           Maintenance Management
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleScheduleMaintenance}
-        >
-          Schedule Maintenance
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <UniversalExportButton
+            dataSource="maintenance"
+            entityType="maintenance_schedules"
+            buttonText="Export"
+          />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleScheduleMaintenance}
+          >
+            Schedule Maintenance
+          </Button>
+        </Box>
       </Box>
 
       {/* KPI Cards */}

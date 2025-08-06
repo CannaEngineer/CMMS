@@ -14,13 +14,20 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import WorkOrders from './pages/WorkOrders';
 import Assets from './pages/Assets';
+import AssetDetail from './pages/AssetDetail';
+import WorkOrderDetail from './pages/WorkOrderDetail';
 import Maintenance from './pages/Maintenance';
+import MaintenanceScheduleDetail from './pages/MaintenanceScheduleDetail';
 import Inventory from './pages/Inventory';
 import Locations from './pages/Locations';
-import Reports from './pages/Reports';
 import Users from './pages/Users';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
+import PartDetail from './pages/PartDetail';
+import ExportCenter from './components/Export/ExportCenter';
+import Portals from './pages/Portals';
+import PublicPortal from './pages/PublicPortal';
+import PortalDetailView from './components/Portal/PortalDetailView';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -43,7 +50,15 @@ function App() {
           <CssBaseline />
           <Router>
           <Routes>
+            {/* Public Portal Routes (no authentication required) */}
+            <Route path="/portal/:portalSlug" element={<PublicPortal />} />
+            <Route path="/portals/public/:portalSlug" element={<PublicPortal />} />
+            <Route path="/p/:portalSlug" element={<PublicPortal />} />
+            
+            {/* Authentication Routes */}
             <Route path="/login" element={<Login />} />
+            
+            {/* Protected Routes */}
             <Route
               path="/*"
               element={
@@ -53,11 +68,17 @@ function App() {
                       <Route index element={<Navigate to="/dashboard" replace />} />
                       <Route path="dashboard" element={<Dashboard />} />
                       <Route path="work-orders" element={<WorkOrders />} />
+                      <Route path="work-orders/:id" element={<WorkOrderDetail />} />
                       <Route path="assets" element={<Assets />} />
+                      <Route path="assets/:id" element={<AssetDetail />} />
                       <Route path="maintenance" element={<Maintenance />} />
+                      <Route path="maintenance/schedules/:id" element={<MaintenanceScheduleDetail />} />
                       <Route path="inventory" element={<Inventory />} />
+                      <Route path="inventory/parts/:id" element={<PartDetail />} />
                       <Route path="locations" element={<Locations />} />
-                      <Route path="reports" element={<Reports />} />
+                      <Route path="portals" element={<Portals />} />
+                      <Route path="portals/:id" element={<PortalDetailView />} />
+                      <Route path="exports" element={<ExportCenter />} />
                       <Route path="users" element={<Users />} />
                       <Route path="profile" element={<ProfilePage />} />
                       <Route path="settings" element={<SettingsPage />} />

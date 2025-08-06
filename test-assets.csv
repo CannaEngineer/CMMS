@@ -1,0 +1,3 @@
+Name,Description,Serial Number,Location,Status,Criticality
+Test Asset 1,A test asset for import,SN001,Test Location,ONLINE,HIGH
+Test Asset 2,Another test asset,SN002,Test Location,OFFLINE,MEDIUM

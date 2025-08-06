@@ -154,8 +154,8 @@ export default function LocationForm({
   }, [locationHierarchy]);
 
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...formData, ...initialData });
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
 

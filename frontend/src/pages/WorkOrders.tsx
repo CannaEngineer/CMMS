@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -61,6 +61,7 @@ import {
   Close as CloseIcon,
   Tune as TuneIcon,
   Refresh as RefreshIcon,
+  FileDownload as DownloadIcon,
   KeyboardArrowUp as UpIcon,
   KeyboardArrowDown as DownIcon,
   Home as HomeIcon,
@@ -72,8 +73,11 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
+import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
+import { qrService } from '../services/qrService';
+import { useNavigate } from 'react-router-dom';
 
 interface WorkOrder {
   id: number;
@@ -100,6 +104,7 @@ interface WorkOrder {
 export default function WorkOrders() {
   const theme = useTheme();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -115,6 +120,7 @@ export default function WorkOrders() {
   const [showSearch, setShowSearch] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [urgentModalOpen, setUrgentModalOpen] = useState(false);
   
   // Mobile-specific states
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -142,9 +148,44 @@ export default function WorkOrders() {
     refetchOnWindowFocus: false,
   });
 
+  // Memoized initial data to prevent re-renders
+  const workOrderInitialData = useMemo(() => selectedWorkOrder || {}, [selectedWorkOrder]);
+
+  // Helper function to generate QR code for work order
+  const generateWorkOrderQRCode = useCallback(async (workOrderData: any) => {
+    try {
+      const qrData = qrService.createQRCodeData('work-order', workOrderData.id?.toString() || 'temp', {
+        title: workOrderData.title,
+        priority: workOrderData.priority,
+        status: workOrderData.status,
+      });
+      const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
+      return qrCodeUrl;
+    } catch (error) {
+      console.error('Failed to generate QR code for work order:', error);
+      return null;
+    }
+  }, []);
+
   // Mutations
   const createWorkOrderMutation = useMutation({
-    mutationFn: workOrdersService.create,
+    mutationFn: async (workOrderData: any) => {
+      // Create the work order first
+      const createdWorkOrder = await workOrdersService.create(workOrderData);
+      
+      // Generate QR code with the actual work order ID
+      const qrCodeUrl = await generateWorkOrderQRCode({ ...workOrderData, id: createdWorkOrder.id });
+      
+      // Update the work order with the QR code if generation succeeded
+      if (qrCodeUrl && createdWorkOrder.id) {
+        await workOrdersService.update(createdWorkOrder.id.toString(), {
+          ...createdWorkOrder,
+          qrCode: qrCodeUrl
+        });
+      }
+      
+      return createdWorkOrder;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
@@ -153,7 +194,15 @@ export default function WorkOrders() {
   });
 
   const updateWorkOrderMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => workOrdersService.update(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // If the work order doesn't have a QR code, generate one
+      if (!data.qrCode) {
+        const qrCodeUrl = await generateWorkOrderQRCode({ ...data, id });
+        data = { ...data, qrCode: qrCodeUrl };
+      }
+      
+      return workOrdersService.update(id, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
@@ -199,12 +248,8 @@ export default function WorkOrders() {
   }, []);
 
   const handleViewWorkOrder = useCallback((workOrder: WorkOrder) => {
-    setSelectedWorkOrder(workOrder);
-    setFormMode('view');
-    setWorkOrderFormOpen(true);
-    setAnchorEl(null);
-    setQuickActionOpen(false);
-  }, []);
+    navigate(`/work-orders/${workOrder.id}`);
+  }, [navigate]);
 
   const handleDeleteWorkOrder = useCallback((workOrder: WorkOrder) => {
     if (window.confirm(`Are you sure you want to delete work order "${workOrder.title}"?`)) {
@@ -288,32 +333,47 @@ export default function WorkOrders() {
     touchStartRef.current = null;
   }, [selectedWorkOrder, handleQuickStatusUpdate]);
 
-  // Enhanced filtering with active filter support
-  const filteredWorkOrders = workOrders.filter((workOrder: WorkOrder) => {
+  // Base filtering (search and additional filters, but not tab filtering)
+  const baseFilteredWorkOrders = workOrders.filter((workOrder: WorkOrder) => {
     const matchesSearch = searchTerm === '' || 
       workOrder.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workOrder.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workOrder.asset?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       workOrder.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTab = currentTab === 0 || // All
-                      (currentTab === 1 && workOrder.status === 'OPEN') ||
-                      (currentTab === 2 && workOrder.status === 'IN_PROGRESS') ||
-                      (currentTab === 3 && workOrder.status === 'COMPLETED');
-    
     const matchesFilters = activeFilters.length === 0 || 
       activeFilters.some(filter => {
         switch (filter) {
           case 'urgent': return workOrder.priority === 'URGENT';
           case 'high': return workOrder.priority === 'HIGH';
+          case 'medium': return workOrder.priority === 'MEDIUM';
+          case 'low': return workOrder.priority === 'LOW';
           case 'unassigned': return !workOrder.assignedToId;
           case 'overdue': return new Date(workOrder.createdAt) < new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
           default: return true;
         }
       });
     
-    return matchesSearch && matchesTab && matchesFilters;
+    return matchesSearch && matchesFilters;
   });
+
+  // Enhanced filtering with active filter support
+  const filteredWorkOrders = baseFilteredWorkOrders.filter((workOrder: WorkOrder) => {
+    const matchesTab = currentTab === 0 || // All
+                      (currentTab === 1 && workOrder.status === 'OPEN') ||
+                      (currentTab === 2 && workOrder.status === 'IN_PROGRESS') ||
+                      (currentTab === 3 && workOrder.status === 'COMPLETED');
+    
+    return matchesTab;
+  });
+
+  // Calculate filtered tab counts
+  const filteredTabCounts = {
+    all: baseFilteredWorkOrders.length,
+    open: baseFilteredWorkOrders.filter((wo: WorkOrder) => wo.status === 'OPEN').length,
+    inProgress: baseFilteredWorkOrders.filter((wo: WorkOrder) => wo.status === 'IN_PROGRESS').length,
+    completed: baseFilteredWorkOrders.filter((wo: WorkOrder) => wo.status === 'COMPLETED').length,
+  };
 
   // Enhanced stats calculation
   const workOrderStats = {
@@ -571,6 +631,13 @@ export default function WorkOrders() {
               <SearchIcon />
             </IconButton>
             
+            <UniversalExportButton
+              variant="icon"
+              data={filteredWorkOrders}
+              dataSource="work_orders"
+              entityType="work_orders"
+            />
+            
             <IconButton 
               onClick={handlePullToRefresh}
               disabled={isRefreshing}
@@ -662,25 +729,36 @@ export default function WorkOrders() {
               </Typography>
             </Box>
             
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreateWorkOrder}
-              disabled={createWorkOrderMutation.isPending}
-              sx={{ 
-                minHeight: 48,
-                px: 3,
-                borderRadius: 3,
-                boxShadow: 2,
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: 4,
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              Create Work Order
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <UniversalExportButton
+                data={filteredWorkOrders}
+                dataSource="work_orders"
+                entityType="work_orders"
+                showBadge={filteredWorkOrders.length > 0}
+                badgeContent={filteredWorkOrders.length}
+                buttonText="Export"
+              />
+              
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateWorkOrder}
+                disabled={createWorkOrderMutation.isPending}
+                sx={{ 
+                  minHeight: 48,
+                  px: 3,
+                  borderRadius: 3,
+                  boxShadow: 2,
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: 4,
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Create Work Order
+              </Button>
+            </Stack>
           </Box>
         )}
 
@@ -688,7 +766,7 @@ export default function WorkOrders() {
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
             {/* Mobile: 2x2 grid */}
-            <Grid item xs={6} sm={4} md={2.4}>
+            <Grid item xs={6} sm={4} md={2}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -701,7 +779,9 @@ export default function WorkOrders() {
                 },
                 borderRadius: 3,
                 overflow: 'hidden',
-              }}>
+              }}
+              onClick={() => setCurrentTab(0)}
+              >
                 <CardContent sx={{ 
                   p: { xs: 2, sm: 2.5, md: 3 }, 
                   '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
@@ -754,7 +834,9 @@ export default function WorkOrders() {
                 },
                 borderRadius: 3,
                 overflow: 'hidden',
-              }}>
+              }}
+              onClick={() => setCurrentTab(1)}
+              >
                 <CardContent sx={{ 
                   p: { xs: 2, sm: 2.5, md: 3 }, 
                   '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
@@ -807,7 +889,9 @@ export default function WorkOrders() {
                 },
                 borderRadius: 3,
                 overflow: 'hidden',
-              }}>
+              }}
+              onClick={() => setCurrentTab(2)}
+              >
                 <CardContent sx={{ 
                   p: { xs: 2, sm: 2.5, md: 3 }, 
                   '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
@@ -860,7 +944,9 @@ export default function WorkOrders() {
                 },
                 borderRadius: 3,
                 overflow: 'hidden',
-              }}>
+              }}
+              onClick={() => setCurrentTab(3)}
+              >
                 <CardContent sx={{ 
                   p: { xs: 2, sm: 2.5, md: 3 }, 
                   '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
@@ -913,7 +999,9 @@ export default function WorkOrders() {
                 },
                 borderRadius: 3,
                 overflow: 'hidden',
-              }}>
+              }}
+              onClick={() => setUrgentModalOpen(true)}
+              >
                 <CardContent sx={{ 
                   p: { xs: 2, sm: 2.5, md: 3 }, 
                   '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
@@ -961,7 +1049,7 @@ export default function WorkOrders() {
           <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
             <Tabs 
               value={currentTab} 
-              onChange={(e, newValue) => setCurrentTab(newValue)}
+              onChange={(_, newValue) => setCurrentTab(newValue)}
               variant="scrollable"
               scrollButtons="auto"
               sx={{
@@ -982,16 +1070,16 @@ export default function WorkOrders() {
               }}
             >
               <Tab 
-                label={`All (${workOrderStats.total})`} 
+                label={`All (${filteredTabCounts.all})`} 
               />
               <Tab 
-                label={`Open (${workOrderStats.open})`}
+                label={`Open (${filteredTabCounts.open})`}
               />
               <Tab 
-                label={`Active (${workOrderStats.inProgress})`}
+                label={`Active (${filteredTabCounts.inProgress})`}
               />
               <Tab 
-                label={`Done (${workOrderStats.completed})`}
+                label={`Done (${filteredTabCounts.completed})`}
               />
             </Tabs>
           </Box>
@@ -1036,31 +1124,34 @@ export default function WorkOrders() {
                 }}
               />
               
-              <ButtonGroup variant="outlined" sx={{ height: 48 }}>
-                <Button
-                  startIcon={<TuneIcon />}
-                  onClick={() => setFiltersOpen(true)}
-                  sx={{ px: 3, borderRadius: '24px 0 0 24px' }}
-                >
-                  Filters
-                  {activeFilters.length > 0 && (
-                    <Chip 
-                      label={activeFilters.length} 
-                      size="small" 
-                      color="primary" 
-                      sx={{ ml: 1, minWidth: 20, height: 20 }}
-                    />
-                  )}
-                </Button>
-                
-                <Button
-                  onClick={handlePullToRefresh}
-                  disabled={isRefreshing}
-                  sx={{ px: 2, borderRadius: '0 24px 24px 0' }}
-                >
-                  {isRefreshing ? <CircularProgress size={20} /> : <RefreshIcon />}
-                </Button>
-              </ButtonGroup>
+              <Button
+                variant="outlined"
+                startIcon={<TuneIcon />}
+                onClick={() => setFiltersOpen(true)}
+                sx={{ 
+                  px: 3, 
+                  borderRadius: 3,
+                  height: 48,
+                  position: 'relative'
+                }}
+              >
+                Filters
+                {activeFilters.length > 0 && (
+                  <Badge 
+                    badgeContent={activeFilters.length} 
+                    color="primary" 
+                    sx={{ 
+                      position: 'absolute',
+                      top: -8,
+                      right: -8,
+                      '& .MuiBadge-badge': {
+                        minWidth: 20,
+                        height: 20,
+                      }
+                    }}
+                  />
+                )}
+              </Button>
             </Box>
           )}
           
@@ -1191,6 +1282,7 @@ export default function WorkOrders() {
               <CardContent sx={{ p: 0 }}>
                 <DataTable
                   data={filteredWorkOrders}
+                  onRowClick={(row: WorkOrder) => handleViewWorkOrder(row)}
                   columns={[
                     {
                       key: 'id',
@@ -1288,16 +1380,47 @@ export default function WorkOrders() {
                     },
                     {
                       key: 'actions',
-                      label: 'Actions',
+                      label: 'Quick Actions',
                       priority: 'high' as const,
                       render: (value: any, row: WorkOrder) => (
-                        <IconButton
-                          onClick={(e) => handleCardAction(e, row)}
-                          size="small"
-                          sx={{ minWidth: 48, minHeight: 48 }}
-                        >
-                          <MoreIcon />
-                        </IconButton>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          {row.status === 'OPEN' && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<StartIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickStatusUpdate(row, 'IN_PROGRESS');
+                              }}
+                              sx={{ minWidth: 'auto' }}
+                            >
+                              Start
+                            </Button>
+                          )}
+                          {row.status === 'IN_PROGRESS' && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="success"
+                              startIcon={<CompleteIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleQuickStatusUpdate(row, 'COMPLETED');
+                              }}
+                              sx={{ minWidth: 'auto' }}
+                            >
+                              Complete
+                            </Button>
+                          )}
+                          <IconButton
+                            onClick={(e) => handleCardAction(e, row)}
+                            size="small"
+                            sx={{ minWidth: 40, minHeight: 40 }}
+                          >
+                            <MoreIcon />
+                          </IconButton>
+                        </Stack>
                       ),
                     },
                   ]}
@@ -1305,6 +1428,8 @@ export default function WorkOrders() {
                   emptyMessage="No work orders found"
                   searchable={false}
                   mobileCardView={false}
+                  showExportButton={false}
+                  showFilterButton={false}
                 />
               </CardContent>
             </Card>
@@ -1530,7 +1655,7 @@ export default function WorkOrders() {
             </Typography>
             
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-              {['urgent', 'high'].map((filter) => (
+              {['urgent', 'high', 'medium', 'low'].map((filter) => (
                 <Chip
                   key={filter}
                   label={filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -1615,11 +1740,259 @@ export default function WorkOrders() {
             setSelectedWorkOrder(null);
           }}
           onSubmit={handleWorkOrderSubmit}
-          initialData={selectedWorkOrder || {}}
+          initialData={workOrderInitialData}
           mode={formMode}
           loading={createWorkOrderMutation.isPending || updateWorkOrderMutation.isPending}
         />
         
+        {/* Urgent Tasks Modal */}
+        <Dialog
+          open={urgentModalOpen}
+          onClose={() => setUrgentModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+          fullScreen={isMobile}
+          PaperProps={{
+            sx: {
+              borderRadius: isMobile ? 0 : 3,
+              maxHeight: isMobile ? '100%' : '80vh',
+            }
+          }}
+        >
+          <DialogTitle sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 2,
+            pb: 2,
+            borderBottom: 1,
+            borderColor: 'divider'
+          }}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: 'error.main',
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': { opacity: 1 },
+                  '50%': { opacity: 0.5 },
+                  '100%': { opacity: 1 },
+                },
+              }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              Urgent Work Orders
+            </Typography>
+            <Chip 
+              label={workOrderStats.urgent} 
+              color="error" 
+              size="small"
+              sx={{ ml: 'auto' }}
+            />
+            {!isMobile && (
+              <IconButton onClick={() => setUrgentModalOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            )}
+          </DialogTitle>
+          
+          <DialogContent sx={{ p: 0 }}>
+            {workOrders.filter((wo: WorkOrder) => wo.priority === 'URGENT').length === 0 ? (
+              <Box sx={{ 
+                textAlign: 'center', 
+                py: 6,
+                px: 3,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2
+              }}>
+                <CompleteIcon sx={{ fontSize: 64, color: 'success.main' }} />
+                <Typography variant="h6" gutterBottom>
+                  No Urgent Tasks
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Great! You don't have any urgent work orders at the moment.
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ p: 0 }}>
+                {workOrders
+                  .filter((wo: WorkOrder) => wo.priority === 'URGENT')
+                  .map((workOrder, index) => (
+                    <Box
+                      key={workOrder.id}
+                      sx={{
+                        p: 3,
+                        borderBottom: index < workOrders.filter((wo: WorkOrder) => wo.priority === 'URGENT').length - 1 
+                          ? '1px solid' 
+                          : 'none',
+                        borderColor: 'divider',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                      onClick={() => {
+                        setUrgentModalOpen(false);
+                        handleViewWorkOrder(workOrder);
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                              WO-{workOrder.id}
+                            </Typography>
+                            <Chip
+                              label={workOrder.status.replace('_', ' ')}
+                              color={getStatusColor(workOrder.status) as any}
+                              size="small"
+                              icon={getStatusIcon(workOrder.status)}
+                            />
+                          </Box>
+                          
+                          <Typography variant="h6" fontWeight={600} sx={{ mb: 1, lineHeight: 1.2 }}>
+                            {workOrder.title}
+                          </Typography>
+                          
+                          {workOrder.description && (
+                            <Typography 
+                              variant="body2" 
+                              color="text.secondary" 
+                              sx={{ 
+                                mb: 2,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {workOrder.description}
+                            </Typography>
+                          )}
+                          
+                          <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
+                            {workOrder.asset && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <LocationIcon fontSize="small" color="action" />
+                                <Typography variant="caption" color="text.secondary">
+                                  {workOrder.asset.name}
+                                </Typography>
+                              </Box>
+                            )}
+                            
+                            {workOrder.assignedTo && (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Avatar sx={{ width: 16, height: 16, fontSize: '0.7rem' }}>
+                                  {workOrder.assignedTo.name.charAt(0)}
+                                </Avatar>
+                                <Typography variant="caption" color="text.secondary">
+                                  {workOrder.assignedTo.name}
+                                </Typography>
+                              </Box>
+                            )}
+                            
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(workOrder.createdAt).toLocaleDateString()}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                          <Chip
+                            label="URGENT"
+                            color="error"
+                            size="small"
+                            icon={<PriorityIcon />}
+                            sx={{ fontWeight: 600 }}
+                          />
+                          
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUrgentModalOpen(false);
+                              handleCardAction(e, workOrder);
+                            }}
+                            sx={{ 
+                              minWidth: 40, 
+                              minHeight: 40,
+                              '&:hover': {
+                                bgcolor: 'action.hover',
+                                transform: 'scale(1.1)',
+                              },
+                            }}
+                          >
+                            <MoreIcon />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      
+                      {/* Quick Actions for Urgent Items */}
+                      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                        {workOrder.status === 'OPEN' && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<StartIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickStatusUpdate(workOrder, 'IN_PROGRESS');
+                              setUrgentModalOpen(false);
+                            }}
+                          >
+                            Start Now
+                          </Button>
+                        )}
+                        {workOrder.status === 'IN_PROGRESS' && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            startIcon={<CompleteIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickStatusUpdate(workOrder, 'COMPLETED');
+                              setUrgentModalOpen(false);
+                            }}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                        <Button
+                          size="small"
+                          variant="text"
+                          startIcon={<ViewIcon />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUrgentModalOpen(false);
+                            handleViewWorkOrder(workOrder);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      </Box>
+                    </Box>
+                  ))}
+              </Box>
+            )}
+          </DialogContent>
+          
+          {isMobile && (
+            <DialogActions sx={{ p: 2 }}>
+              <Button 
+                fullWidth 
+                onClick={() => setUrgentModalOpen(false)}
+                sx={{ borderRadius: 3, minHeight: 48 }}
+              >
+                Close
+              </Button>
+            </DialogActions>
+          )}
+        </Dialog>
+
         {/* Notifications */}
         <Snackbar
           open={snackbarOpen}

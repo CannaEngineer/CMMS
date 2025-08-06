@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
@@ -30,7 +31,6 @@ export default defineConfig(({ command, mode }) => {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:5000',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
         },
       },
     },
@@ -66,6 +66,11 @@ export default defineConfig(({ command, mode }) => {
     // Preview configuration (for production builds)
     preview: {
       port: 4173,
+    },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.ts',
     },
   }
 })

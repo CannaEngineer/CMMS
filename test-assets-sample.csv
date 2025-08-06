@@ -1,0 +1,4 @@
+Name,Description,Serial Number,Location,Status,Criticality,Manufacturer
+Asset Test 1,Testing the import system,SN-12345,Test Location,ONLINE,HIGH,Test Manufacturer
+Asset Test 2,Another test asset,SN-67890,Test Location,OFFLINE,MEDIUM,Test Manufacturer 2
+Asset Test 3,Third test asset,SN-11111,Test Location,ONLINE,LOW,Test Manufacturer 3
