@@ -1,0 +1,361 @@
+// =====================================================
+// UPDATED PRISMA SCHEMA WITH QR SYSTEM INTEGRATION
+// This shows the additions needed to your existing schema.prisma
+// =====================================================
+
+// Add these enums to your existing schema.prisma file:
+
+enum QREntityType {
+  ASSET
+  LOCATION
+  WORK_ORDER
+  PM_SCHEDULE
+  PART
+  USER
+  PORTAL
+}
+
+enum QRStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum QRBatchStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum QRScanAction {
+  VIEW
+  EDIT
+  CREATE_WORK_ORDER
+  UPDATE_STATUS
+  LOG_METER
+  INSPECT
+  DOWNLOAD
+}
+
+// =====================================================
+// ADD THESE MODELS TO YOUR EXISTING SCHEMA
+// =====================================================
+
+model QRCode {
+  id              Int           @id @default(autoincrement())
+  uniqueId        String        @unique @default(cuid())
+  organizationId  Int
+  organization    Organization  @relation("OrganizationQRCodes", fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Entity Association (Polymorphic)
+  entityType      QREntityType
+  entityId        Int
+  entityUniqueId  String?       // For human-readable references
+  
+  // QR Code Properties
+  qrData          String        // The actual QR code data/URL
+  qrHash          String        @unique // SHA-256 hash for deduplication
+  qrImageUrl      String?       // Generated QR code image URL
+  shortUrl        String?       @unique // Shortened URL for QR code
+  
+  // Metadata
+  title           String?
+  description     String?
+  customData      Json          @default("{}")
+  
+  // Configuration
+  status          QRStatus      @default(ACTIVE)
+  expiresAt       DateTime?
+  maxScans        Int?          // Optional scan limit
+  currentScans    Int           @default(0)
+  
+  // Security & Access Control
+  isPublic        Boolean       @default(false)
+  requiresAuth    Boolean       @default(true)
+  allowedRoles    String[]      // Array of allowed user roles
+  accessPermissions Json        @default("{}")
+  
+  // Format & Display Options
+  format          String        @default("PNG") // PNG, SVG, PDF
+  size            Int           @default(200)   // QR code size in pixels
+  color           String        @default("#000000")
+  backgroundColor String        @default("#FFFFFF")
+  logoUrl         String?       // Optional logo overlay
+  
+  // Audit Fields
+  createdBy       Int?
+  updatedBy       Int?
+  createdByUser   User?         @relation("QRCodeCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  updatedByUser   User?         @relation("QRCodeUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+  
+  // Relationships
+  scanLogs        QRScanLog[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@unique([organizationId, entityType, entityId])
+  @@index([organizationId])
+  @@index([entityType, entityId])
+  @@index([status])
+  @@index([qrHash])
+  @@index([shortUrl])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@index([organizationId, entityType, status])
+  @@map("qr_codes")
+}
+
+model QRScanLog {
+  id              String        @id @default(cuid())
+  qrCodeId        Int
+  organizationId  Int
+  qrCode          QRCode        @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  organization    Organization  @relation("QRScanLogs", fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Scan Details
+  scanAction      QRScanAction  @default(VIEW)
+  scanResult      String        @default("SUCCESS") // SUCCESS, ERROR, BLOCKED
+  errorMessage    String?
+  
+  // User Information
+  scannedBy       Int?
+  userRole        String?
+  sessionId       String?
+  scannedByUser   User?         @relation("QRScanner", fields: [scannedBy], references: [id], onDelete: SetNull)
+  
+  // Technical Details
+  ipAddress       String?
+  userAgent       String?
+  deviceType      String?       // mobile, desktop, tablet
+  browser         String?
+  platform        String?
+  
+  // Location & Context
+  scanLocation    Json?         // GPS coordinates if available
+  scanContext     Json          @default("{}")
+  referrerUrl     String?
+  
+  // Performance Metrics
+  responseTimeMs  Int?
+  dataTransferredBytes Int?
+  
+  // Timestamp
+  scannedAt       DateTime      @default(now())
+  
+  @@index([qrCodeId])
+  @@index([organizationId])
+  @@index([scannedAt])
+  @@index([scannedBy])
+  @@index([ipAddress])
+  @@index([deviceType])
+  @@index([scanAction])
+  @@index([organizationId, scannedAt, scanAction])
+  @@map("qr_scan_logs")
+}
+
+model QRBatchOperation {
+  id              Int           @id @default(autoincrement())
+  batchId         String        @unique @default(cuid())
+  organizationId  Int
+  organization    Organization  @relation("QRBatchOperations", fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Operation Details
+  operationType   String        // GENERATE, UPDATE, DELETE, EXPORT
+  entityType      QREntityType
+  status          QRBatchStatus @default(PENDING)
+  
+  // Batch Configuration
+  batchName       String?
+  description     String?
+  filters         Json          @default("{}")
+  templateConfig  Json          @default("{}")
+  
+  // Progress Tracking
+  totalItems      Int           @default(0)
+  processedItems  Int           @default(0)
+  successfulItems Int           @default(0)
+  failedItems     Int           @default(0)
+  
+  // Results & Errors
+  results         Json          @default("[]")
+  errors          Json          @default("[]")
+  outputFiles     String[]
+  
+  // Timing
+  startedAt       DateTime?
+  completedAt     DateTime?
+  estimatedCompletion DateTime?
+  
+  // User & Audit
+  createdBy       Int
+  createdByUser   User          @relation("QRBatchCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@index([organizationId])
+  @@index([batchId])
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([operationType])
+  @@map("qr_batch_operations")
+}
+
+model QRTemplate {
+  id              Int           @id @default(autoincrement())
+  organizationId  Int
+  organization    Organization  @relation("QRTemplates", fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Template Identity
+  name            String
+  description     String?
+  entityType      QREntityType
+  
+  // Template Configuration
+  config          Json          @default("{}")
+  isDefault       Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  
+  // Usage Tracking
+  usageCount      Int           @default(0)
+  lastUsedAt      DateTime?
+  
+  // Audit
+  createdBy       Int
+  createdByUser   User          @relation("QRTemplateCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([entityType])
+  @@index([isActive])
+  @@index([isDefault])
+  @@map("qr_templates")
+}
+
+// =====================================================
+// UPDATE EXISTING MODELS WITH QR RELATIONSHIPS
+// Add these fields to your existing User model:
+// =====================================================
+
+// Add to existing User model:
+/*
+  // QR System relationships
+  qrCodesCreated     QRCode[]            @relation("QRCodeCreator")
+  qrCodesUpdated     QRCode[]            @relation("QRCodeUpdater") 
+  qrScans            QRScanLog[]         @relation("QRScanner")
+  qrBatchOperations  QRBatchOperation[]  @relation("QRBatchCreator")
+  qrTemplatesCreated QRTemplate[]        @relation("QRTemplateCreator")
+*/
+
+// =====================================================
+// UPDATE EXISTING ORGANIZATION MODEL
+// Add these fields to your existing Organization model:
+// =====================================================
+
+// Add to existing Organization model:
+/*
+  // QR System relationships
+  qrCodes            QRCode[]            @relation("OrganizationQRCodes")
+  qrScanLogs         QRScanLog[]         @relation("QRScanLogs")
+  qrBatchOperations  QRBatchOperation[]  @relation("QRBatchOperations")
+  qrTemplates        QRTemplate[]        @relation("QRTemplates")
+*/
+
+// =====================================================
+// COMPLETE UPDATED USER MODEL EXAMPLE
+// =====================================================
+
+model User {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  email          String       @unique
+  name           String
+  password       String // Will be hashed
+  role           UserRole     @default(TECHNICIAN)
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // User status tracking fields
+  isOnline       Boolean      @default(false)
+  lastSeen       DateTime?
+  lastActivity   DateTime?
+  workOrders     WorkOrder[]
+  
+  // New relationships for PM system
+  tasksCompleted    WorkOrderTask[] @relation("TaskCompletedBy")
+  tasksSigned       WorkOrderTask[] @relation("TaskSignedBy")
+  meterReadings     MeterReading[]  @relation("MeterReadingRecordedBy")
+  maintenancePerformed MaintenanceHistory[] @relation("MaintenancePerformedBy")
+  maintenanceSigned    MaintenanceHistory[] @relation("MaintenanceSignedBy")
+  
+  // Portal relationships
+  portalSubmissionsAssigned PortalSubmission[]
+  portalCommunicationsSent  PortalCommunication[]
+  
+  // Comment relationships
+  comments         Comment[] @relation("UserComments")
+  editedComments   Comment[] @relation("CommentEdits")
+
+  // Import relationships
+  importHistory    ImportHistory[] @relation("ImportHistory")
+  rolledBackImports ImportHistory[] @relation("ImportRollback")
+  
+  // Time logging and sharing relationships
+  timeLogs         WorkOrderTimeLog[] @relation("TimeLogUser")
+  createdShares    WorkOrderShare[]   @relation("ShareCreator")
+  moderatedComments PublicComment[]   @relation("CommentModerator")
+
+  // Notification relationships
+  notifications            Notification[] @relation("UserNotifications")
+  createdNotifications     Notification[] @relation("NotificationCreator")
+  notificationPreferences  NotificationPreference[]
+  notificationDevices      NotificationDevice[]
+
+  // QR System relationships
+  qrCodesCreated     QRCode[]            @relation("QRCodeCreator")
+  qrCodesUpdated     QRCode[]            @relation("QRCodeUpdater") 
+  qrScans            QRScanLog[]         @relation("QRScanner")
+  qrBatchOperations  QRBatchOperation[]  @relation("QRBatchCreator")
+  qrTemplatesCreated QRTemplate[]        @relation("QRTemplateCreator")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =====================================================
+// COMPLETE UPDATED ORGANIZATION MODEL EXAMPLE
+// =====================================================
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  legacyId  Int?     @unique
+  name      String @unique
+  settings  Json?
+  users     User[]
+  assets    Asset[]
+  locations Location[]
+  suppliers Supplier[]
+  parts     Part[]
+  workOrders WorkOrder[]
+  pmTasks   PMTask[]
+  portals   Portal[]
+  importHistory ImportHistory[] @relation("ImportHistory")
+  workOrderShares WorkOrderShare[] @relation("WorkOrderShares")
+
+  // QR System relationships
+  qrCodes            QRCode[]            @relation("OrganizationQRCodes")
+  qrScanLogs         QRScanLog[]         @relation("QRScanLogs")
+  qrBatchOperations  QRBatchOperation[]  @relation("QRBatchOperations")
+  qrTemplates        QRTemplate[]        @relation("QRTemplates")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

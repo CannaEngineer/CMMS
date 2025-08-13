@@ -238,6 +238,12 @@ model User {
   notificationPreferences  NotificationPreference[]
   notificationDevices      NotificationDevice[]
 
+  // QR Code relationships
+  qrCodesCreated           QRCode[]                @relation("QRCodeCreator")
+  qrScanLogs               QRScanLog[]             @relation("QRScanLogs")
+  qrBatchOperationsCreated QRBatchOperation[]      @relation("QRBatchOperationCreator")
+  qrTemplatesCreated       QRTemplate[]            @relation("QRTemplateCreator")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -257,6 +263,12 @@ model Organization {
   portals   Portal[]
   importHistory ImportHistory[] @relation("ImportHistory")
   workOrderShares WorkOrderShare[] @relation("WorkOrderShares")
+
+  // QR Code relationships
+  qrCodes                  QRCode[]
+  qrScanLogs               QRScanLog[]
+  qrBatchOperations        QRBatchOperation[]
+  qrTemplates              QRTemplate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1271,3 +1283,244 @@ model NotificationTemplate {
   @@index([organizationId])
   @@index([key])
 }
+
+// QR Code System Enums
+enum QRCodeType {
+  ASSET
+  WORK_ORDER
+  PM_SCHEDULE
+  LOCATION
+  USER
+  PART
+  PORTAL
+}
+
+enum QRCodeStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum QRScanActionType {
+  VIEW
+  EDIT
+  CREATE_WORK_ORDER
+  COMPLETE_TASK
+  CHECK_IN
+  SCHEDULE_PM
+  UPDATE_STATUS
+  ADD_NOTES
+}
+
+enum QRBatchOperationType {
+  GENERATE
+  REGENERATE
+  DEACTIVATE
+  EXPORT
+}
+
+enum QRBatchOperationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// QR Code System Models
+model QRCode {
+  id                String        @id @default(cuid())
+  
+  // Entity identification
+  entityType        QRCodeType
+  entityId          String        // Flexible to handle different ID types
+  entityName        String?       // Cached entity name for quick lookup
+  
+  // Security and access
+  secureToken       String        @unique  // Encrypted token for secure URLs
+  organizationId    Int
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // QR Code metadata
+  qrCodeDataUrl     String?       // Generated QR code image data URL
+  metadata          Json?         // Encrypted entity-specific metadata
+  
+  // Access control
+  status            QRCodeStatus  @default(ACTIVE)
+  isPublic          Boolean       @default(false)  // Allow anonymous scanning
+  allowedUserRoles  Json?         // Array of UserRole values that can scan
+  
+  // Usage tracking
+  scanCount         Int           @default(0)
+  maxScans          Int?          // Optional scan limit
+  
+  // Temporal controls
+  expiresAt         DateTime?     // Optional expiration
+  lastScannedAt     DateTime?
+  
+  // Audit trail
+  createdById       Int
+  createdBy         User          @relation("QRCodeCreator", fields: [createdById], references: [id])
+  
+  // Relationships
+  scanLogs          QRScanLog[]
+  batchOperations   QRBatchOperationItem[]
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([entityType, entityId])
+  @@index([organizationId])
+  @@index([secureToken])
+  @@index([status, expiresAt])
+  @@index([createdById])
+}
+
+model QRScanLog {
+  id                String          @id @default(cuid())
+  
+  // QR Code reference
+  qrCodeId          String
+  qrCode            QRCode          @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  
+  // Scanner information
+  userId            Int?            // Null for anonymous scans
+  user              User?           @relation("QRScanLogs", fields: [userId], references: [id])
+  sessionId         String?         // For anonymous sessions
+  
+  // Scan context
+  actionTaken       QRScanActionType?
+  actionData        Json?           // Additional action-specific data
+  
+  // Technical details
+  ipAddress         String?
+  userAgent         String?
+  deviceType        String?         // mobile, desktop, tablet
+  
+  // Location data
+  location          Json?           // GPS coordinates if available
+  
+  // Security tracking
+  isSuccessful      Boolean         @default(true)
+  errorCode         String?         // If scan failed
+  riskScore         Float?          // Security risk assessment
+  
+  // Audit
+  organizationId    Int
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  scannedAt         DateTime        @default(now())
+  
+  @@index([qrCodeId, scannedAt])
+  @@index([userId, scannedAt])
+  @@index([organizationId, scannedAt])
+  @@index([actionTaken])
+  @@index([isSuccessful])
+}
+
+model QRBatchOperation {
+  id                String                   @id @default(cuid())
+  
+  // Operation details
+  operationType     QRBatchOperationType
+  status            QRBatchOperationStatus   @default(PENDING)
+  
+  // Progress tracking
+  totalItems        Int
+  processedItems    Int                      @default(0)
+  successfulItems   Int                      @default(0)
+  failedItems       Int                      @default(0)
+  
+  // Configuration
+  options           Json?                    // Generation options, filters, etc.
+  errorLog          Json?                    // Array of error messages
+  
+  // Security and access
+  organizationId    Int
+  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById       Int
+  createdBy         User                     @relation("QRBatchOperationCreator", fields: [createdById], references: [id])
+  
+  // Relationships
+  items             QRBatchOperationItem[]
+  
+  // Timestamps
+  startedAt         DateTime?
+  completedAt       DateTime?
+  
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([status, createdAt])
+}
+
+model QRBatchOperationItem {
+  id                String              @id @default(cuid())
+  
+  // Batch reference
+  batchOperationId  String
+  batchOperation    QRBatchOperation    @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  
+  // QR Code reference (nullable for failed operations)
+  qrCodeId          String?
+  qrCode            QRCode?             @relation(fields: [qrCodeId], references: [id])
+  
+  // Item data
+  entityType        QRCodeType
+  entityId          String
+  entityName        String?
+  
+  // Status
+  status            QRBatchOperationStatus  @default(PENDING)
+  errorMessage      String?
+  
+  // Result
+  resultData        Json?               // Generated QR data, etc.
+  
+  processedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  
+  @@index([batchOperationId])
+  @@index([qrCodeId])
+  @@index([status])
+}
+
+model QRTemplate {
+  id                String        @id @default(cuid())
+  
+  // Template identification
+  name              String
+  description       String?
+  category          String        // asset, work-order, location, etc.
+  
+  // Template configuration
+  dimensions        Json          // width, height, unit
+  layout            String        // horizontal, vertical
+  qrSize            Int           // QR code size in template units
+  fontSize          Json          // title, subtitle, info sizes
+  
+  // Styling
+  includeQRBorder   Boolean       @default(true)
+  customCSS         String?
+  logoUrl           String?
+  
+  // Access control
+  isPublic          Boolean       @default(true)
+  organizationId    Int?          // null = system template
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  createdById       Int
+  createdBy         User          @relation("QRTemplateCreator", fields: [createdById], references: [id])
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@index([organizationId])
+  @@index([category])
+  @@index([isPublic])
+}
+
