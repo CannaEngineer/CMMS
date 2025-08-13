@@ -122,7 +122,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {/* Key Metrics */}
             <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%', bgcolor: 'primary.50' }}>
                   <CardContent sx={{ textAlign: 'center', p: 3 }}>
                     <TrendingUpIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
@@ -139,7 +139,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%', bgcolor: 'warning.50' }}>
                   <CardContent sx={{ textAlign: 'center', p: 3 }}>
                     <ScheduleIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
@@ -156,7 +156,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%', bgcolor: 'success.50' }}>
                   <CardContent sx={{ textAlign: 'center', p: 3 }}>
                     <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
@@ -173,7 +173,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
                 </Card>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%', bgcolor: 'info.50' }}>
                   <CardContent sx={{ textAlign: 'center', p: 3 }}>
                     <ViewsIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
@@ -201,7 +201,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
                   
                   <Grid container spacing={2}>
                     {Object.entries(analytics.statusBreakdown).map(([status, count]) => (
-                      <Grid item xs={12} sm={6} md={4} key={status}>
+                      <Grid xs={12} sm={6} md={4} key={status}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
                           <Chip
                             label={status.replace('_', ' ')}
@@ -236,7 +236,7 @@ const PortalAnalyticsDialog: React.FC<PortalAnalyticsDialogProps> = ({
                       const totalViews = Object.values(analytics.deviceBreakdown).reduce((a, b) => a + b, 0);
                       const percentage = totalViews > 0 ? (count / totalViews) * 100 : 0;
                       return (
-                        <Grid item xs={12} sm={4} key={device}>
+                        <Grid xs={12} sm={4} key={device}>
                           <Box>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                               <Typography variant="body2" sx={{ fontWeight: 500 }}>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Button,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -37,6 +36,7 @@ import {
   Select,
   SelectChangeEvent,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import {
   Add as AddIcon,
   MoreVert as MoreIcon,
@@ -626,7 +626,7 @@ export default function Users() {
 
           <Grid container spacing={2}>
             {/* Always visible stats */}
-            <Grid item xs={6} sm={3}>
+            <Grid xs={6} sm={3}>
               <CardActionArea 
                 onClick={() => handleRoleFilter('all')}
                 sx={{ p: 1, borderRadius: 1 }}
@@ -647,7 +647,7 @@ export default function Users() {
               </CardActionArea>
             </Grid>
 
-            <Grid item xs={6} sm={3}>
+            <Grid xs={6} sm={3}>
               <CardActionArea 
                 onClick={() => handleRoleFilter('online')}
                 sx={{ p: 1, borderRadius: 1 }}
@@ -671,7 +671,7 @@ export default function Users() {
             {/* Expandable stats on mobile */}
             <Collapse in={expandedStats || !isMobile} sx={{ width: '100%' }}>
               <Grid container spacing={2} sx={{ mt: 0 }}>
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                   <CardActionArea 
                     onClick={() => handleRoleFilter('ADMIN')}
                     sx={{ p: 1, borderRadius: 1 }}
@@ -692,7 +692,7 @@ export default function Users() {
                   </CardActionArea>
                 </Grid>
 
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                   <CardActionArea 
                     onClick={() => handleRoleFilter('MANAGER')}
                     sx={{ p: 1, borderRadius: 1 }}
@@ -713,7 +713,7 @@ export default function Users() {
                   </CardActionArea>
                 </Grid>
 
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                   <CardActionArea 
                     onClick={() => handleRoleFilter('TECHNICIAN')}
                     sx={{ p: 1, borderRadius: 1 }}
@@ -734,7 +734,7 @@ export default function Users() {
                   </CardActionArea>
                 </Grid>
 
-                <Grid item xs={6} sm={3}>
+                <Grid xs={6} sm={3}>
                   <CardActionArea 
                     onClick={() => handleRoleFilter('offline')}
                     sx={{ p: 1, borderRadius: 1 }}
@@ -951,7 +951,6 @@ export default function Users() {
                 <Grid container spacing={isTablet ? 2 : 0}>
                   {filteredAndSortedUsers.map((user: User) => (
                     <Grid 
-                      item 
                       xs={12} 
                       md={isTablet && viewMode === 'cards' ? 6 : 12}
                       key={user.id}
@@ -970,7 +969,7 @@ export default function Users() {
                   </Typography>
                   <Grid container spacing={1}>
                     {filteredAndSortedUsers.map((user: User) => (
-                      <Grid item xs={12} sm={6} lg={4} xl={3} key={user.id}>
+                      <Grid xs={12} sm={6} lg={4} xl={3} key={user.id}>
                         <UserContactCard user={user} />
                       </Grid>
                     ))}

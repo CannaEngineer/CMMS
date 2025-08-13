@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   FormControl,
   InputLabel,
   Select,
@@ -19,6 +18,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -235,7 +235,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
 
       {/* Key Metrics */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <MetricCard
             title="Total Exports"
             value={stats.totalExports.toLocaleString()}
@@ -246,7 +246,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <MetricCard
             title="Success Rate"
             value={`${successRate}%`}
@@ -257,7 +257,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <MetricCard
             title="Avg. Processing Time"
             value={formatTime(stats.averageExecutionTime)}
@@ -268,7 +268,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <MetricCard
             title="Data Volume"
             value={formatFileSize(stats.totalDataExported * 1024 * 1024)}
@@ -283,7 +283,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
       {/* Charts */}
       <Grid container spacing={3} sx={{ flexGrow: 1 }}>
         {/* Export Trends */}
-        <Grid item xs={12} lg={8}>
+        <Grid xs={12} lg={8}>
           <Card sx={{ height: 400 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -321,7 +321,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
         </Grid>
 
         {/* Data Sources Distribution */}
-        <Grid item xs={12} lg={4}>
+        <Grid xs={12} lg={4}>
           <Card sx={{ height: 400 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -349,7 +349,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
         </Grid>
 
         {/* Format Distribution */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card sx={{ height: 350 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -369,7 +369,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
         </Grid>
 
         {/* Performance Over Time */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card sx={{ height: 350 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -413,14 +413,14 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
         </Grid>
 
         {/* Recent Activity Summary */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Recent Activity Summary
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} md={3}>
+                <Grid xs={12} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h5" color="primary" fontWeight="bold">
                       {stats.recentActivity.length}
@@ -431,7 +431,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} md={3}>
+                <Grid xs={12} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h5" color="success.main" fontWeight="bold">
                       {stats.recentActivity.filter(a => a.status === 'completed').length}
@@ -442,7 +442,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} md={3}>
+                <Grid xs={12} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h5" color="warning.main" fontWeight="bold">
                       {stats.recentActivity.filter(a => a.status === 'processing').length}
@@ -453,7 +453,7 @@ export default function ExportAnalytics({ stats, onRefresh, loading }: ExportAna
                   </Paper>
                 </Grid>
                 
-                <Grid item xs={12} md={3}>
+                <Grid xs={12} md={3}>
                   <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                     <Typography variant="h5" color="error.main" fontWeight="bold">
                       {stats.recentActivity.filter(a => a.status === 'failed').length}

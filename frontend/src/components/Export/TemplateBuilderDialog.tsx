@@ -526,7 +526,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
 
   const renderBasicStep = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           fullWidth
           label="Template Name"
@@ -538,7 +538,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
         />
       </Grid>
       
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           fullWidth
           label="Description"
@@ -549,7 +549,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
         />
       </Grid>
       
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormControl fullWidth>
           <InputLabel>Template Type</InputLabel>
           <Select
@@ -571,7 +571,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
         </FormControl>
       </Grid>
       
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormControl fullWidth>
           <InputLabel>Data Source</InputLabel>
           <Select
@@ -589,7 +589,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
         </FormControl>
       </Grid>
       
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormControl fullWidth>
           <InputLabel>Quality Level</InputLabel>
           <Select
@@ -659,7 +659,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
         </AccordionSummary>
         <AccordionDetails>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <TextField
                 fullWidth
                 label="Max Records"
@@ -670,7 +670,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
               />
             </Grid>
             
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <FormControlLabel
                   control={
@@ -724,7 +724,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
       
       {data.scheduling.isScheduled && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel>Frequency</InputLabel>
               <Select
@@ -741,7 +741,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="Execution Time"
@@ -753,7 +753,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
           </Grid>
           
           {data.scheduling.frequency === 'custom' && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <TextField
                 fullWidth
                 label="Cron Expression"
@@ -766,7 +766,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             </Grid>
           )}
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="Start Date"
@@ -779,7 +779,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             />
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="End Date (Optional)"
@@ -790,7 +790,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             />
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel>Timezone</InputLabel>
               <Select
@@ -807,7 +807,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={3}>
+          <Grid xs={12} md={3}>
             <TextField
               fullWidth
               label="Max Retries"
@@ -818,7 +818,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             />
           </Grid>
           
-          <Grid item xs={12} md={3}>
+          <Grid xs={12} md={3}>
             <TextField
               fullWidth
               label="Retry Delay (seconds)"
@@ -873,7 +873,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
               
               {data.email.recipients.map((recipient, index) => (
                 <Grid container spacing={2} key={index} sx={{ mb: 2 }}>
-                  <Grid item xs={12} md={4}>
+                  <Grid xs={12} md={4}>
                     <TextField
                       fullWidth
                       label="Email"
@@ -881,7 +881,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                       onChange={(e) => updateRecipient('recipients', index, 'email', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid xs={12} md={3}>
                     <TextField
                       fullWidth
                       label="Name"
@@ -889,7 +889,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                       onChange={(e) => updateRecipient('recipients', index, 'name', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} md={3}>
+                  <Grid xs={12} md={3}>
                     <TextField
                       fullWidth
                       label="Role"
@@ -897,7 +897,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                       onChange={(e) => updateRecipient('recipients', index, 'role', e.target.value)}
                     />
                   </Grid>
-                  <Grid item xs={12} md={2}>
+                  <Grid xs={12} md={2}>
                     <IconButton
                       onClick={() => removeRecipient('recipients', index)}
                       color="error"
@@ -917,7 +917,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     label="Subject Template"
@@ -927,7 +927,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                   />
                 </Grid>
                 
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     label="Body Template"
@@ -939,7 +939,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                   />
                 </Grid>
                 
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -951,7 +951,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                   />
                 </Grid>
                 
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -963,7 +963,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Minimum Records"
@@ -1002,7 +1002,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
       
       {!data.permissions.isPublic && (
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel>Allowed Roles</InputLabel>
               <Select
@@ -1027,7 +1027,7 @@ export default function TemplateBuilderDialog({ open, onClose, onSave, template 
             </FormControl>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="Max Records Per User"

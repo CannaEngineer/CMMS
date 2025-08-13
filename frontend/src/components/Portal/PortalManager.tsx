@@ -239,7 +239,7 @@ const PortalManager: React.FC<PortalManagerProps> = ({ onPortalSelect }) => {
       {!isLoading && (
         <Grid container spacing={3}>
           {portals.map((portal) => (
-            <Grid item xs={12} sm={6} md={4} key={portal.id}>
+            <Grid xs={12} sm={6} md={4} key={portal.id}>
               <Card
                 sx={{
                   height: '100%',

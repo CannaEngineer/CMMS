@@ -92,7 +92,7 @@ export const commentService = {
       }
 
       const queryString = queryParams.toString();
-      const endpoint = `/comments/${entityType}/${entityId}${queryString ? `?${queryString}` : ''}`;
+      const endpoint = `/api/comments/${entityType}/${entityId}${queryString ? `?${queryString}` : ''}`;
       
       const response = await apiClient.get<CommentResponse>(endpoint);
       return Array.isArray(response.data) ? response.data : [];
@@ -105,7 +105,7 @@ export const commentService = {
   // Get a single comment by ID
   async getComment(id: number): Promise<Comment | null> {
     try {
-      const response = await apiClient.get<CommentResponse>(`/comments/comment/${id}`);
+      const response = await apiClient.get<CommentResponse>(`/api/comments/comment/${id}`);
       return response.data as Comment;
     } catch (error) {
       throw new Error(`Failed to fetch comment ${id}`);
@@ -120,7 +120,7 @@ export const commentService = {
   ): Promise<Comment> {
     try {
       const response = await apiClient.post<CommentResponse>(
-        `/comments/${entityType}/${entityId}`,
+        `/api/comments/${entityType}/${entityId}`,
         commentData
       );
       return response.data as Comment;
@@ -133,7 +133,7 @@ export const commentService = {
   async updateComment(id: number, commentData: UpdateCommentRequest): Promise<Comment> {
     try {
       const response = await apiClient.put<CommentResponse>(
-        `/comments/comment/${id}`,
+        `/api/comments/comment/${id}`,
         commentData
       );
       return response.data as Comment;
@@ -145,7 +145,7 @@ export const commentService = {
   // Delete a comment
   async deleteComment(id: number): Promise<void> {
     try {
-      await apiClient.delete(`/comments/comment/${id}`);
+      await apiClient.delete(`/api/comments/comment/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete comment ${id}`);
     }
@@ -160,7 +160,7 @@ export const commentService = {
     try {
       const queryParams = includeInternal ? '' : '?includeInternal=false';
       const response = await apiClient.get<CommentResponse>(
-        `/comments/${entityType}/${entityId}/count${queryParams}`
+        `/api/comments/${entityType}/${entityId}/count${queryParams}`
       );
       return (response.data as any).count || 0;
     } catch (error) {
@@ -182,7 +182,7 @@ export const commentService = {
       queryParams.append('includeInternal', includeInternal.toString());
 
       const response = await apiClient.get<CommentResponse>(
-        `/comments/${entityType}/${entityId}/recent?${queryParams.toString()}`
+        `/api/comments/${entityType}/${entityId}/recent?${queryParams.toString()}`
       );
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -195,7 +195,7 @@ export const commentService = {
   async togglePin(id: number, isPinned: boolean): Promise<Comment> {
     try {
       const response = await apiClient.put<CommentResponse>(
-        `/comments/comment/${id}/pin`,
+        `/api/comments/comment/${id}/pin`,
         { isPinned }
       );
       return response.data as Comment;
@@ -208,7 +208,7 @@ export const commentService = {
   async toggleInternal(id: number, isInternal: boolean): Promise<Comment> {
     try {
       const response = await apiClient.put<CommentResponse>(
-        `/comments/comment/${id}/internal`,
+        `/api/comments/comment/${id}/internal`,
         { isInternal }
       );
       return response.data as Comment;
@@ -237,7 +237,7 @@ export const commentService = {
       }
 
       const response = await apiClient.get<CommentResponse>(
-        `/comments/search?${queryParams.toString()}`
+        `/api/comments/search?${queryParams.toString()}`
       );
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -250,7 +250,7 @@ export const commentService = {
   async getCommentsByUser(userId: number, limit: number = 50): Promise<Comment[]> {
     try {
       const response = await apiClient.get<CommentResponse>(
-        `/comments/user/${userId}?limit=${limit}`
+        `/api/comments/user/${userId}?limit=${limit}`
       );
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
@@ -269,7 +269,7 @@ export const commentService = {
   ): Promise<Comment> {
     try {
       const response = await apiClient.post<CommentResponse>(
-        `/comments/${entityType}/${entityId}`,
+        `/api/comments/${entityType}/${entityId}`,
         {
           content,
           isInternal,

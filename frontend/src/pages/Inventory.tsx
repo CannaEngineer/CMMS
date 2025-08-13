@@ -39,6 +39,7 @@ import {
   ShoppingCart as OrderIcon,
   TrendingDown as LowStockIcon,
   Assessment as ReportIcon,
+  CleaningServices as CleanupIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StatCard from '../components/Common/StatCard';
@@ -147,12 +148,32 @@ export default function Inventory() {
   // Create part mutation
   const createPartMutation = useMutation({
     mutationFn: partsService.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Check if this was a merge operation based on the part's updatedAt vs createdAt
+      const wasUpdated = data.updatedAt && data.createdAt && 
+        new Date(data.updatedAt).getTime() > new Date(data.createdAt).getTime();
+      
+      if (wasUpdated) {
+        console.log('🔄 Part merged with existing part:', data);
+        setSnackbar({ 
+          open: true, 
+          message: `Part "${data.name}" merged with existing part (Stock: ${data.stockLevel})`, 
+          severity: 'info' 
+        });
+      } else {
+        console.log('✅ Part created successfully:', data);
+        setSnackbar({ 
+          open: true, 
+          message: `Part "${data.name}" created successfully`, 
+          severity: 'success' 
+        });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setOpenDialog(false);
-      setSnackbar({ open: true, message: 'Part created successfully', severity: 'success' });
     },
     onError: (error: any) => {
+      console.error('❌ Failed to create part:', error);
       setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to create part', severity: 'error' });
     },
   });
@@ -160,12 +181,14 @@ export default function Inventory() {
   // Update part mutation
   const updatePartMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => partsService.update(id, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Part updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       setOpenDialog(false);
       setSnackbar({ open: true, message: 'Part updated successfully', severity: 'success' });
     },
     onError: (error: any) => {
+      console.error('❌ Failed to update part:', error);
       setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to update part', severity: 'error' });
     },
   });
@@ -179,6 +202,28 @@ export default function Inventory() {
     },
     onError: (error: any) => {
       setSnackbar({ open: true, message: error.response?.data?.error || 'Failed to delete part', severity: 'error' });
+    },
+  });
+
+  // Cleanup duplicates mutation
+  const cleanupDuplicatesMutation = useMutation({
+    mutationFn: partsService.cleanupDuplicates,
+    onSuccess: (data) => {
+      console.log('✅ Duplicates cleanup completed:', data);
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      setSnackbar({ 
+        open: true, 
+        message: `Cleanup complete: ${data.results.partsMerged} duplicates merged`, 
+        severity: 'success' 
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to cleanup duplicates:', error);
+      setSnackbar({ 
+        open: true, 
+        message: 'Failed to cleanup duplicates', 
+        severity: 'error' 
+      });
     },
   });
 
@@ -374,7 +419,7 @@ export default function Inventory() {
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Total Parts"
             value={totalParts}
@@ -383,7 +428,7 @@ export default function Inventory() {
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Low Stock Items"
             value={(lowStockParts || []).length}
@@ -392,7 +437,7 @@ export default function Inventory() {
             color="warning"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Out of Stock"
             value={outOfStockParts.length}
@@ -401,7 +446,7 @@ export default function Inventory() {
             color="error"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Total Items"
             value={(parts || []).reduce((sum, part) => sum + part.stockLevel, 0)}
@@ -429,7 +474,7 @@ export default function Inventory() {
 
       <Grid container spacing={3}>
         {/* Main Inventory Table */}
-        <Grid item xs={12} md={9}>
+        <Grid xs={12} md={9}>
           <Paper sx={{ mb: 2 }}>
             <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
               <Tab label={`All Parts (${totalParts})`} />
@@ -477,7 +522,7 @@ export default function Inventory() {
         </Grid>
 
         {/* Quick Actions Sidebar */}
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Quick Actions</Typography>
@@ -581,6 +626,19 @@ export default function Inventory() {
                   }}
                 >
                   Inventory Report
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<CleanupIcon />}
+                  fullWidth
+                  onClick={() => {
+                    if (confirm('This will merge duplicate parts based on SKU and name. Stock levels will be combined. Are you sure?')) {
+                      cleanupDuplicatesMutation.mutate();
+                    }
+                  }}
+                  disabled={cleanupDuplicatesMutation.isLoading}
+                >
+                  {cleanupDuplicatesMutation.isLoading ? 'Cleaning...' : 'Cleanup Duplicates'}
                 </Button>
               </Box>
             </CardContent>

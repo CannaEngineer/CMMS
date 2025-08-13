@@ -6,7 +6,10 @@ const registerSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   password: z.string().min(6),
-  organizationId: z.number(),
+  organizationId: z.number().optional(),
+  organizationName: z.string().optional(),
+  createOrganization: z.boolean().optional(),
+  role: z.enum(['ADMIN', 'MANAGER', 'TECHNICIAN']).optional(),
 });
 
 const loginSchema = z.object({

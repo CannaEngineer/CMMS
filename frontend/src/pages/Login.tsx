@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
   Paper,
@@ -23,55 +25,66 @@ import {
   Lock as LockIcon,
 } from '@mui/icons-material';
 import { authService } from '../services/api';
+import { loginSchema, LoginFormData } from '../utils/validationSchemas';
+import FormErrorDisplay from '../components/Common/FormErrorDisplay';
 
 export default function Login() {
   const theme = useTheme();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [field]: event.target.value });
-    setError('');
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+    clearErrors,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const onSubmit = async (data: LoginFormData) => {
     setError('');
-    setLoading(true);
+    clearErrors();
 
     try {
-      // For MVP, use mock authentication
-      if (formData.email === 'admin@compass.com' && formData.password === 'admin123') {
-        localStorage.setItem('token', 'mock-jwt-token');
-        navigate('/dashboard');
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('user', JSON.stringify(responseData.user));
+        
+        // Route based on user role
+        if (responseData.user.role === 'TECHNICIAN') {
+          navigate('/tech/dashboard');
+        } else {
+          // ADMIN and MANAGER go to main dashboard
+          navigate('/dashboard');
+        }
       } else {
-        setError('Invalid email or password');
+        const errorData = await response.json();
+        setError(errorData.error || 'Invalid email or password');
       }
-      
-      // When backend is ready, use:
-      // await authService.login(formData.email, formData.password);
-      // navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Network error. Please check your connection and try again.');
+      console.error('Login error:', err);
     }
   };
 
-  const handleDemoLogin = () => {
-    setFormData({
-      email: 'admin@compass.com',
-      password: 'admin123',
-    });
-  };
 
   return (
     <Box
@@ -117,60 +130,87 @@ export default function Login() {
           </Typography>
         </Box>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
-
-          <TextField
-            fullWidth
-            label="Email Address"
-            type="email"
-            value={formData.email}
-            onChange={handleChange('email')}
-            margin="normal"
-            required
-            autoComplete="email"
-            autoFocus
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ mb: 2 }}
+          
+          <FormErrorDisplay 
+            errors={errors} 
+            title="Please check your login details:"
           />
 
-          <TextField
-            fullWidth
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            value={formData.password}
-            onChange={handleChange('password')}
-            margin="normal"
-            required
-            autoComplete="current-password"
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockIcon color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            sx={{ mb: 3 }}
+          <Controller
+            name="email"
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="Email Address"
+                type="email"
+                margin="normal"
+                required
+                autoComplete="email"
+                autoFocus
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 2 }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  if (error) setError('');
+                }}
+              />
+            )}
+          />
+
+          <Controller
+            name="password"
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                margin="normal"
+                required
+                autoComplete="current-password"
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mb: 3 }}
+                onChange={(e) => {
+                  field.onChange(e);
+                  if (error) setError('');
+                }}
+              />
+            )}
           />
 
           <Button
@@ -178,7 +218,7 @@ export default function Login() {
             fullWidth
             variant="contained"
             size="large"
-            disabled={loading}
+            disabled={isSubmitting || !isValid}
             sx={{
               py: 1.5,
               mb: 2,
@@ -187,7 +227,7 @@ export default function Login() {
               fontSize: '1rem',
             }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
           </Button>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
@@ -203,48 +243,15 @@ export default function Login() {
               Forgot password?
             </Link>
             <Link
-              component="button"
+              component={RouterLink}
+              to="/signup"
               variant="body2"
-              onClick={(e) => {
-                e.preventDefault();
-                // Handle sign up
-              }}
               sx={{ textDecoration: 'none' }}
             >
               Create account
             </Link>
           </Box>
 
-          <Divider sx={{ mb: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              OR
-            </Typography>
-          </Divider>
-
-          <Button
-            fullWidth
-            variant="outlined"
-            size="large"
-            onClick={handleDemoLogin}
-            sx={{
-              py: 1.5,
-              fontWeight: 600,
-              textTransform: 'none',
-              fontSize: '1rem',
-              borderWidth: 2,
-              '&:hover': {
-                borderWidth: 2,
-              },
-            }}
-          >
-            Try Demo Account
-          </Button>
-
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Typography variant="caption" color="text.secondary">
-              Demo credentials: admin@compass.com / admin123
-            </Typography>
-          </Box>
         </form>
       </Paper>
 

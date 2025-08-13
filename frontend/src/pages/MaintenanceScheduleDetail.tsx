@@ -240,7 +240,7 @@ export default function MaintenanceScheduleDetail() {
 
       <Grid container spacing={3}>
         {/* Main Content */}
-        <Grid item xs={12} lg={8}>
+        <Grid xs={12} lg={8}>
           <Paper sx={{ mb: 3 }}>
             <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
               <Tab label="Overview" />
@@ -251,7 +251,7 @@ export default function MaintenanceScheduleDetail() {
             <TabPanel value={tabValue} index={0}>
               {/* Schedule Details */}
               <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Typography variant="h6" gutterBottom>
                     Description
                   </Typography>
@@ -260,7 +260,7 @@ export default function MaintenanceScheduleDetail() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Schedule Information
                   </Typography>
@@ -299,7 +299,7 @@ export default function MaintenanceScheduleDetail() {
                   </List>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Schedule Status
                   </Typography>
@@ -385,7 +385,7 @@ export default function MaintenanceScheduleDetail() {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} lg={4}>
+        <Grid xs={12} lg={4}>
           {/* QR Code */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>

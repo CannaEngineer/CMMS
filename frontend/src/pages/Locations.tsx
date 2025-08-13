@@ -33,6 +33,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ChevronRight as ChevronRightIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
   MoreVert as MoreVertIcon,
   Map as MapIcon,
   Assessment as AssessmentIcon,
@@ -128,20 +129,28 @@ export default function Locations() {
   // Create location mutation
   const createLocationMutation = useMutation({
     mutationFn: locationsService.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Location created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['locations'] });
       setOpenDialog(false);
       setSelectedLocation(null);
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to create location:', error);
     },
   });
 
   // Update location mutation
   const updateLocationMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) => locationsService.update(id, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Location updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['locations'] });
       setOpenDialog(false);
       setSelectedLocation(null);
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to update location:', error);
     },
   });
 
@@ -149,7 +158,11 @@ export default function Locations() {
   const deleteLocationMutation = useMutation({
     mutationFn: locationsService.delete,
     onSuccess: () => {
+      console.log('✅ Location deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['locations'] });
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to delete location:', error);
     },
   });
 
@@ -184,6 +197,12 @@ export default function Locations() {
       updateLocationMutation.mutate({ id: selectedLocation.id.toString(), data });
     } else {
       createLocationMutation.mutate(data);
+    }
+  };
+
+  const handleDeleteLocation = (location: Location) => {
+    if (confirm(`Are you sure you want to delete "${location.name}"? This action cannot be undone.`)) {
+      deleteLocationMutation.mutate(location.id.toString());
     }
   };
 
@@ -224,6 +243,16 @@ export default function Locations() {
               }}
             >
               <EditIcon fontSize="small" />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteLocation(node);
+              }}
+              color="error"
+            >
+              <DeleteIcon fontSize="small" />
             </IconButton>
           </Box>
         }
@@ -300,7 +329,7 @@ export default function Locations() {
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Total Locations"
             value={allLocations.length}
@@ -309,7 +338,7 @@ export default function Locations() {
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Buildings"
             value={buildingCount}
@@ -318,7 +347,7 @@ export default function Locations() {
             color="secondary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Rooms & Zones"
             value={roomCount + allLocations.filter(loc => loc.type === 'ZONE').length}
@@ -327,7 +356,7 @@ export default function Locations() {
             color="info"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Total Assets"
             value={totalAssets}
@@ -340,7 +369,7 @@ export default function Locations() {
 
       <Grid container spacing={3}>
         {/* Location Tree */}
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
           <Paper sx={{ p: 2, mb: 3 }}>
             <TextField
               placeholder="Search locations..."
@@ -383,7 +412,7 @@ export default function Locations() {
         </Grid>
 
         {/* Location Stats and Quick Actions */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Quick Actions</Typography>

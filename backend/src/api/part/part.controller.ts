@@ -48,10 +48,28 @@ export class PartController {
         return res.status(400).json({ error: 'Organization ID required' });
       }
 
+      // Convert numeric fields from strings to numbers
       const partData = {
         ...req.body,
         organizationId,
+        stockLevel: req.body.stockLevel ? parseInt(req.body.stockLevel) : 0,
+        reorderPoint: req.body.reorderPoint ? parseInt(req.body.reorderPoint) : 0,
+        unitCost: req.body.unitCost || req.body.unitPrice ? parseFloat(req.body.unitCost || req.body.unitPrice) : null,
+        totalCost: req.body.totalCost ? parseFloat(req.body.totalCost) : null,
+        supplierId: req.body.supplierId ? parseInt(req.body.supplierId) : null,
+        legacyId: req.body.legacyId ? parseInt(req.body.legacyId) : null,
       };
+      
+      // Remove undefined values and fields not in schema
+      Object.keys(partData).forEach(key => {
+        if (partData[key] === undefined || partData[key] === null) {
+          delete partData[key];
+        }
+      });
+      
+      // Remove fields that don't exist in the Part model
+      delete partData.unitPrice;
+      delete partData.categoryId;
 
       const part = await partService.createPart(partData);
       res.status(201).json(part);
@@ -70,7 +88,30 @@ export class PartController {
         return res.status(400).json({ error: 'Organization ID required' });
       }
 
-      const part = await partService.updatePart(parseInt(id), organizationId, req.body);
+      // Convert numeric fields from strings to numbers
+      const updateData = {
+        ...req.body,
+        stockLevel: req.body.stockLevel !== undefined ? parseInt(req.body.stockLevel) : undefined,
+        reorderPoint: req.body.reorderPoint !== undefined ? parseInt(req.body.reorderPoint) : undefined,
+        unitCost: req.body.unitCost !== undefined || req.body.unitPrice !== undefined ? 
+          parseFloat(req.body.unitCost || req.body.unitPrice) : undefined,
+        totalCost: req.body.totalCost !== undefined ? parseFloat(req.body.totalCost) : undefined,
+        supplierId: req.body.supplierId ? parseInt(req.body.supplierId) : undefined,
+        legacyId: req.body.legacyId ? parseInt(req.body.legacyId) : undefined,
+      };
+      
+      // Remove undefined values and fields not in schema
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
+      
+      // Remove fields that don't exist in the Part model
+      delete updateData.unitPrice;
+      delete updateData.categoryId;
+
+      const part = await partService.updatePart(parseInt(id), organizationId, updateData);
       res.json(part);
     } catch (error) {
       console.error('Error updating part:', error);
@@ -125,6 +166,57 @@ export class PartController {
     } catch (error) {
       console.error('Error updating stock level:', error);
       res.status(500).json({ error: 'Failed to update stock level' });
+    }
+  }
+
+  async batchCreateOrMerge(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization ID required' });
+      }
+
+      const partsData = req.body.parts;
+      if (!Array.isArray(partsData) || partsData.length === 0) {
+        return res.status(400).json({ error: 'Parts array is required' });
+      }
+
+      // Add organization ID to each part
+      const partsWithOrgId = partsData.map(part => ({
+        ...part,
+        organizationId,
+      }));
+
+      const results = await partService.batchCreateOrMergeParts(partsWithOrgId);
+      
+      res.json({
+        success: true,
+        message: `Processed ${results.total} parts: ${results.created} created, ${results.merged} merged`,
+        results,
+      });
+    } catch (error) {
+      console.error('Error in batch create/merge:', error);
+      res.status(500).json({ error: 'Failed to process parts batch' });
+    }
+  }
+
+  async cleanupDuplicates(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization ID required' });
+      }
+
+      const results = await partService.cleanupDuplicates(organizationId);
+      
+      res.json({
+        success: true,
+        message: `Cleanup complete: ${results.partsMerged} duplicates merged into ${results.groupsProcessed} primary parts`,
+        results,
+      });
+    } catch (error) {
+      console.error('Error in cleanup duplicates:', error);
+      res.status(500).json({ error: 'Failed to cleanup duplicates' });
     }
   }
 }

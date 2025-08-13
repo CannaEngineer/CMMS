@@ -4,5 +4,8 @@
     "papaparse": "^5.5.3",
     "react-color": "^2.19.3",
     "react-swipeable": "^7.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
   }
 }

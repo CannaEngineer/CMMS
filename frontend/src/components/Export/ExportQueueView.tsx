@@ -79,7 +79,7 @@ function QueueStats({ queue }: QueueStatsProps) {
 
   return (
     <Grid container spacing={2}>
-      <Grid item xs={6} md={3}>
+      <Grid xs={6} md={3}>
         <Card variant="outlined">
           <CardContent sx={{ textAlign: 'center', py: 2 }}>
             <Typography variant="h4" color="primary.main" fontWeight="bold">
@@ -92,7 +92,7 @@ function QueueStats({ queue }: QueueStatsProps) {
         </Card>
       </Grid>
 
-      <Grid item xs={6} md={3}>
+      <Grid xs={6} md={3}>
         <Card variant="outlined">
           <CardContent sx={{ textAlign: 'center', py: 2 }}>
             <Typography variant="h4" color="warning.main" fontWeight="bold">
@@ -105,7 +105,7 @@ function QueueStats({ queue }: QueueStatsProps) {
         </Card>
       </Grid>
 
-      <Grid item xs={6} md={3}>
+      <Grid xs={6} md={3}>
         <Card variant="outlined">
           <CardContent sx={{ textAlign: 'center', py: 2 }}>
             <Typography variant="h4" color="info.main" fontWeight="bold">
@@ -118,7 +118,7 @@ function QueueStats({ queue }: QueueStatsProps) {
         </Card>
       </Grid>
 
-      <Grid item xs={6} md={3}>
+      <Grid xs={6} md={3}>
         <Card variant="outlined">
           <CardContent sx={{ textAlign: 'center', py: 2 }}>
             <Typography variant="h4" color="secondary.main" fontWeight="bold">

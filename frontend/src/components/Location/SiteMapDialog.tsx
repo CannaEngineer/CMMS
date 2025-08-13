@@ -282,7 +282,7 @@ export default function SiteMapDialog({
       <DialogContent>
         <Grid container spacing={3}>
           {/* Map Controls */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card variant="outlined" sx={{ mb: 2 }}>
               <CardContent sx={{ py: 2 }}>
                 <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
@@ -359,7 +359,7 @@ export default function SiteMapDialog({
           </Grid>
 
           {/* Map View */}
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             {mappableLocations.length === 0 ? (
               <Alert severity="info" sx={{ height: 400, display: 'flex', alignItems: 'center' }}>
                 <Typography>
@@ -388,7 +388,7 @@ export default function SiteMapDialog({
           </Grid>
 
           {/* Location Details & Legend */}
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             {/* Selected Location Details */}
             {selectedLocation && (
               <Card sx={{ mb: 2 }}>

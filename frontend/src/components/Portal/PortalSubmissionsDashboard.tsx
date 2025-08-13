@@ -816,7 +816,7 @@ const SubmissionDetailsDialog: React.FC<{
       <DialogContent dividers>
         <Grid container spacing={3}>
           {/* Quick Actions */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'primary.main' }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom color="primary">
@@ -917,7 +917,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submitter Information */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -969,7 +969,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submission Information */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -1049,7 +1049,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Form Data */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -1057,7 +1057,7 @@ const SubmissionDetailsDialog: React.FC<{
                 </Typography>
                 <Grid container spacing={2}>
                   {Object.entries(submission.submissionData || submission.formData || {}).map(([key, value]) => (
-                    <Grid item xs={12} sm={6} key={key}>
+                    <Grid xs={12} sm={6} key={key}>
                       <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                           {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -1075,7 +1075,7 @@ const SubmissionDetailsDialog: React.FC<{
 
           {/* Files */}
           {submission.files && Array.isArray(submission.files) && submission.files.length > 0 && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -1084,7 +1084,7 @@ const SubmissionDetailsDialog: React.FC<{
                   </Typography>
                   <Grid container spacing={2}>
                     {(submission.files || []).map((file) => (
-                      <Grid item xs={12} sm={6} md={4} key={file.id}>
+                      <Grid xs={12} sm={6} md={4} key={file.id}>
                         <Card variant="outlined">
                           <CardContent>
                             <Typography variant="body2" gutterBottom>
@@ -1110,7 +1110,7 @@ const SubmissionDetailsDialog: React.FC<{
 
           {/* Communication Thread */}
           {submission.communications && submission.communications.length > 0 && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>

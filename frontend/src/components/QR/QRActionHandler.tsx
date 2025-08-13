@@ -266,7 +266,7 @@ export default function QRActionHandler({
         {/* QR Code Information */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item>
+            <Grid>
               <Box
                 sx={{
                   width: 80,
@@ -281,7 +281,7 @@ export default function QRActionHandler({
                 {getTypeIcon(scanResult.qrCodeData?.type || '')}
               </Box>
             </Grid>
-            <Grid item xs>
+            <Grid xs>
               <Typography variant="h6" gutterBottom>
                 {scanResult.qrCodeData?.type.replace('-', ' ').toUpperCase()} {scanResult.qrCodeData?.id}
               </Typography>
@@ -343,7 +343,7 @@ export default function QRActionHandler({
               <Box sx={{ mb: 3 }}>
                 <Grid container spacing={2}>
                   {actionsByCategory.view.slice(0, 2).map((action) => (
-                    <Grid item xs={12} sm={6} key={action.id}>
+                    <Grid xs={12} sm={6} key={action.id}>
                       <Card 
                         sx={{ 
                           cursor: 'pointer',

@@ -26,9 +26,23 @@ export class DashboardController {
         return res.status(400).json({ error: 'Organization ID required' });
       }
 
-      const { period } = req.query;
-      const validPeriods = ['week', 'month', 'year'];
-      const selectedPeriod = validPeriods.includes(period as string) ? (period as 'week' | 'month' | 'year') : 'month';
+      const { period, days } = req.query;
+      let selectedPeriod: 'week' | 'month' | 'year' = 'month';
+
+      // Handle 'days' parameter by mapping to appropriate period
+      if (days) {
+        const numDays = parseInt(days as string);
+        if (numDays <= 7) {
+          selectedPeriod = 'week';
+        } else if (numDays <= 365) {
+          selectedPeriod = 'month';
+        } else {
+          selectedPeriod = 'year';
+        }
+      } else if (period) {
+        const validPeriods = ['week', 'month', 'year'];
+        selectedPeriod = validPeriods.includes(period as string) ? (period as 'week' | 'month' | 'year') : 'month';
+      }
 
       const trends = await dashboardService.getWorkOrderTrends(organizationId, selectedPeriod);
       res.json(trends);

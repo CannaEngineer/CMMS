@@ -202,7 +202,7 @@ export default function ExportStatsCards({ stats }: ExportStatsCardsProps) {
   return (
     <Grid container spacing={isMobile ? 2 : 3}>
       {cards.map((card, index) => (
-        <Grid item xs={12} sm={6} md={4} lg={2} key={index}>
+        <Grid xs={12} sm={6} md={4} lg={2} key={index}>
           <StatCard {...card} />
         </Grid>
       ))}

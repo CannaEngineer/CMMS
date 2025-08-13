@@ -102,7 +102,7 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
         <Grid container spacing={3}>
           {/* Pre-built Templates */}
           {filteredTemplates.map((template) => (
-            <Grid item xs={12} sm={6} md={4} key={template.id}>
+            <Grid xs={12} sm={6} md={4} key={template.id}>
               <Card
                 variant="outlined"
                 sx={{
@@ -161,7 +161,7 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
           ))}
 
           {/* Custom Template Option */}
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <Card
               variant="outlined"
               sx={{
@@ -220,7 +220,7 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
           </Typography>
           
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Fields Included:</strong>
               </Typography>
@@ -238,7 +238,7 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
               </Box>
             </Grid>
             
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Features:</strong>
               </Typography>

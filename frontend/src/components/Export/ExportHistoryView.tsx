@@ -270,7 +270,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>
                 Basic Information
               </Typography>
@@ -281,7 +281,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               <Typography variant="body2"><strong>File Name:</strong> {item.fileName || 'N/A'}</Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>
                 Performance Metrics
               </Typography>
@@ -292,7 +292,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               <Typography variant="body2"><strong>Downloads:</strong> {item.downloadCount}</Typography>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>
                 Timestamps
               </Typography>
@@ -305,7 +305,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               )}
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle2" gutterBottom>
                 Quality & Compliance
               </Typography>
@@ -320,7 +320,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
             </Grid>
 
             {item.errorMessage && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="subtitle2" gutterBottom color="error">
                   Error Details
                 </Typography>
@@ -336,7 +336,7 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
             )}
 
             {Object.keys(item.filtersApplied).length > 0 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="subtitle2" gutterBottom>
                   Applied Filters
                 </Typography>
@@ -433,7 +433,7 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
       {/* Filters */}
       <Box sx={{ mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               placeholder="Search exports..."
@@ -450,7 +450,7 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
             />
           </Grid>
           
-          <Grid item xs={6} md={3}>
+          <Grid xs={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
@@ -467,7 +467,7 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
             </FormControl>
           </Grid>
           
-          <Grid item xs={6} md={3}>
+          <Grid xs={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Format</InputLabel>
               <Select

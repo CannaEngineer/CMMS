@@ -335,7 +335,7 @@ ${poData.notes ? `NOTES: ${poData.notes}` : ''}
       <DialogContent>
         <Grid container spacing={3}>
           {/* Left Panel - Part Selection & Inventory Management */}
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="h6">Part Selection & Inventory</Typography>
@@ -461,7 +461,7 @@ ${poData.notes ? `NOTES: ${poData.notes}` : ''}
           </Grid>
 
           {/* Right Panel - Order Details */}
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Stack spacing={3}>
               {/* Order Configuration */}
               <Card>
@@ -547,7 +547,7 @@ ${poData.notes ? `NOTES: ${poData.notes}` : ''}
                           </Box>
 
                           <Grid container spacing={1} alignItems="center">
-                            <Grid item xs={4}>
+                            <Grid xs={4}>
                               <TextField
                                 label="Qty"
                                 type="number"
@@ -558,7 +558,7 @@ ${poData.notes ? `NOTES: ${poData.notes}` : ''}
                                 fullWidth
                               />
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid xs={4}>
                               <TextField
                                 label="Price"
                                 type="number"
@@ -569,7 +569,7 @@ ${poData.notes ? `NOTES: ${poData.notes}` : ''}
                                 fullWidth
                               />
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid xs={4}>
                               <Typography variant="body2" fontWeight="medium" textAlign="right">
                                 ${(item.quantity * item.unitPrice).toFixed(2)}
                               </Typography>

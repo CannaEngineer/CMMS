@@ -172,7 +172,7 @@ export default function AssetDistributionDialog({
 
   const renderHierarchyView = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -212,7 +212,7 @@ export default function AssetDistributionDialog({
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -267,7 +267,7 @@ export default function AssetDistributionDialog({
 
   const renderTypeView = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -297,7 +297,7 @@ export default function AssetDistributionDialog({
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -317,7 +317,7 @@ export default function AssetDistributionDialog({
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -325,7 +325,7 @@ export default function AssetDistributionDialog({
             </Typography>
             <Grid container spacing={2}>
               {typeDistribution.map((type) => (
-                <Grid item xs={12} sm={6} md={4} key={type.type}>
+                <Grid xs={12} sm={6} md={4} key={type.type}>
                   <Box
                     sx={{
                       p: 2,
@@ -358,12 +358,12 @@ export default function AssetDistributionDialog({
 
   const renderDensityView = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <Alert severity="info" sx={{ mb: 2 }}>
           Asset density analysis shows how efficiently assets are distributed across parent locations.
         </Alert>
       </Grid>
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
@@ -383,7 +383,7 @@ export default function AssetDistributionDialog({
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>

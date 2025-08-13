@@ -14,11 +14,20 @@ import pmTaskRouter from './api/pm-task/pmTask.router';
 import pmTriggerRouter from './api/pm-trigger/pmTrigger.router';
 import meterReadingRouter from './api/meter-reading/meterReading.router';
 import maintenanceHistoryRouter from './api/maintenance-history/maintenanceHistory.router';
+import maintenanceRouter from './api/maintenance/maintenance.router';
 import portalRouter from './api/portal/portal.router';
 import commentRouter from './api/comment/comment.router';
 import importRouter from './api/import/import.router';
+import publicShareRouter from './api/public/publicShare.router';
+import organizationRouter from './api/organization/organization.router';
 import { authenticate } from './middleware/auth.middleware';
 import { uploadService } from './services/uploadService';
+import { 
+  errorHandler, 
+  notFoundHandler, 
+  requestLogger,
+  asyncHandler 
+} from './middleware/errorHandler.middleware';
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,31 +37,35 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit for CSV imports
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL encoded payload limit
 
+// Request logging
+app.use(requestLogger);
+
 app.get('/', (req, res) => {
   res.send('Hello from the Compass CMMS Backend!');
 });
 
-// Temporary bypass for development - TODO: Remove in production
-const developmentAuth = (req: any, res: any, next: any) => {
-  req.user = { organizationId: 1, id: 1, role: 'ADMIN' };
-  next();
-};
+// Remove development auth bypass - use real authentication
+
+// Public routes (no authentication required)
+app.use('/api/public', publicShareRouter);
 
 app.use('/api/auth', authRouter);
-app.use('/api/assets', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, assetRouter);
-app.use('/api/locations', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, locationRouter);
-app.use('/api/work-orders', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, workOrderRouter);
-app.use('/api/parts', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, partRouter);
-app.use('/api/users', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, userRouter);
+app.use('/api/assets', authenticate, assetRouter);
+app.use('/api/locations', authenticate, locationRouter);
+app.use('/api/work-orders', authenticate, workOrderRouter);
+app.use('/api/parts', authenticate, partRouter);
+app.use('/api/users', authenticate, userRouter);
+app.use('/api/organization', authenticate, organizationRouter);
 
-app.use('/api/dashboard', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, dashboardRouter);
-app.use('/api/pm-schedules', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, pmScheduleRouter);
-app.use('/api/pm-tasks', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, pmTaskRouter);
-app.use('/api/pm-triggers', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, pmTriggerRouter);
-app.use('/api/meter-readings', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, meterReadingRouter);
-app.use('/api/maintenance-history', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, maintenanceHistoryRouter);
-app.use('/api/comments', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, commentRouter);
-app.use('/api/import', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, importRouter);
+app.use('/api/dashboard', authenticate, dashboardRouter);
+app.use('/api/maintenance', authenticate, maintenanceRouter);
+app.use('/api/pm-schedules', authenticate, pmScheduleRouter);
+app.use('/api/pm-tasks', authenticate, pmTaskRouter);
+app.use('/api/pm-triggers', authenticate, pmTriggerRouter);
+app.use('/api/meter-readings', authenticate, meterReadingRouter);
+app.use('/api/maintenance-history', authenticate, maintenanceHistoryRouter);
+app.use('/api/comments', authenticate, commentRouter);
+app.use('/api/import', authenticate, importRouter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -99,7 +112,11 @@ app.get('/api/portals/public/:slug/rate-limit', (req, res) => {
   checkRateLimit(req, res);
 });
 
-app.use('/api/portals', process.env.NODE_ENV === 'production' ? authenticate : developmentAuth, portalRouter);
+app.use('/api/portals', authenticate, portalRouter);
+
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);

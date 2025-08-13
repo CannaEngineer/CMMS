@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Grid,
   Paper,
   Typography,
   Box,
@@ -36,6 +35,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import {
   Assignment as WorkOrderIcon,
   Build as AssetIcon,
@@ -147,25 +147,27 @@ export default function Dashboard() {
   // Mutations for quick actions
   const createWorkOrderMutation = useMutation({
     mutationFn: workOrdersService.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Work Order created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
     },
     onError: (error) => {
-      console.error('Error creating work order:', error);
+      console.error('❌ Failed to create work order:', error);
     },
   });
 
   const createAssetMutation = useMutation({
     mutationFn: assetsService.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Asset created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       setAssetFormOpen(false);
     },
     onError: (error) => {
-      console.error('Error creating asset:', error);
+      console.error('❌ Failed to create asset:', error);
     },
   });
 
@@ -646,7 +648,7 @@ export default function Dashboard() {
           </Typography>
           <Grid container spacing={2}>
             {quickActions.map((action, index) => (
-              <Grid item xs={12} sm={4} key={index}>
+              <Grid xs={12} sm={4} key={index}>
                 <Grow in timeout={1000 + (index * 200)}>
                   <Button
                     fullWidth
@@ -710,7 +712,7 @@ export default function Dashboard() {
 
   const KeyMetricsSection = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
-      <Grid item xs={6} sm={3}>
+      <Grid xs={6} sm={3}>
         <Grow in timeout={1200}>
           <div>
             <StatCard
@@ -724,7 +726,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid item xs={6} sm={3}>
+      <Grid xs={6} sm={3}>
         <Grow in timeout={1400}>
           <div>
             <StatCard
@@ -738,7 +740,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid item xs={6} sm={3}>
+      <Grid xs={6} sm={3}>
         <Grow in timeout={1600}>
           <div>
             <StatCard
@@ -752,7 +754,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid item xs={6} sm={3}>
+      <Grid xs={6} sm={3}>
         <Grow in timeout={1800}>
           <div>
             <StatCard
@@ -1143,7 +1145,7 @@ export default function Dashboard() {
             
             <Grid container spacing={3}>
               {/* Left Column */}
-              <Grid item xs={12} md={8}>
+              <Grid xs={12} md={8}>
                 <QuickActionsSection />
                 <KeyMetricsSection />
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
@@ -1167,7 +1169,7 @@ export default function Dashboard() {
               </Grid>
               
               {/* Right Column */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <RecentActivitySection />
                 
                 {/* Additional side panel content for desktop */}

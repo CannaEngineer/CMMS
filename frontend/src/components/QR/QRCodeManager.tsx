@@ -253,7 +253,7 @@ export default function QRCodeManager({
         <DialogContent dividers sx={{ p: 0 }}>
           <Grid container sx={{ height: '100%' }}>
             {/* Configuration Panel */}
-            <Grid item xs={12} md={4} sx={{ borderRight: { md: `1px solid ${theme.palette.divider}` } }}>
+            <Grid xs={12} md={4} sx={{ borderRight: { md: `1px solid ${theme.palette.divider}` } }}>
               <Box sx={{ p: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   Configuration
@@ -392,7 +392,7 @@ export default function QRCodeManager({
             </Grid>
 
             {/* Generated Labels Panel */}
-            <Grid item xs={12} md={8}>
+            <Grid xs={12} md={8}>
               <Box sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                   <Typography variant="h6">

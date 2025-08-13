@@ -381,7 +381,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
 
       {/* Overview Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Grow in timeout={400}>
             <MetricCard>
               <CardContent>
@@ -403,7 +403,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
             </Grow>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Grow in timeout={600}>
             <MetricCard>
               <CardContent>
@@ -425,7 +425,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
             </Grow>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Grow in timeout={800}>
             <MetricCard>
               <CardContent>
@@ -447,7 +447,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
             </Grow>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Grow in timeout={1000}>
             <MetricCard>
               <CardContent>
@@ -503,7 +503,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
           {selectedTab === 0 && (
             <Grid container spacing={3}>
               {/* Portal Configuration */}
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Typography variant="h6" gutterBottom>
                   Portal Configuration
                 </Typography>
@@ -593,7 +593,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
               </Grid>
 
               {/* Recent Submissions */}
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6">
                     Recent Submissions
@@ -631,7 +631,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
               </Grid>
 
               {/* Portal Fields Summary */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="h6" gutterBottom>
                   Form Fields ({portal.fields?.length || 0})
                 </Typography>
@@ -639,7 +639,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
                   {portal.fields && portal.fields.length > 0 ? (
                     <Grid container spacing={2}>
                       {portal.fields.map((field) => (
-                        <Grid item xs={12} sm={6} md={4} key={field.id}>
+                        <Grid xs={12} sm={6} md={4} key={field.id}>
                           <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                             <Typography variant="body2" fontWeight="medium">
                               {field.fieldLabel}
@@ -684,7 +684,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
               </Typography>
               {analytics ? (
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <Card>
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
@@ -713,7 +713,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
                       </CardContent>
                     </Card>
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <Card>
                       <CardContent>
                         <Typography variant="h6" gutterBottom>
@@ -754,7 +754,7 @@ const PortalDetailView: React.FC<PortalDetailViewProps> = ({
                 Share Portal
               </Typography>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
+                <Grid xs={12} md={8}>
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>

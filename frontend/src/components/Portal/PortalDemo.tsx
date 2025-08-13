@@ -120,7 +120,7 @@ const PortalDemo: React.FC = () => {
 
       <Grid container spacing={3}>
         {DEMO_PORTALS.map((portal) => (
-          <Grid item xs={12} md={6} lg={4} key={portal.id}>
+          <Grid xs={12} md={6} lg={4} key={portal.id}>
             <Card 
               sx={{ 
                 height: '100%',
@@ -265,7 +265,7 @@ const PortalDemo: React.FC = () => {
         </Typography>
         
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
                 📱 Mobile-First Design
@@ -276,7 +276,7 @@ const PortalDemo: React.FC = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'success.main' }}>
                 🔓 No Login Required
@@ -287,7 +287,7 @@ const PortalDemo: React.FC = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'warning.main' }}>
                 📊 Auto Work Order Creation
@@ -298,7 +298,7 @@ const PortalDemo: React.FC = () => {
             </Card>
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ p: 3, height: '100%' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: 'info.main' }}>
                 🎨 Custom Branding

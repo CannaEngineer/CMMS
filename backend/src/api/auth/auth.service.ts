@@ -7,13 +7,56 @@ const prisma = new PrismaClient();
 
 export const register = async (data: any) => {
   const hashedPassword = await bcrypt.hash(data.password, 10);
+  
+  // Check if this is the first user ever (superuser case)
+  const userCount = await prisma.user.count();
+  const isSuperUser = userCount === 0;
+  
+  let organizationId = data.organizationId;
+  
+  // If no organizationId provided or this is a new admin signup, create new organization
+  if (!organizationId || data.createOrganization) {
+    const organizationName = data.organizationName || `${data.name}'s Organization`;
+    
+    const organization = await prisma.organization.create({
+      data: {
+        name: organizationName,
+        settings: {
+          timezone: 'America/New_York',
+          dateFormat: 'MM/DD/YYYY',
+          currency: 'USD'
+        }
+      }
+    });
+    
+    organizationId = organization.id;
+  }
+  
+  // Determine user role based on context
+  let userRole = data.role || 'TECHNICIAN'; // Default role
+  
+  // If creating new organization, user becomes ADMIN
+  if (data.createOrganization || !data.organizationId) {
+    userRole = 'ADMIN';
+  }
+  
+  // Create the user
   const user = await prisma.user.create({
     data: {
-      ...data,
+      name: data.name,
+      email: data.email,
       password: hashedPassword,
+      role: userRole,
+      organizationId: organizationId,
     },
+    include: {
+      organization: true
+    }
   });
-  return user;
+  
+  // Return user without password
+  const { password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
 };
 
 export const login = async (data: any) => {

@@ -223,7 +223,7 @@ export default function UserForm({
 
   const renderViewMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent sx={{ textAlign: 'center' }}>
             <Badge
@@ -283,7 +283,7 @@ export default function UserForm({
         </Card>
       </Grid>
 
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Contact Information</Typography>
@@ -315,14 +315,14 @@ export default function UserForm({
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Work Details</Typography>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Work Shift</Typography>
                 <Typography variant="body1">
                   {shiftOptions.find(s => s.value === formData.workShift)?.label}
                 </Typography>
               </Grid>
               {formData.supervisor && (
-                <Grid item xs={6}>
+                <Grid xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">Supervisor</Typography>
                   <Typography variant="body1">
                     {supervisorOptions.find(s => s.value === formData.supervisor)?.label}
@@ -375,7 +375,7 @@ export default function UserForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="text"
           name="name"
@@ -387,7 +387,7 @@ export default function UserForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="email"
           name="email"
@@ -400,7 +400,7 @@ export default function UserForm({
         />
       </Grid>
       {mode === 'create' && (
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <FormField
             type="password"
             name="password"
@@ -413,7 +413,7 @@ export default function UserForm({
           />
         </Grid>
       )}
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="select"
           name="role"

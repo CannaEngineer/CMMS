@@ -16,7 +16,7 @@ const assetSchema = z.object({
   imageUrl: z.string().optional(),
   attachments: z.any().optional(),
   locationId: z.number(),
-  organizationId: z.number(),
+  organizationId: z.number().optional(), // Make it optional since it comes from req.user
   parentId: z.number().optional(),
 });
 
@@ -38,8 +38,9 @@ export const getAssetById = async (req: Request, res: Response) => {
 
 export const createAsset = async (req: Request, res: Response) => {
   try {
+    const { organizationId } = req.user;
     const data = assetSchema.parse(req.body);
-    const asset = await assetService.createAsset(data);
+    const asset = await assetService.createAsset(data, organizationId);
     res.status(201).json(asset);
   } catch (error) {
     res.status(400).json({ error: error.message });

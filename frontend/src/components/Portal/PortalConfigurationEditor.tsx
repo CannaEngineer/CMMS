@@ -41,7 +41,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
 
       <Grid container spacing={3}>
         {/* Submission Settings */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -49,7 +49,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -61,7 +61,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -73,7 +73,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControl fullWidth>
                     <InputLabel>Default Priority</InputLabel>
                     <Select
@@ -89,7 +89,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   </FormControl>
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Rate Limit (per hour)"
@@ -105,7 +105,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
         </Grid>
 
         {/* File Upload Settings */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -113,7 +113,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -127,7 +127,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                 
                 {configuration.allowFileUploads && (
                   <>
-                    <Grid item xs={12} md={4}>
+                    <Grid xs={12} md={4}>
                       <TextField
                         fullWidth
                         label="Max File Size (MB)"
@@ -138,7 +138,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                       />
                     </Grid>
                     
-                    <Grid item xs={12} md={4}>
+                    <Grid xs={12} md={4}>
                       <TextField
                         fullWidth
                         label="Max Files"
@@ -149,7 +149,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                       />
                     </Grid>
                     
-                    <Grid item xs={12} md={4}>
+                    <Grid xs={12} md={4}>
                       <Typography variant="body2" gutterBottom>
                         Allowed File Types
                       </Typography>
@@ -167,7 +167,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
         </Grid>
 
         {/* Email Notifications */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -175,7 +175,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -192,7 +192,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -209,7 +209,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -227,7 +227,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                 </Grid>
                 
                 {configuration.emailNotifications.notifyAdmins && (
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <TextField
                       fullWidth
                       label="Admin Email Addresses"
@@ -255,7 +255,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
         </Grid>
 
         {/* Security Settings */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -263,7 +263,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -275,7 +275,7 @@ const PortalConfigurationEditor: React.FC<PortalConfigurationEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControlLabel
                     control={
                       <Switch

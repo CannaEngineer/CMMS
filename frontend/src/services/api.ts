@@ -8,10 +8,12 @@ const API_BASE_URL = import.meta.env.PROD
   ? (import.meta.env.VITE_API_URL || '') 
   : '';
 
-// Generic API client with error handling and retries
+// Enhanced API client with error handling, retries, and better error formatting
 class ApiClient {
   private baseURL: string;
   private defaultHeaders: HeadersInit;
+  private requestInterceptors: Array<(config: RequestInit) => RequestInit> = [];
+  private responseInterceptors: Array<(response: Response) => Response> = [];
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -20,47 +22,206 @@ class ApiClient {
     };
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
-    const config: RequestInit = {
-      headers: { ...this.defaultHeaders, ...options.headers },
-      ...options,
+  private getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return {
+        'Authorization': `Bearer ${token}`,
+      };
+    }
+    return {};
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private getRetryDelay(attempt: number): number {
+    // Exponential backoff: 1s, 2s, 4s
+    return Math.min(1000 * Math.pow(2, attempt), 10000);
+  }
+
+  private shouldRetry(error: any, attempt: number, maxRetries: number): boolean {
+    if (attempt >= maxRetries) return false;
+    
+    // Don't retry client errors (4xx), except for specific cases
+    if (error.status >= 400 && error.status < 500) {
+      // Retry on 408 (Request Timeout), 429 (Too Many Requests)
+      return error.status === 408 || error.status === 429;
+    }
+    
+    // Retry on network errors and server errors (5xx)
+    return error.status >= 500 || !error.status || error.name === 'NetworkError';
+  }
+
+  private async parseErrorResponse(response: Response): Promise<any> {
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        return await response.json();
+      } catch {
+        return null;
+      }
+    }
+    
+    try {
+      return { message: await response.text() };
+    } catch {
+      return null;
+    }
+  }
+
+  private createError(response: Response, errorData?: any): Error {
+    const error: any = new Error();
+    
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.response = {
+      status: response.status,
+      statusText: response.statusText,
+      data: errorData
     };
 
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        // Create a proper error object with status
-        const error: any = new Error(`HTTP error! status: ${response.status}`);
-        error.status = response.status;
-        error.response = { status: response.status };
-        throw error;
+    // Set error message based on response
+    if (errorData?.error?.message) {
+      error.message = errorData.error.message;
+    } else if (errorData?.message) {
+      error.message = errorData.message;
+    } else {
+      // Default messages based on status code
+      switch (response.status) {
+        case 400:
+          error.message = 'Invalid request. Please check your input.';
+          break;
+        case 401:
+          error.message = 'You are not authorized. Please log in again.';
+          break;
+        case 403:
+          error.message = 'You do not have permission to perform this action.';
+          break;
+        case 404:
+          error.message = 'The requested resource was not found.';
+          break;
+        case 409:
+          error.message = 'There was a conflict with your request.';
+          break;
+        case 422:
+          error.message = 'The data provided is invalid.';
+          break;
+        case 429:
+          error.message = 'Too many requests. Please try again later.';
+          break;
+        case 500:
+          error.message = 'Internal server error. Please try again.';
+          break;
+        case 502:
+          error.message = 'Service temporarily unavailable.';
+          break;
+        case 503:
+          error.message = 'Service unavailable. Please try again later.';
+          break;
+        default:
+          error.message = `Request failed with status ${response.status}`;
       }
-
-      // Handle empty responses (like 204 No Content)
-      const contentType = response.headers.get('content-type');
-      if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
-        return null as any;
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error: any) {
-      // Only log errors in development mode
-      if (import.meta.env.DEV) {
-        console.warn(`API unavailable: ${url}`);
-      }
-      
-      // Preserve error status for proper handling
-      if (!error.status && error.name !== 'SyntaxError') {
-        error.status = 500;
-      }
-      throw error;
     }
+
+    return error;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    maxRetries: number = 2
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    let attempt = 0;
+    
+    while (attempt <= maxRetries) {
+      try {
+        let config: RequestInit = {
+          headers: { 
+            ...this.defaultHeaders, 
+            ...this.getAuthHeaders(),
+            ...options.headers 
+          },
+          ...options,
+        };
+
+        // Apply request interceptors
+        this.requestInterceptors.forEach(interceptor => {
+          config = interceptor(config);
+        });
+
+        const response = await fetch(url, config);
+        
+        // Apply response interceptors
+        let finalResponse = response;
+        this.responseInterceptors.forEach(interceptor => {
+          finalResponse = interceptor(finalResponse);
+        });
+
+        if (!finalResponse.ok) {
+          const errorData = await this.parseErrorResponse(finalResponse);
+          const error = this.createError(finalResponse, errorData);
+          
+          // Check if we should retry
+          if (this.shouldRetry(error, attempt, maxRetries)) {
+            attempt++;
+            if (attempt <= maxRetries) {
+              await this.sleep(this.getRetryDelay(attempt - 1));
+              continue;
+            }
+          }
+          
+          // Handle authentication errors
+          if (finalResponse.status === 401) {
+            // Clear auth data and redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+            return Promise.reject(error);
+          }
+          
+          throw error;
+        }
+
+        // Handle empty responses (like 204 No Content)
+        const contentType = finalResponse.headers.get('content-type');
+        if (finalResponse.status === 204 || !contentType || !contentType.includes('application/json')) {
+          return null as any;
+        }
+
+        const data = await finalResponse.json();
+        return data;
+        
+      } catch (error: any) {
+        // If this is the last attempt or shouldn't retry, throw the error
+        if (!this.shouldRetry(error, attempt, maxRetries)) {
+          // Enhance error for network failures
+          if (!error.status && error.name !== 'SyntaxError') {
+            error.status = 0;
+            error.message = 'Network error. Please check your connection.';
+          }
+          
+          // Log errors in development mode
+          if (import.meta.env.DEV) {
+            console.warn(`API request failed: ${url}`, error);
+          }
+          
+          throw error;
+        }
+        
+        // Retry on next iteration
+        attempt++;
+        if (attempt <= maxRetries) {
+          await this.sleep(this.getRetryDelay(attempt - 1));
+        }
+      }
+    }
+
+    // This should never be reached, but TypeScript needs it
+    throw new Error('Maximum retries exceeded');
   }
 
   async get<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -95,7 +256,7 @@ const apiClient = new ApiClient(API_BASE_URL);
 export const dashboardService = {
   async getStats(): Promise<DashboardStats> {
     try {
-      return await apiClient.get<DashboardStats>('/dashboard/stats');
+      return await apiClient.get<DashboardStats>('/api/dashboard/stats');
     } catch (error) {
       // Return empty dashboard stats when API is unavailable
       console.warn('Dashboard API not available');
@@ -131,7 +292,7 @@ export const dashboardService = {
 
   async getTrends(days: number = 7): Promise<WorkOrderTrends[]> {
     try {
-      const result = await apiClient.get<WorkOrderTrends[]>(`/dashboard/trends?days=${days}`);
+      const result = await apiClient.get<WorkOrderTrends[]>(`/api/dashboard/trends?days=${days}`);
       return result || [];
     } catch (error) {
       // Return empty trends when API is unavailable
@@ -142,12 +303,12 @@ export const dashboardService = {
 
   async getRecentWorkOrders(limit: number = 10): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>(`/work-orders/recent?limit=${limit}`);
+      const result = await apiClient.get<any[]>(`/api/work-orders/recent?limit=${limit}`);
       return result || [];
     } catch (error) {
       // Try to get work orders from the main endpoint
       try {
-        const allWorkOrders = await apiClient.get<any[]>('/work-orders');
+        const allWorkOrders = await apiClient.get<any[]>('/api/work-orders');
         const workOrders = allWorkOrders || [];
         // Sort by createdAt descending and take the first 'limit' items
         return workOrders
@@ -163,7 +324,7 @@ export const dashboardService = {
 
   async getMaintenanceSchedule(limit: number = 10): Promise<MaintenanceScheduleItem[]> {
     try {
-      const result = await apiClient.get<MaintenanceScheduleItem[]>(`/maintenance/schedule?limit=${limit}`);
+      const result = await apiClient.get<MaintenanceScheduleItem[]>(`/api/maintenance/schedule?limit=${limit}`);
       return result || [];
     } catch (error) {
       // Return empty maintenance schedule when API is unavailable
@@ -174,7 +335,7 @@ export const dashboardService = {
 
   async getMaintenanceStats(): Promise<{ today: number; thisWeek: number }> {
     try {
-      return await apiClient.get<{ today: number; thisWeek: number }>('/maintenance/stats');
+      return await apiClient.get<{ today: number; thisWeek: number }>('/api/maintenance/stats');
     } catch (error) {
       // Return empty maintenance stats when API is unavailable
       console.warn('Maintenance stats API not available');
@@ -187,7 +348,7 @@ export const dashboardService = {
 
   async getAssetHealth(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/dashboard/asset-health');
+      const result = await apiClient.get<any[]>('/api/dashboard/asset-health');
       return result || [];
     } catch (error) {
       // Return empty asset health when API is unavailable
@@ -198,7 +359,7 @@ export const dashboardService = {
 
   async getWorkOrderTrends(period: 'week' | 'month' | 'year'): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>(`/dashboard/work-order-trends?period=${period}`);
+      const result = await apiClient.get<any[]>(`/api/dashboard/work-order-trends?period=${period}`);
       return result || [];
     } catch (error) {
       // Return empty work order trends when API is unavailable
@@ -213,7 +374,7 @@ export const workOrdersService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      const result = await apiClient.get<any[]>(`/work-orders${queryParams}`);
+      const result = await apiClient.get<any[]>(`/api/work-orders${queryParams}`);
       return result || [];
     } catch (error) {
       console.warn('Work orders API not available');
@@ -223,7 +384,7 @@ export const workOrdersService = {
 
   async getById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/work-orders/${id}`);
+      return await apiClient.get<any>(`/api/work-orders/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch work order ${id}`);
     }
@@ -231,7 +392,7 @@ export const workOrdersService = {
 
   async create(workOrder: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/work-orders', workOrder);
+      return await apiClient.post<any>('/api/work-orders', workOrder);
     } catch (error) {
       throw new Error('Failed to create work order');
     }
@@ -239,7 +400,7 @@ export const workOrdersService = {
 
   async update(id: string, workOrder: any): Promise<any> {
     try {
-      return await apiClient.put<any>(`/work-orders/${id}`, workOrder);
+      return await apiClient.put<any>(`/api/work-orders/${id}`, workOrder);
     } catch (error) {
       throw new Error(`Failed to update work order ${id}`);
     }
@@ -247,7 +408,7 @@ export const workOrdersService = {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/work-orders/${id}`);
+      await apiClient.delete(`/api/work-orders/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete work order ${id}`);
     }
@@ -255,7 +416,7 @@ export const workOrdersService = {
 
   async updateStatus(id: string, status: string): Promise<any> {
     try {
-      return await apiClient.put<any>(`/work-orders/${id}/status`, { status });
+      return await apiClient.put<any>(`/api/work-orders/${id}/status`, { status });
     } catch (error) {
       throw new Error(`Failed to update work order status ${id}`);
     }
@@ -263,10 +424,116 @@ export const workOrdersService = {
 
   async getByAssetId(assetId: string): Promise<any[]> {
     try {
-      return await apiClient.get<any[]>(`/work-orders?assetId=${assetId}`);
+      return await apiClient.get<any[]>(`/api/work-orders?assetId=${assetId}`);
     } catch (error) {
       console.warn(`Work orders for asset ${assetId} API not available`);
       return [];
+    }
+  },
+
+  async updatePriority(id: string, priority: string): Promise<any> {
+    try {
+      return await apiClient.put<any>(`/api/work-orders/${id}`, { priority });
+    } catch (error) {
+      throw new Error(`Failed to update work order priority ${id}`);
+    }
+  },
+
+  async assignWorkOrder(id: string, assigneeEmail: string): Promise<any> {
+    try {
+      return await apiClient.put<any>(`/api/work-orders/${id}`, { assigneeEmail });
+    } catch (error) {
+      throw new Error(`Failed to assign work order ${id}`);
+    }
+  },
+
+  // Time Logging methods
+  async logTime(id: string, hours: number, description: string, category?: string, billable?: boolean): Promise<any> {
+    try {
+      return await apiClient.post<any>(`/api/work-orders/${id}/time`, {
+        description,
+        hours,
+        category: category || 'LABOR',
+        billable: billable ?? true
+      });
+    } catch (error) {
+      throw new Error(`Failed to log time for work order ${id}`);
+    }
+  },
+
+  async getTimeLogs(id: string): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/api/work-orders/${id}/time`);
+      return result || [];
+    } catch (error) {
+      console.warn(`Time logs for work order ${id} not available`);
+      return [];
+    }
+  },
+
+  async getTimeStats(id: string): Promise<any> {
+    try {
+      return await apiClient.get<any>(`/api/work-orders/${id}/time/stats`);
+    } catch (error) {
+      console.warn(`Time stats for work order ${id} not available`);
+      return { totalHours: 0, billableHours: 0 };
+    }
+  },
+
+  // Notes methods
+  async addNote(id: string, content: string, isInternal?: boolean): Promise<any> {
+    try {
+      return await apiClient.post<any>(`/api/work-orders/${id}/notes`, {
+        content,
+        isInternal: isInternal || false
+      });
+    } catch (error) {
+      throw new Error(`Failed to add note to work order ${id}`);
+    }
+  },
+
+  async getNotes(id: string, includeInternal?: boolean): Promise<any[]> {
+    try {
+      const params = includeInternal !== undefined ? `?includeInternal=${includeInternal}` : '';
+      const result = await apiClient.get<any[]>(`/api/work-orders/${id}/notes${params}`);
+      return result || [];
+    } catch (error) {
+      console.warn(`Notes for work order ${id} not available`);
+      return [];
+    }
+  },
+
+  // Sharing methods
+  async createShare(id: string, options: {
+    allowComments?: boolean;
+    allowDownload?: boolean;
+    viewerCanSeeAssignee?: boolean;
+    sanitizationLevel?: string;
+    expiresAt?: Date;
+    maxViews?: number;
+  } = {}): Promise<any> {
+    try {
+      return await apiClient.post<any>(`/api/work-orders/${id}/share`, options);
+    } catch (error) {
+      throw new Error(`Failed to create share for work order ${id}`);
+    }
+  },
+
+  async getShares(id: string): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/api/work-orders/${id}/shares`);
+      return result || [];
+    } catch (error) {
+      console.warn(`Shares for work order ${id} not available`);
+      return [];
+    }
+  },
+
+  async deactivateShare(shareId: string): Promise<void> {
+    try {
+      await apiClient.put(`/api/work-orders/shares/${shareId}/deactivate`, {});
+    } catch (error) {
+      throw new Error(`Failed to deactivate share ${shareId}`);
     }
   },
 };
@@ -276,7 +543,7 @@ export const assetsService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      const result = await apiClient.get<any[]>(`/assets${queryParams}`);
+      const result = await apiClient.get<any[]>(`/api/assets${queryParams}`);
       return result || [];
     } catch (error) {
       console.warn('Assets API not available');
@@ -286,7 +553,7 @@ export const assetsService = {
 
   async getById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/assets/${id}`);
+      return await apiClient.get<any>(`/api/assets/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch asset ${id}`);
     }
@@ -294,7 +561,7 @@ export const assetsService = {
 
   async create(asset: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/assets', asset);
+      return await apiClient.post<any>('/api/assets', asset);
     } catch (error) {
       throw new Error('Failed to create asset');
     }
@@ -302,7 +569,7 @@ export const assetsService = {
 
   async update(id: string, asset: any): Promise<any> {
     try {
-      return await apiClient.put<any>(`/assets/${id}`, asset);
+      return await apiClient.put<any>(`/api/assets/${id}`, asset);
     } catch (error) {
       throw new Error(`Failed to update asset ${id}`);
     }
@@ -310,7 +577,7 @@ export const assetsService = {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/assets/${id}`);
+      await apiClient.delete(`/api/assets/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete asset ${id}`);
     }
@@ -321,7 +588,7 @@ export const assetsService = {
 export const locationsService = {
   async getAll(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/locations');
+      const result = await apiClient.get<any[]>('/api/locations');
       return result || [];
     } catch (error) {
       console.warn('Locations API not available');
@@ -331,7 +598,7 @@ export const locationsService = {
 
   async getById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/locations/${id}`);
+      return await apiClient.get<any>(`/api/locations/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch location ${id}`);
     }
@@ -339,7 +606,7 @@ export const locationsService = {
 
   async create(location: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/locations', location);
+      return await apiClient.post<any>('/api/locations', location);
     } catch (error) {
       throw new Error('Failed to create location');
     }
@@ -347,7 +614,7 @@ export const locationsService = {
 
   async update(id: string, location: any): Promise<any> {
     try {
-      return await apiClient.put<any>(`/locations/${id}`, location);
+      return await apiClient.put<any>(`/api/locations/${id}`, location);
     } catch (error) {
       throw new Error(`Failed to update location ${id}`);
     }
@@ -355,7 +622,7 @@ export const locationsService = {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/locations/${id}`);
+      await apiClient.delete(`/api/locations/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete location ${id}`);
     }
@@ -366,7 +633,7 @@ export const locationsService = {
 export const usersService = {
   async getAll(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/users');
+      const result = await apiClient.get<any[]>('/api/users');
       return result || [];
     } catch (error) {
       console.warn('Users API not available');
@@ -376,7 +643,7 @@ export const usersService = {
 
   async getById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/users/${id}`);
+      return await apiClient.get<any>(`/api/users/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch user ${id}`);
     }
@@ -384,7 +651,7 @@ export const usersService = {
 
   async create(user: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/users', user);
+      return await apiClient.post<any>('/api/users', user);
     } catch (error) {
       throw new Error('Failed to create user');
     }
@@ -392,7 +659,7 @@ export const usersService = {
 
   async update(id: string, user: any): Promise<any> {
     try {
-      return await apiClient.put<any>(`/users/${id}`, user);
+      return await apiClient.put<any>(`/api/users/${id}`, user);
     } catch (error) {
       throw new Error(`Failed to update user ${id}`);
     }
@@ -400,7 +667,7 @@ export const usersService = {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/users/${id}`);
+      await apiClient.delete(`/api/users/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete user ${id}`);
     }
@@ -456,7 +723,7 @@ export const partsService = {
   async getAll(filters?: any): Promise<any[]> {
     try {
       const queryParams = filters ? `?${new URLSearchParams(filters).toString()}` : '';
-      const result = await apiClient.get<any[]>(`/parts${queryParams}`);
+      const result = await apiClient.get<any[]>(`/api/parts${queryParams}`);
       return result || [];
     } catch (error) {
       console.warn('Parts API not available');
@@ -466,7 +733,7 @@ export const partsService = {
 
   async getById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/parts/${id}`);
+      return await apiClient.get<any>(`/api/parts/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch part ${id}`);
     }
@@ -474,7 +741,7 @@ export const partsService = {
 
   async create(part: any): Promise<any> {
     try {
-      const createdPart = await apiClient.post<any>('/parts', part);
+      const createdPart = await apiClient.post<any>('/api/parts', part);
       
       // Generate QR code with the actual part ID
       try {
@@ -488,7 +755,7 @@ export const partsService = {
         
         // Update the part with the QR code if generation succeeded
         if (qrCodeUrl && createdPart.id) {
-          await apiClient.put<any>(`/parts/${createdPart.id}`, {
+          await apiClient.put<any>(`/api/parts/${createdPart.id}`, {
             ...createdPart,
             qrCode: qrCodeUrl
           });
@@ -521,7 +788,7 @@ export const partsService = {
         }
       }
       
-      return await apiClient.put<any>(`/parts/${id}`, part);
+      return await apiClient.put<any>(`/api/parts/${id}`, part);
     } catch (error) {
       throw new Error(`Failed to update part ${id}`);
     }
@@ -529,7 +796,7 @@ export const partsService = {
 
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/parts/${id}`);
+      await apiClient.delete(`/api/parts/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete part ${id}`);
     }
@@ -537,7 +804,7 @@ export const partsService = {
 
   async updateStock(id: string, quantity: number): Promise<any> {
     try {
-      return await apiClient.put<any>(`/parts/${id}/stock`, { quantity });
+      return await apiClient.put<any>(`/api/parts/${id}/stock`, { quantity });
     } catch (error) {
       throw new Error(`Failed to update stock for part ${id}`);
     }
@@ -545,7 +812,7 @@ export const partsService = {
 
   async getLowStock(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/parts/low-stock');
+      const result = await apiClient.get<any[]>('/api/parts/low-stock');
       return result || [];
     } catch (error) {
       console.warn('Low stock parts API not available');
@@ -582,11 +849,27 @@ export const partsService = {
 
   async getRecentActivity(limit: number = 10): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>(`/parts/activity?limit=${limit}`);
+      const result = await apiClient.get<any[]>(`/api/parts/activity?limit=${limit}`);
       return result || [];
     } catch (error) {
       console.warn('Parts activity API not available');
       return [];
+    }
+  },
+
+  async batchCreateOrMerge(parts: any[]): Promise<any> {
+    try {
+      return await apiClient.post<any>('/api/parts/batch', { parts });
+    } catch (error) {
+      throw new Error('Failed to process parts batch');
+    }
+  },
+
+  async cleanupDuplicates(): Promise<any> {
+    try {
+      return await apiClient.post<any>('/api/parts/cleanup-duplicates', {});
+    } catch (error) {
+      throw new Error('Failed to cleanup duplicates');
     }
   },
 };

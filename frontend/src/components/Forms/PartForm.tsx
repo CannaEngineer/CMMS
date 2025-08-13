@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
   Grid,
@@ -25,19 +27,9 @@ import {
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
-
-// Aligned with Part model from database schema
-interface PartFormData {
-  id?: number;
-  legacyId?: number;
-  name: string;
-  description?: string;
-  sku?: string;
-  stockLevel: number;
-  reorderPoint: number;
-  organizationId: number;
-  supplierId?: number;
-}
+import HookFormField from './HookFormField';
+import { partSchema, PartFormData } from '../../utils/validationSchemas';
+import FormErrorDisplay from '../Common/FormErrorDisplay';
 
 interface PartFormProps {
   open: boolean;
@@ -97,51 +89,51 @@ export default function PartForm({
   mode,
   loading = false,
 }: PartFormProps) {
-  const [formData, setFormData] = useState<PartFormData>({
-    name: '',
-    description: '',
-    sku: '',
-    stockLevel: 0,
-    reorderPoint: 5,
-    organizationId: 1,
-    supplierId: undefined,
-    ...initialData,
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+    reset,
+    watch,
+  } = useForm<PartFormData>({
+    resolver: zodResolver(partSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: '',
+      description: '',
+      sku: '',
+      stockLevel: 0,
+      reorderPoint: 5,
+      organizationId: 1,
+      supplierId: undefined,
+      ...initialData,
+    },
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const watchedData = watch();
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      setFormData(prevData => ({ ...prevData, ...initialData }));
+      reset({
+        name: '',
+        description: '',
+        sku: '',
+        stockLevel: 0,
+        reorderPoint: 5,
+        organizationId: 1,
+        supplierId: undefined,
+        ...initialData,
+      });
     }
-  }, [initialData]);
+  }, [initialData, reset]);
 
-  const handleFieldChange = (name: string, value: any) => {
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) newErrors.name = 'Part name is required';
-    if (formData.stockLevel < 0) newErrors.stockLevel = 'Stock level cannot be negative';
-    if (formData.reorderPoint < 0) newErrors.reorderPoint = 'Reorder point cannot be negative';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(formData);
-    }
+  const onFormSubmit = (data: PartFormData) => {
+    onSubmit(data);
   };
 
   const getStockStatus = () => {
-    if (formData.stockLevel === 0) return { status: 'OUT_OF_STOCK', color: 'error' };
-    if (formData.stockLevel <= formData.reorderPoint) return { status: 'LOW_STOCK', color: 'warning' };
+    if (watchedData.stockLevel === 0) return { status: 'OUT_OF_STOCK', color: 'error' };
+    if (watchedData.stockLevel <= watchedData.reorderPoint) return { status: 'LOW_STOCK', color: 'warning' };
     return { status: 'IN_STOCK', color: 'success' };
   };
 
@@ -155,18 +147,18 @@ export default function PartForm({
 
   const renderViewMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent sx={{ textAlign: 'center' }}>
             <Avatar
-              src={typeof formData.imageUrl === 'string' ? formData.imageUrl : undefined}
+              src={typeof watchedData.imageUrl === 'string' ? watchedData.imageUrl : undefined}
               sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
             >
               <PartIcon sx={{ fontSize: 60 }} />
             </Avatar>
             
             <Typography variant="h6" gutterBottom>
-              {formData.name}
+              {watchedData.name}
             </Typography>
             
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 2 }}>
@@ -177,14 +169,14 @@ export default function PartForm({
                 size="small"
               />
               <Chip
-                label={formData.category}
+                label={watchedData.category}
                 color="primary"
                 size="small"
               />
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              SKU: {formData.sku}
+              SKU: {watchedData.sku}
             </Typography>
 
             <Box sx={{ mb: 2 }}>
@@ -192,14 +184,14 @@ export default function PartForm({
                 Stock Level
               </Typography>
               <Typography variant="h4" fontWeight={700} color={getStockStatus().color}>
-                {formData.stockLevel}
+                {watchedData.stockLevel}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {formData.unitOfMeasure} (Reorder at {formData.reorderPoint})
+                {watchedData.unitOfMeasure} (Reorder at {watchedData.reorderPoint})
               </Typography>
               <LinearProgress
                 variant="determinate"
-                value={(formData.stockLevel / formData.maxStock) * 100}
+                value={(watchedData.stockLevel / watchedData.maxStock) * 100}
                 color={getStockStatus().color as any}
                 sx={{ mt: 1, height: 6, borderRadius: 3 }}
               />
@@ -208,44 +200,44 @@ export default function PartForm({
         </Card>
       </Grid>
 
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Part Information</Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="body1" sx={{ mb: 2 }}>
-                  {formData.description}
+                  {watchedData.description}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Manufacturer</Typography>
-                <Typography variant="body1">{formData.manufacturer}</Typography>
+                <Typography variant="body1">{watchedData.manufacturer}</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Unit Cost</Typography>
                 <Typography variant="body1">
-                  ${formData.unitCost.toFixed(2)} per {formData.unitOfMeasure}
+                  ${watchedData.unitCost?.toFixed(2)} per {watchedData.unitOfMeasure}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Lead Time</Typography>
-                <Typography variant="body1">{formData.leadTime} days</Typography>
+                <Typography variant="body1">{watchedData.leadTime} days</Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Location</Typography>
-                <Typography variant="body1">{formData.location}</Typography>
+                <Typography variant="body1">{watchedData.location}</Typography>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
 
-        {formData.supplierIds && formData.supplierIds.length > 0 && (
+        {watchedData.supplierIds && watchedData.supplierIds.length > 0 && (
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Suppliers</Typography>
               <List dense>
-                {formData.supplierIds.map((supplierId) => {
+                {watchedData.supplierIds.map((supplierId) => {
                   const supplier = supplierOptions.find(s => s.value === supplierId);
                   return (
                     <ListItem key={supplierId}>
@@ -259,12 +251,12 @@ export default function PartForm({
           </Card>
         )}
 
-        {formData.compatibleAssets && formData.compatibleAssets.length > 0 && (
+        {watchedData.compatibleAssets && watchedData.compatibleAssets.length > 0 && (
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Compatible Assets</Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {formData.compatibleAssets.map((assetId) => {
+                {watchedData.compatibleAssets.map((assetId) => {
                   const asset = assetOptions.find(a => a.value === assetId);
                   return (
                     <Chip
@@ -280,26 +272,26 @@ export default function PartForm({
           </Card>
         )}
 
-        {(formData.safetyNotes || formData.storageRequirements) && (
+        {(watchedData.safetyNotes || watchedData.storageRequirements) && (
           <Card>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Safety & Storage</Typography>
-              {formData.safetyNotes && (
+              {watchedData.safetyNotes && (
                 <>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Safety Notes
                   </Typography>
                   <Alert severity="warning" sx={{ mb: 2 }}>
-                    {formData.safetyNotes}
+                    {watchedData.safetyNotes}
                   </Alert>
                 </>
               )}
-              {formData.storageRequirements && (
+              {watchedData.storageRequirements && (
                 <>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Storage Requirements
                   </Typography>
-                  <Typography variant="body2">{formData.storageRequirements}</Typography>
+                  <Typography variant="body2">{watchedData.storageRequirements}</Typography>
                 </>
               )}
             </CardContent>
@@ -311,68 +303,59 @@ export default function PartForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <FormField
-          type="text"
+      <Grid xs={12} md={6}>
+        <HookFormField
           name="name"
+          control={control}
           label="Part Name"
-          value={formData.name}
-          onChange={handleFieldChange}
-          required
-          error={errors.name}
-          disabled={mode === 'view'}
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormField
           type="text"
-          name="sku"
-          label="SKU / Part Number"
-          value={formData.sku}
-          onChange={handleFieldChange}
+          required
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12}>
-        <FormField
-          type="textarea"
+      <Grid xs={12} md={6}>
+        <HookFormField
+          name="sku"
+          control={control}
+          label="SKU / Part Number"
+          type="text"
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12}>
+        <HookFormField
           name="description"
+          control={control}
           label="Description"
-          value={formData.description}
-          onChange={handleFieldChange}
+          type="textarea"
           disabled={mode === 'view'}
           rows={3}
         />
       </Grid>
-      <Grid item xs={12} md={6}>
-        <FormField
-          type="number"
+      <Grid xs={12} md={6}>
+        <HookFormField
           name="stockLevel"
+          control={control}
           label="Current Stock"
-          value={formData.stockLevel}
-          onChange={handleFieldChange}
-          error={errors.stockLevel}
-          disabled={mode === 'view'}
-        />
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <FormField
           type="number"
-          name="reorderPoint"
-          label="Reorder Point"
-          value={formData.reorderPoint}
-          onChange={handleFieldChange}
-          error={errors.reorderPoint}
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12}>
-        <FormField
-          type="select"
+      <Grid xs={12} md={6}>
+        <HookFormField
+          name="reorderPoint"
+          control={control}
+          label="Reorder Point"
+          type="number"
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12}>
+        <HookFormField
           name="supplierId"
+          control={control}
           label="Supplier"
-          value={formData.supplierId}
-          onChange={handleFieldChange}
+          type="select"
           options={[
             { value: '', label: 'No Supplier' },
             ...supplierOptions,
@@ -387,23 +370,19 @@ export default function PartForm({
     <FormDialog
       open={open}
       onClose={onClose}
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onFormSubmit)}
       title={
         mode === 'create' ? 'Add New Part' :
         mode === 'edit' ? 'Edit Part' :
-        `Part Details - ${formData.name}`
+        `Part Details - ${watchedData.name || 'Part'}`
       }
       submitText={mode === 'view' ? undefined : mode === 'edit' ? 'Update Part' : 'Create Part'}
-      loading={loading}
+      loading={loading || isSubmitting}
       maxWidth="lg"
       hideActions={mode === 'view'}
-      submitDisabled={mode === 'view'}
+      submitDisabled={mode === 'view' || !isValid || isSubmitting}
     >
-      {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Please fix the errors below before saving.
-        </Alert>
-      )}
+      <FormErrorDisplay errors={errors} />
 
       {mode === 'view' ? renderViewMode() : renderFormMode()}
     </FormDialog>

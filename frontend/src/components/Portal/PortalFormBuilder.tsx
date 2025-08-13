@@ -390,7 +390,7 @@ const FieldEditorDialog: React.FC<{
       <DialogContent>
         <Grid container spacing={3} sx={{ mt: 1 }}>
           {/* Basic Settings */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="Field Name"
@@ -401,7 +401,7 @@ const FieldEditorDialog: React.FC<{
             />
           </Grid>
           
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <TextField
               fullWidth
               label="Display Label"
@@ -412,7 +412,7 @@ const FieldEditorDialog: React.FC<{
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel>Field Type</InputLabel>
               <Select
@@ -437,7 +437,7 @@ const FieldEditorDialog: React.FC<{
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <FormControlLabel
                 control={
@@ -460,7 +460,7 @@ const FieldEditorDialog: React.FC<{
             </Box>
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Placeholder Text"
@@ -470,7 +470,7 @@ const FieldEditorDialog: React.FC<{
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               fullWidth
               label="Help Text"
@@ -484,7 +484,7 @@ const FieldEditorDialog: React.FC<{
 
           {/* Options for select/radio/checkbox fields */}
           {needsOptions && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Typography variant="h6" gutterBottom>
                 Field Options
               </Typography>

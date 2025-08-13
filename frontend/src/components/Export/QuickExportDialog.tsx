@@ -334,7 +334,7 @@ export default function QuickExportDialog({
 
           {/* Format and File Settings */}
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Output Format
               </Typography>
@@ -362,7 +362,7 @@ export default function QuickExportDialog({
               </FormControl>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 File Name
               </Typography>
@@ -384,7 +384,7 @@ export default function QuickExportDialog({
             </Typography>
             
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <DatePicker
                   label="Start Date"
                   value={dateRange.start}
@@ -393,7 +393,7 @@ export default function QuickExportDialog({
                 />
               </Grid>
               
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <DatePicker
                   label="End Date"
                   value={dateRange.end}
@@ -402,7 +402,7 @@ export default function QuickExportDialog({
                 />
               </Grid>
               
-              <Grid item xs={12} md={8}>
+              <Grid xs={12} md={8}>
                 <TextField
                   fullWidth
                   label="Search Filter"
@@ -415,7 +415,7 @@ export default function QuickExportDialog({
                 />
               </Grid>
               
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <TextField
                   fullWidth
                   label="Max Records"

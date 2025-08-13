@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
   Alert,
   Stepper,
   Step,
@@ -18,6 +17,7 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import {
   Assignment as WorkOrderIcon,
   Build as AssetIcon,
@@ -171,8 +171,22 @@ export default function WorkOrderForm({
   };
 
   const handleSubmit = () => {
-    if (validateStep(activeStep)) {
-      onSubmit(formData);
+    // For edit mode, validate all required fields at once
+    if (mode === 'edit') {
+      const newErrors: Record<string, string> = {};
+      if (!formData.title.trim()) newErrors.title = 'Title is required';
+      if (!formData.description?.trim()) newErrors.description = 'Description is required';
+      if (!formData.priority) newErrors.priority = 'Priority is required';
+      
+      setErrors(newErrors);
+      if (Object.keys(newErrors).length === 0) {
+        onSubmit(formData);
+      }
+    } else {
+      // For create mode, use step validation
+      if (validateStep(activeStep)) {
+        onSubmit(formData);
+      }
     }
   };
 
@@ -181,7 +195,7 @@ export default function WorkOrderForm({
       case 0:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <FormField
                 type="text"
                 name="title"
@@ -194,7 +208,7 @@ export default function WorkOrderForm({
                 placeholder="Brief description of the work needed"
               />
             </Grid>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <FormField
                 type="textarea"
                 name="description"
@@ -208,7 +222,7 @@ export default function WorkOrderForm({
                 rows={4}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <FormField
                 type="select"
                 name="assetId"
@@ -225,7 +239,7 @@ export default function WorkOrderForm({
       case 1:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <FormField
                 type="select"
                 name="priority"
@@ -238,7 +252,7 @@ export default function WorkOrderForm({
                 disabled={mode === 'view'}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <FormField
                 type="select"
                 name="status"
@@ -249,7 +263,7 @@ export default function WorkOrderForm({
                 disabled={mode === 'view' || mode === 'create'}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <FormField
                 type="select"
                 name="assignedToId"
@@ -266,7 +280,7 @@ export default function WorkOrderForm({
       case 2:
         return (
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Typography variant="h6">Review Work Order</Typography>
               <Typography variant="body2" sx={{ mt: 1 }}>
                 Please review the work order details before creating.
@@ -282,7 +296,7 @@ export default function WorkOrderForm({
 
   const renderViewMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card sx={{ mb: 3 }}>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -337,7 +351,7 @@ export default function WorkOrderForm({
           </CardContent>
         </Card>
       </Grid>
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Details</Typography>
@@ -368,6 +382,85 @@ export default function WorkOrderForm({
     </Grid>
   );
 
+  // For edit mode, show all fields in one step
+  const renderEditMode = () => (
+    <Grid container spacing={3}>
+      <Grid xs={12}>
+        <FormField
+          type="text"
+          name="title"
+          label="Work Order Title"
+          value={formData.title}
+          onChange={handleFieldChange}
+          required
+          error={errors.title}
+          disabled={mode === 'view'}
+          placeholder="Brief description of the work needed"
+        />
+      </Grid>
+      <Grid xs={12}>
+        <FormField
+          type="textarea"
+          name="description"
+          label="Detailed Description"
+          value={formData.description}
+          onChange={handleFieldChange}
+          required
+          error={errors.description}
+          disabled={mode === 'view'}
+          placeholder="Provide detailed information about the issue or work required"
+          rows={4}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="select"
+          name="priority"
+          label="Priority"
+          value={formData.priority}
+          onChange={handleFieldChange}
+          options={priorityOptions}
+          required
+          error={errors.priority}
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="select"
+          name="status"
+          label="Status"
+          value={formData.status}
+          onChange={handleFieldChange}
+          options={statusOptions}
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="select"
+          name="assetId"
+          label="Asset"
+          value={formData.assetId?.toString() || ''}
+          onChange={(name, value) => handleFieldChange(name, value ? parseInt(value) : undefined)}
+          options={assetOptions}
+          disabled={mode === 'view' || assetsLoading}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="select"
+          name="assignedToId"
+          label="Assign To"
+          value={formData.assignedToId?.toString() || ''}
+          onChange={(name, value) => handleFieldChange(name, value ? parseInt(value) : undefined)}
+          options={userOptions}
+          disabled={mode === 'view' || usersLoading}
+        />
+      </Grid>
+    </Grid>
+  );
+
   return (
     <FormDialog
       open={open}
@@ -378,7 +471,7 @@ export default function WorkOrderForm({
         mode === 'edit' ? 'Edit Work Order' :
         `Work Order #${formData.id || 'New'}`
       }
-      submitText={mode === 'view' ? undefined : activeStep === steps.length - 1 ? 'Create Work Order' : 'Next'}
+      submitText={mode === 'view' ? undefined : mode === 'edit' ? 'Update Work Order' : (activeStep === steps.length - 1 ? 'Create Work Order' : 'Next')}
       loading={loading}
       maxWidth="md"
       hideActions={mode === 'view'}
@@ -392,6 +485,8 @@ export default function WorkOrderForm({
 
       {mode === 'view' ? (
         renderViewMode()
+      ) : mode === 'edit' ? (
+        renderEditMode()
       ) : (
         <>
           <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
@@ -418,7 +513,7 @@ export default function WorkOrderForm({
                 </Button>
               ) : (
                 <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-                  {mode === 'edit' ? 'Update Work Order' : 'Create Work Order'}
+                  Create Work Order
                 </Button>
               )}
             </Box>

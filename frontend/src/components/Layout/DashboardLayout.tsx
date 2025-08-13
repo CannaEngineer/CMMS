@@ -70,6 +70,11 @@ export default function DashboardLayout() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Get user data from localStorage
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const userInitials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U';
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -244,7 +249,7 @@ export default function DashboardLayout() {
                 bgcolor: theme.palette.primary.main,
                 fontSize: { xs: '0.875rem', sm: '1rem' }
               }}>
-                JD
+                {userInitials}
               </Avatar>
             </IconButton>
           </Box>
@@ -265,7 +270,7 @@ export default function DashboardLayout() {
           horizontal: 'right',
         }}
       >
-        <MenuItem onClick={handleMenuClose}>
+        <MenuItem onClick={() => { handleMenuClose(); navigate('/profile'); }}>
           <ListItemIcon>
             <AccountCircleIcon fontSize="small" />
           </ListItemIcon>
@@ -278,7 +283,11 @@ export default function DashboardLayout() {
           Settings
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => navigate('/login')}>
+        <MenuItem onClick={() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        }}>
           Logout
         </MenuItem>
       </Menu>

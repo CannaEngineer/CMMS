@@ -299,7 +299,7 @@ const ImportHistory: React.FC = () => {
                       <Collapse in={expandedRows.has(importRecord.importId)}>
                         <Box sx={{ p: 2 }}>
                           <Grid container spacing={2}>
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                               <Card variant="outlined">
                                 <CardContent>
                                   <Typography variant="h6" gutterBottom>
@@ -329,7 +329,7 @@ const ImportHistory: React.FC = () => {
                             </Grid>
                             
                             {/* Errors and Warnings */}
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                               {importRecord.errors && importRecord.errors.length > 0 && (
                                 <Alert severity="error" sx={{ mb: 1 }}>
                                   <Typography variant="subtitle2" gutterBottom>

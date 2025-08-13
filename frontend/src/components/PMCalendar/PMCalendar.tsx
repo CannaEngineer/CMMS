@@ -150,7 +150,7 @@ const PMCalendar: React.FC<PMCalendarProps> = ({
         </Box>
         <Grid container spacing={1}>
           {Array.from({ length: 42 }).map((_, index) => (
-            <Grid item xs={12/7} key={index}>
+            <Grid xs={12/7} key={index}>
               <Skeleton 
                 variant="rectangular" 
                 height={120} 
@@ -275,7 +275,7 @@ const PMCalendar: React.FC<PMCalendarProps> = ({
           {/* Week Day Headers */}
           <Grid container spacing={1} sx={{ mb: 1 }} role="row">
             {weekDays.map((day) => (
-              <Grid item xs={12/7} key={day}>
+              <Grid xs={12/7} key={day}>
                 <Box
                   sx={{
                     p: 2,
@@ -304,7 +304,7 @@ const PMCalendar: React.FC<PMCalendarProps> = ({
           {calendarGrid.map((week, weekIndex) => (
             <Grid container spacing={1} key={weekIndex} sx={{ mb: 1 }}>
               {week.map((day, dayIndex) => (
-                <Grid item xs={12/7} key={day.format('YYYY-MM-DD')}>
+                <Grid xs={12/7} key={day.format('YYYY-MM-DD')}>
                   <CalendarDay
                     date={day}
                     isCurrentMonth={day.month() === currentDate.month()}

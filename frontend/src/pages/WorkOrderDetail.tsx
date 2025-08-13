@@ -176,6 +176,42 @@ export default function WorkOrderDetail() {
   // Get comment count for the work order
   const { data: commentCount = 0 } = useCommentCount('workOrder', parseInt(id || '0'));
 
+  // Fetch time logs for the work order
+  const { data: timeLogs = [], refetch: refetchTimeLogs } = useQuery({
+    queryKey: ['work-order-time-logs', id],
+    queryFn: async () => {
+      if (!id) return [];
+      return workOrdersService.getTimeLogs(id);
+    },
+    enabled: !!id,
+  });
+
+  // Fetch time stats for the work order
+  const { data: timeStats } = useQuery({
+    queryKey: ['work-order-time-stats', id],
+    queryFn: async () => {
+      if (!id) return { totalHours: 0, billableHours: 0 };
+      return workOrdersService.getTimeStats(id);
+    },
+    enabled: !!id,
+  });
+
+  // Update mutation
+  const updateWorkOrderMutation = useMutation({
+    mutationFn: (updatedData: any) => {
+      if (!id) throw new Error('Work order ID is required');
+      return workOrdersService.update(id, updatedData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      setEditDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Failed to update work order:', error);
+    },
+  });
+
   // Delete mutation
   const deleteWorkOrderMutation = useMutation({
     mutationFn: workOrdersService.delete,
@@ -234,12 +270,16 @@ export default function WorkOrderDetail() {
   const logTimeMutation = useMutation({
     mutationFn: ({ hours, description }: { hours: number; description: string }) => {
       if (!id) throw new Error('Work order ID is required');
-      return workOrdersService.logTime(id, hours, description);
+      return workOrdersService.logTime(id, hours, description, 'LABOR', true);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['work-order-time-logs', id] });
+      queryClient.invalidateQueries({ queryKey: ['work-order-time-stats', id] });
+      refetchTimeLogs();
       setTimeDialogOpen(false);
       setTimeEntry('');
+      setComment(''); // Clear the comment field too
     },
   });
 
@@ -287,6 +327,7 @@ export default function WorkOrderDetail() {
         onSuccess: () => {
           setCommentDialogOpen(false);
           setComment('');
+          refetchComments(); // Refresh comments list
         },
       });
     }
@@ -365,43 +406,48 @@ export default function WorkOrderDetail() {
     }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: `Work Order #${workOrder?.id} - ${workOrder?.title}`,
-      text: `Work Order: ${workOrder?.title}\nStatus: ${workOrder?.status}\nPriority: ${workOrder?.priority}\nCreated: ${new Date(workOrder?.createdAt || '').toLocaleDateString()}`,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback: Copy detailed info to clipboard
-        const shareText = `${shareData.title}\n\n${shareData.text}\n\nLink: ${shareData.url}`;
-        await navigator.clipboard.writeText(shareText);
+  // Share work order mutation
+  const createShareMutation = useMutation({
+    mutationFn: () => {
+      if (!id) throw new Error('Work order ID is required');
+      return workOrdersService.createShare(id, {
+        allowComments: true,
+        allowDownload: false,
+        viewerCanSeeAssignee: false,
+        sanitizationLevel: 'STANDARD'
+      });
+    },
+    onSuccess: async (shareData) => {
+      // Use the share URL from the backend, which knows the correct domain
+      const publicShareUrl = shareData.shareUrl || `${window.location.origin}/public/share/${shareData.shareToken}`;
+      
+      try {
+        await navigator.clipboard.writeText(publicShareUrl);
         
-        // Show a temporary success message
+        // Show success message
         const button = document.querySelector('[aria-label="Share work order"]') as HTMLElement;
         if (button) {
-          const originalText = button.textContent;
-          button.textContent = 'Copied!';
-          button.style.color = '#4caf50';
+          const originalText = button.innerHTML;
+          button.innerHTML = `<span style="color: #4caf50;">✓ Public link copied!</span>`;
           setTimeout(() => {
-            button.textContent = originalText;
-            button.style.color = '';
-          }, 2000);
+            button.innerHTML = originalText;
+          }, 3000);
+        } else {
+          alert(`Public share link copied to clipboard!\n\n${publicShareUrl}`);
         }
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      // Fallback to just copying the URL
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        alert('Work order link copied to clipboard');
       } catch (clipboardError) {
-        console.error('Clipboard error:', clipboardError);
+        // Fallback: show the URL in an alert
+        alert(`Public share link created:\n\n${publicShareUrl}\n\nCopy this link to share with others.`);
       }
+    },
+    onError: (error) => {
+      console.error('Error creating share:', error);
+      alert('Failed to create public share link. Please try again.');
     }
+  });
+
+  const handleShare = () => {
+    createShareMutation.mutate();
   };
 
   const getStatusColor = (status: string) => {
@@ -668,14 +714,16 @@ export default function WorkOrderDetail() {
             </Button>
           </Tooltip>
 
-          <Tooltip title="Share work order">
+          <Tooltip title="Create public share link">
             <Button
               variant="outlined"
-              startIcon={<ShareIcon />}
+              startIcon={createShareMutation.isPending ? <CircularProgress size={16} /> : <ShareIcon />}
               onClick={handleShare}
               size="small"
+              disabled={createShareMutation.isPending}
+              aria-label="Share work order"
             >
-              Share
+              {createShareMutation.isPending ? 'Creating Link...' : 'Share'}
             </Button>
           </Tooltip>
 
@@ -747,10 +795,11 @@ export default function WorkOrderDetail() {
 
       <Grid container spacing={3}>
         {/* Main Content */}
-        <Grid item xs={12} lg={8}>
+        <Grid xs={12} lg={8}>
           <Paper sx={{ mb: 3 }}>
             <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
               <Tab label="Overview" />
+              <Tab label={`Time Tracking (${timeStats?.totalHours || 0}h)`} />
               <Tab label="Progress" />
               <Tab label="History" />
             </Tabs>
@@ -758,7 +807,7 @@ export default function WorkOrderDetail() {
             <TabPanel value={tabValue} index={0}>
               {/* Work Order Details */}
               <Grid container spacing={3}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Typography variant="h6" gutterBottom>
                     Description
                   </Typography>
@@ -767,7 +816,7 @@ export default function WorkOrderDetail() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Work Order Information
                   </Typography>
@@ -819,7 +868,7 @@ export default function WorkOrderDetail() {
                   </List>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Dates & Asset
                   </Typography>
@@ -864,6 +913,144 @@ export default function WorkOrderDetail() {
 
             <TabPanel value={tabValue} index={1}>
               <Typography variant="h6" gutterBottom>
+                Time Tracking
+              </Typography>
+              
+              {/* Time Stats Summary */}
+              {timeStats && (
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                  <Grid xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="text.secondary" gutterBottom>
+                          Total Hours
+                        </Typography>
+                        <Typography variant="h4">
+                          {timeStats.totalHours || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="text.secondary" gutterBottom>
+                          Billable Hours
+                        </Typography>
+                        <Typography variant="h4">
+                          {timeStats.billableHours || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="text.secondary" gutterBottom>
+                          Non-Billable
+                        </Typography>
+                        <Typography variant="h4">
+                          {timeStats.nonBillableHours || 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                  <Grid xs={12} sm={6} md={3}>
+                    <Card>
+                      <CardContent>
+                        <Typography color="text.secondary" gutterBottom>
+                          Estimated Hours
+                        </Typography>
+                        <Typography variant="h4">
+                          {timeStats.estimatedHours || workOrder.estimatedHours || '-'}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              )}
+
+              {/* Time Logs List */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  Time Log Entries ({timeLogs.length})
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<TimerIcon />}
+                  onClick={() => setTimeDialogOpen(true)}
+                  size="small"
+                >
+                  Log Time
+                </Button>
+              </Box>
+
+              {timeLogs.length === 0 ? (
+                <Alert severity="info">
+                  No time has been logged for this work order yet.
+                </Alert>
+              ) : (
+                <List>
+                  {timeLogs
+                    .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
+                    .map((log: any) => (
+                      <ListItem key={log.id} divider>
+                        <ListItemIcon>
+                          <TimeIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography variant="body1" fontWeight={500}>
+                                {log.hours} hours
+                              </Typography>
+                              {log.billable && (
+                                <Chip label="Billable" size="small" color="success" />
+                              )}
+                              {log.category && (
+                                <Chip label={log.category} size="small" variant="outlined" />
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Box>
+                              <Typography variant="body2">
+                                {log.description}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                By {log.user?.name || 'Unknown'} on {new Date(log.loggedAt).toLocaleString()}
+                              </Typography>
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                </List>
+              )}
+              
+              {/* Time by Category Breakdown */}
+              {timeStats?.timeByCategory && Object.keys(timeStats.timeByCategory).length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Time by Category
+                  </Typography>
+                  <Grid container spacing={1}>
+                    {Object.entries(timeStats.timeByCategory).map(([category, hours]) => (
+                      <Grid key={category}>
+                        <Chip
+                          label={`${category}: ${hours}h`}
+                          variant="outlined"
+                          color="primary"
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              )}
+            </TabPanel>
+
+            <TabPanel value={tabValue} index={2}>
+              <Typography variant="h6" gutterBottom>
                 Work Progress
               </Typography>
               <Alert severity="info">
@@ -871,7 +1058,7 @@ export default function WorkOrderDetail() {
               </Alert>
             </TabPanel>
 
-            <TabPanel value={tabValue} index={2}>
+            <TabPanel value={tabValue} index={3}>
               <Typography variant="h6" gutterBottom>
                 Work Order History
               </Typography>
@@ -883,7 +1070,7 @@ export default function WorkOrderDetail() {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} lg={4}>
+        <Grid xs={12} lg={4}>
           {/* QR Code */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
@@ -952,8 +1139,10 @@ export default function WorkOrderDetail() {
       <WorkOrderForm
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
+        onSubmit={(updatedData) => updateWorkOrderMutation.mutate(updatedData)}
         initialData={workOrder}
         mode="edit"
+        loading={updateWorkOrderMutation.isPending}
       />
 
       {/* Status Update Dialog */}

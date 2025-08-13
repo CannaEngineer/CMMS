@@ -27,8 +27,8 @@ import type {
 } from '../types/portal';
 
 export class PortalService {
-  private baseUrl = '/portals';
-  private publicBaseUrl = '/public/portals';
+  private baseUrl = '/api/portals';
+  private publicBaseUrl = '/api/public/portals';
 
   // Portal Management (Admin)
   async getAll(filters?: PortalSearchFilters): Promise<Portal[]> {
@@ -79,7 +79,8 @@ export class PortalService {
       
       // Transform portal data to backend format
       const backendPortal = transformPortalForBackend(sanitizedPortal);
-      console.log('Sending portal data to backend:', JSON.stringify(backendPortal, null, 2));
+      console.log('Original portal data:', JSON.stringify(portal, null, 2));
+      console.log('Transformed portal data to backend:', JSON.stringify(backendPortal, null, 2));
       
       const created = await apiClient.post<any>(this.baseUrl, backendPortal);
       return transformPortalFromBackend(created);
@@ -272,13 +273,13 @@ export class PortalService {
     if (filters?.limit) queryParams.append('limit', filters.limit.toString());
     
     const query = queryParams.toString();
-    const url = query ? `/portal-submissions?${query}` : '/portal-submissions';
+    const url = query ? `${this.baseUrl}?${query}` : this.baseUrl;
     
     return apiClient.get(url);
   }
 
   async getSubmissionById(id: string): Promise<PortalSubmission> {
-    return apiClient.get<PortalSubmission>(`/portal-submissions/${id}`);
+    return apiClient.get<PortalSubmission>(`${this.baseUrl}/${id}`);
   }
 
   async updateSubmissionStatus(
@@ -287,7 +288,7 @@ export class PortalService {
     reviewNotes?: string,
     internalNotes?: string
   ): Promise<PortalSubmission> {
-    return apiClient.put<PortalSubmission>(`/portal-submissions/${id}/status`, {
+    return apiClient.put<PortalSubmission>(`${this.baseUrl}/${id}/status`, {
       status,
       reviewNotes,
       internalNotes
@@ -305,12 +306,12 @@ export class PortalService {
       locationId?: string;
     }
   ): Promise<{ workOrderId: string }> {
-    return apiClient.post(`/portal-submissions/${submissionId}/work-order`, workOrderData || {});
+    return apiClient.post(`${this.baseUrl}/${submissionId}/work-order`, workOrderData || {});
   }
 
   // Communication with Submitters
   async getCommunications(submissionId: string): Promise<PortalCommunication[]> {
-    return apiClient.get<PortalCommunication[]>(`/portal-submissions/${submissionId}/communications`);
+    return apiClient.get<PortalCommunication[]>(`${this.baseUrl}/${submissionId}/communications`);
   }
 
   async addCommunication(
@@ -320,7 +321,7 @@ export class PortalService {
     isInternal: boolean = false,
     sendEmail: boolean = true
   ): Promise<PortalCommunication> {
-    return apiClient.post<PortalCommunication>(`/portal-submissions/${submissionId}/communications`, {
+    return apiClient.post<PortalCommunication>(`${this.baseUrl}/${submissionId}/communications`, {
       message,
       messageType,
       isInternal,
@@ -337,7 +338,7 @@ export class PortalService {
       assignedTo?: string;
     }
   ): Promise<{ updated: number; failed: string[] }> {
-    return apiClient.post('/portal-submissions/bulk-update', {
+    return apiClient.post(`${this.baseUrl}/bulk-update`, {
       submissionIds,
       updates
     });
@@ -352,7 +353,7 @@ export class PortalService {
     },
     format: 'csv' | 'xlsx' = 'xlsx'
   ): Promise<{ downloadUrl: string; filename: string }> {
-    return apiClient.post('/portal-submissions/export', { filters, format });
+    return apiClient.post(`${this.baseUrl}/export`, { filters, format });
   }
 
   // Portal Statistics and Reports
@@ -621,7 +622,7 @@ export const portalTemplateService = new PortalTemplateService();
 
 // Public Portal Service for anonymous/public access
 export class PublicPortalService {
-  private baseUrl = '/public/portals';
+  private baseUrl = '/api/public/portals';
 
   async getPortalInfo(slug: string): Promise<{
     id: string;
@@ -868,7 +869,7 @@ export const publicPortalService = new PublicPortalService();
 
 // Portal Submission Service for managing submissions
 export class PortalSubmissionService {
-  private baseUrl = '/portal-submissions';
+  private baseUrl = '/api/portal-submissions';
 
   async submitForm(request: {
     portalId: string;
@@ -912,7 +913,7 @@ export class PortalSubmissionService {
     };
 
     try {
-      return await apiClient.post('/portals/public/submit', backendRequest);
+      return await apiClient.post('/api/portals/public/submit', backendRequest);
     } catch (error) {
       console.error('Error submitting portal form:', error);
       throw error;
@@ -937,24 +938,24 @@ export class PortalSubmissionService {
     if (filters?.limit) queryParams.append('limit', filters.limit.toString());
     
     const query = queryParams.toString();
-    const url = query ? `/portals/admin/submissions?${query}` : '/portals/admin/submissions';
+    const url = query ? `/api/portals/admin/submissions?${query}` : '/api/portals/admin/submissions';
     
     return apiClient.get(url);
   }
 
   async updateSubmissionStatus(id: string, status: string, notes?: string): Promise<any> {
-    return apiClient.put(`/portals/submissions/${id}/status`, {
+    return apiClient.put(`/api/portals/submissions/${id}/status`, {
       status,
       reviewNotes: notes
     });
   }
 
   async createWorkOrderFromSubmission(submissionId: string): Promise<{ workOrderId: string }> {
-    return apiClient.post(`/portals/submissions/${submissionId}/work-order`);
+    return apiClient.post(`/api/portals/submissions/${submissionId}/work-order`);
   }
 
   async addCommunication(submissionId: string, message: string, isInternal: boolean): Promise<any> {
-    return apiClient.post(`/portals/submissions/${submissionId}/communications`, {
+    return apiClient.post(`/api/portals/submissions/${submissionId}/communications`, {
       message,
       isInternal
     });

@@ -184,6 +184,11 @@ model User {
   // Import relationships
   importHistory    ImportHistory[] @relation("ImportHistory")
   rolledBackImports ImportHistory[] @relation("ImportRollback")
+  
+  // Time logging and sharing relationships
+  timeLogs         WorkOrderTimeLog[] @relation("TimeLogUser")
+  createdShares    WorkOrderShare[]   @relation("ShareCreator")
+  moderatedComments PublicComment[]   @relation("CommentModerator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -203,6 +208,7 @@ model Organization {
   pmTasks   PMTask[]
   portals   Portal[]
   importHistory ImportHistory[] @relation("ImportHistory")
+  workOrderShares WorkOrderShare[] @relation("WorkOrderShares")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -285,12 +291,22 @@ model WorkOrder {
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
+  // Time tracking fields (new)
+  totalLoggedHours Float?           @default(0)
+  estimatedHours   Float?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  
   // New relationships for PM system
   tasks             WorkOrderTask[]
   maintenanceHistory MaintenanceHistory[]
   
   // Portal relationships
   portalSubmissions PortalSubmission[]
+  
+  // Time logging and sharing relationships (new)
+  timeLogs         WorkOrderTimeLog[]
+  shares           WorkOrderShare[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -854,4 +870,116 @@ model ImportHistory {
   @@index([status])
   @@index([createdAt])
   @@index([importId])
+}
+
+// Time Logging for Work Orders
+model WorkOrderTimeLog {
+  id             Int      @id @default(autoincrement())
+  workOrderId    Int
+  userId         Int
+  description    String
+  hours          Float
+  category       String?  // "LABOR", "TRAVEL", "MATERIALS", "OTHER"
+  billable       Boolean  @default(true)
+  loggedAt       DateTime @default(now())
+  
+  // Relationships
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  user           User     @relation("TimeLogUser", fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([workOrderId])
+  @@index([userId])
+  @@index([loggedAt])
+}
+
+// Public Work Order Sharing
+model WorkOrderShare {
+  id             String   @id @default(cuid())
+  workOrderId    Int
+  organizationId Int
+  shareToken     String   @unique
+  
+  // Access Control
+  isActive       Boolean  @default(true)
+  expiresAt      DateTime?
+  maxViews       Int?
+  currentViews   Int      @default(0)
+  
+  // Permissions
+  allowComments  Boolean  @default(true)
+  allowDownload  Boolean  @default(false)
+  viewerCanSeeAssignee Boolean @default(false)
+  
+  // Data Filtering
+  sanitizationLevel String @default("STANDARD") // "MINIMAL", "STANDARD", "STRICT"
+  
+  // Creator and Audit
+  createdById    Int
+  lastAccessedAt DateTime?
+  
+  // Relationships
+  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  organization   Organization @relation("WorkOrderShares", fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User     @relation("ShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  comments       PublicComment[]
+  auditLogs      ShareAuditLog[] @relation("ShareAuditLogs")
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([shareToken])
+  @@index([workOrderId])
+  @@index([organizationId])
+  @@index([expiresAt])
+}
+
+// Anonymous Comments for Public Shares
+model PublicComment {
+  id             String   @id @default(cuid())
+  shareId        String
+  content        String
+  
+  // Anonymous User Info
+  authorName     String?  // Optional display name
+  authorEmail    String?  // For notifications only, not displayed
+  
+  // Security and Moderation
+  status         String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED", "FLAGGED"
+  ipAddressHash  String   // Hashed IP for abuse tracking
+  userAgent      String?
+  
+  // Moderation
+  moderatedById  Int?
+  moderatedAt    DateTime?
+  flagCount      Int      @default(0)
+  
+  // Relationships
+  share          WorkOrderShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  moderatedBy    User?    @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@index([shareId])
+  @@index([status])
+  @@index([ipAddressHash])
+}
+
+// Share Access Audit Log
+model ShareAuditLog {
+  id             String   @id @default(cuid())
+  shareId        String
+  action         String   // "VIEW", "DOWNLOAD", "COMMENT"
+  ipAddressHash  String
+  userAgent      String?
+  timestamp      DateTime @default(now())
+  
+  share          WorkOrderShare @relation("ShareAuditLogs", fields: [shareId], references: [id], onDelete: Cascade)
+  
+  @@index([shareId])
+  @@index([timestamp])
+  @@index([ipAddressHash])
 }

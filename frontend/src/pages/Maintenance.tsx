@@ -315,7 +315,7 @@ export default function Maintenance() {
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Scheduled This Month"
             value={maintenanceScheduleStats?.thisMonth || 0}
@@ -324,7 +324,7 @@ export default function Maintenance() {
             color="primary"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Completed Work Orders"
             value={stats?.workOrders?.byStatus?.COMPLETED || 0}
@@ -335,7 +335,7 @@ export default function Maintenance() {
             color="success"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Overdue Work Orders"
             value={stats?.workOrders?.overdue || 0}
@@ -344,7 +344,7 @@ export default function Maintenance() {
             color="error"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <StatCard
             title="Total Assets"
             value={stats?.assets?.total || 0}
@@ -359,7 +359,7 @@ export default function Maintenance() {
 
       <Grid container spacing={3}>
         {/* Maintenance Schedule */}
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -476,10 +476,10 @@ export default function Maintenance() {
         </Grid>
 
         {/* Maintenance Types & Critical Assets */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <Grid container spacing={3}>
             {/* Maintenance by Type */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
                   Maintenance by Type
@@ -508,7 +508,7 @@ export default function Maintenance() {
             </Grid>
 
             {/* Critical Assets Alert */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -562,7 +562,7 @@ export default function Maintenance() {
         </Grid>
 
         {/* Monthly Trend */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
               Maintenance Completion Trend

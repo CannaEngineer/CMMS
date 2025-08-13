@@ -432,7 +432,7 @@ const ImportManager = () => {
       {/* Column Mapping Tab */}
       {activeTab === 1 && csvData && (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -540,7 +540,7 @@ const ImportManager = () => {
       {/* Review & Import Tab */}
       {activeTab === 2 && csvData && canProceedToReview() && (
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

@@ -746,7 +746,7 @@ const BasicInformationStep: React.FC<{
       </Typography>
 
       <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             fullWidth
             label="Portal Name"
@@ -758,7 +758,7 @@ const BasicInformationStep: React.FC<{
           />
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <FormControl fullWidth error={Boolean(errors.type)}>
             <InputLabel>Portal Type</InputLabel>
             <Select
@@ -784,7 +784,7 @@ const BasicInformationStep: React.FC<{
           </FormControl>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             fullWidth
             label="Description"
@@ -817,7 +817,7 @@ const ReviewStep: React.FC<{
 
       <Grid container spacing={3}>
         {/* Basic Information */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -849,7 +849,7 @@ const ReviewStep: React.FC<{
         </Grid>
 
         {/* Template */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -881,7 +881,7 @@ const ReviewStep: React.FC<{
         </Grid>
 
         {/* Branding */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -927,7 +927,7 @@ const ReviewStep: React.FC<{
         </Grid>
 
         {/* Settings */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -959,7 +959,7 @@ const ReviewStep: React.FC<{
         </Grid>
 
         {/* Preview Button */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card sx={{ textAlign: 'center' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>

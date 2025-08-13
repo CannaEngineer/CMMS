@@ -154,7 +154,7 @@ export default function MaintenanceScheduleForm({
 
   const renderViewMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -169,19 +169,19 @@ export default function MaintenanceScheduleForm({
             <Divider sx={{ my: 2 }} />
 
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Asset</Typography>
                 <Typography variant="body1">
                   {assetOptions.find(a => a.value.toString() === formData.assetId.toString())?.label}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Frequency</Typography>
                 <Typography variant="body1">
                   {frequencyOptions.find(opt => opt.value === formData.frequency)?.label || formData.frequency}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Next Due</Typography>
                 <Typography variant="body1">{formData.nextDue}</Typography>
               </Grid>
@@ -194,7 +194,7 @@ export default function MaintenanceScheduleForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <FormField
           type="text"
           name="title"
@@ -206,7 +206,7 @@ export default function MaintenanceScheduleForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <FormField
           type="textarea"
           name="description"
@@ -217,7 +217,7 @@ export default function MaintenanceScheduleForm({
           rows={3}
         />
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="select"
           name="assetId"
@@ -230,7 +230,7 @@ export default function MaintenanceScheduleForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="select"
           name="frequency"
@@ -244,7 +244,7 @@ export default function MaintenanceScheduleForm({
           helperText="Standardized frequencies enable automatic schedule generation"
         />
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid xs={12} md={6}>
         <FormField
           type="date"
           name="nextDue"

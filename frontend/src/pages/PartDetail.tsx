@@ -208,7 +208,7 @@ export default function PartDetail() {
 
       <Grid container spacing={3}>
         {/* Main Part Information */}
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -246,7 +246,7 @@ export default function PartDetail() {
               </Typography>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Current Stock Level
                   </Typography>
@@ -269,7 +269,7 @@ export default function PartDetail() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Supplier Information
                   </Typography>
@@ -305,7 +305,7 @@ export default function PartDetail() {
         </Grid>
 
         {/* QR Code and Actions Sidebar */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>QR Code</Typography>
@@ -407,7 +407,7 @@ export default function PartDetail() {
             />
             
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <TextField
                   label="Current Stock"
                   type="number"
@@ -420,7 +420,7 @@ export default function PartDetail() {
                   inputProps={{ min: 0 }}
                 />
               </Grid>
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <TextField
                   label="Reorder Point"
                   type="number"

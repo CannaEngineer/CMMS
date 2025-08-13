@@ -69,6 +69,11 @@ export class PortalService {
   async createPortal(data: CreatePortalRequest, organizationId: number): Promise<Portal> {
     const { fields, ...portalData } = data;
     
+    // Transform portal type to SCREAMING_SNAKE_CASE if needed
+    if (portalData.type && portalData.type.includes('-')) {
+      portalData.type = portalData.type.toUpperCase().replace(/-/g, '_') as any;
+    }
+    
     // Generate unique slug
     const baseSlug = this.generateSlug(data.name);
     let slug = baseSlug;
@@ -86,10 +91,19 @@ export class PortalService {
         organizationId,
         publicUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/portal/${slug}`,
         fields: fields ? {
-          create: fields.map((field, index) => ({
-            ...field,
-            orderIndex: index
-          }))
+          create: fields.map((field, index) => {
+            // Remove frontend-only fields that database auto-generates
+            const { id, order, validation, isVisible, ...cleanField } = field as any;
+            
+            return {
+              ...cleanField,
+              orderIndex: index,
+              // Ensure options is properly formatted as JSON
+              options: field.options || undefined,
+              // Ensure validations is properly formatted as JSON  
+              validations: field.validation || undefined
+            };
+          })
         } : undefined
       },
       include: {
@@ -119,6 +133,11 @@ export class PortalService {
 
   async updatePortal(id: number, data: UpdatePortalRequest, organizationId: number): Promise<Portal | null> {
     const { fields, ...portalData } = data;
+    
+    // Transform portal type to SCREAMING_SNAKE_CASE if needed
+    if (portalData.type && portalData.type.includes('-')) {
+      portalData.type = portalData.type.toUpperCase().replace(/-/g, '_') as any;
+    }
     
     const portal = await prisma.portal.findFirst({
       where: { id, organizationId }

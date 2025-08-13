@@ -25,7 +25,16 @@
       "mcp__playwright__browser_evaluate",
       "Bash(npx prisma migrate reset:*)",
       "mcp__playwright__browser_handle_dialog",
-      "mcp__playwright__browser_file_upload"
+      "mcp__playwright__browser_file_upload",
+      "Bash(ls:*)",
+      "Bash(true)",
+      "Bash(npm run seed:*)",
+      "mcp__playwright__browser_close",
+      "Bash(npx prisma db seed:*)",
+      "mcp__playwright__browser_network_requests",
+      "Bash(rm:*)",
+      "Bash(find:*)",
+      "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwLCJpYXQiOjE3NTUwNDgyODMsImV4cCI6MTc1NTA1MTg4M30.vSzv9ffwuKylHA-lZqcjy-oykNEL-XMwQcvsPGnXp-M\")"
     ],
     "deny": []
   }

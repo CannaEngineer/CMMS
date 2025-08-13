@@ -87,6 +87,7 @@ export function transformFieldType(frontendType: string): string {
  * Transform portal type from frontend to backend format
  */
 export function transformPortalType(frontendType: string): string {
+  console.log('Portal type mapping:', frontendType, '->', PORTAL_TYPE_MAP[frontendType]);
   const mapped = PORTAL_TYPE_MAP[frontendType];
   if (!mapped) {
     console.warn(`Unknown portal type: ${frontendType}, using MAINTENANCE_REQUEST as fallback`);
@@ -119,6 +120,7 @@ export function transformPortalFields(fields: any[]): any[] {
  * Transform complete portal data for backend submission
  */
 export function transformPortalForBackend(portalData: any): any {
+  console.log('Transforming portal type from:', portalData.type, 'to:', transformPortalType(portalData.type));
   const transformed = {
     ...portalData,
     type: transformPortalType(portalData.type),

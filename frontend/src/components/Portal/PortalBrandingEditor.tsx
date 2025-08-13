@@ -92,7 +92,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
 
       <Grid container spacing={3}>
         {/* Colors */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -100,7 +100,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
               </Typography>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid xs={12} sm={6} md={3}>
                   <ColorPickerButton
                     label="Primary Color"
                     colorKey="primaryColor"
@@ -108,7 +108,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid xs={12} sm={6} md={3}>
                   <ColorPickerButton
                     label="Secondary Color"
                     colorKey="secondaryColor"
@@ -116,7 +116,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid xs={12} sm={6} md={3}>
                   <ColorPickerButton
                     label="Accent Color"
                     colorKey="accentColor"
@@ -124,7 +124,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} sm={6} md={3}>
+                <Grid xs={12} sm={6} md={3}>
                   <ColorPickerButton
                     label="Background"
                     colorKey="backgroundColor"
@@ -137,7 +137,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
         </Grid>
 
         {/* Typography */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -197,7 +197,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
         </Grid>
 
         {/* Layout */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -246,7 +246,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
         </Grid>
 
         {/* Content */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -254,7 +254,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
               </Typography>
               
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Welcome Message"
@@ -264,7 +264,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Instructions Text"
@@ -274,7 +274,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Thank You Message"
@@ -284,7 +284,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
                   />
                 </Grid>
                 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     label="Footer Text"
@@ -299,7 +299,7 @@ const PortalBrandingEditor: React.FC<PortalBrandingEditorProps> = ({
         </Grid>
 
         {/* Preview */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>

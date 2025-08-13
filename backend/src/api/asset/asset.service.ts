@@ -78,8 +78,13 @@ export const getAssetById = async (id: number, organizationId: number) => {
   });
 };
 
-export const createAsset = async (data: any) => {
-  return prisma.asset.create({ data });
+export const createAsset = async (data: any, organizationId: number) => {
+  return prisma.asset.create({ 
+    data: {
+      ...data,
+      organizationId
+    }
+  });
 };
 
 export const updateAsset = async (id: number, data: any, organizationId: number) => {

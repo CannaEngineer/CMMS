@@ -179,17 +179,20 @@ export default function WorkOrders() {
       // Update the work order with the QR code if generation succeeded
       if (qrCodeUrl && createdWorkOrder.id) {
         await workOrdersService.update(createdWorkOrder.id.toString(), {
-          ...createdWorkOrder,
           qrCode: qrCodeUrl
         });
       }
       
       return createdWorkOrder;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Work Order created successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
       setSelectedWorkOrder(null);
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to create work order:', error);
     },
   });
 
@@ -203,10 +206,14 @@ export default function WorkOrders() {
       
       return workOrdersService.update(id, data);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Work Order updated successfully:', data);
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       setWorkOrderFormOpen(false);
       setSelectedWorkOrder(null);
+    },
+    onError: (error: any) => {
+      console.error('❌ Failed to update work order:', error);
     },
   });
 
@@ -766,7 +773,7 @@ export default function WorkOrders() {
         <Box sx={{ mb: 3 }}>
           <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
             {/* Mobile: 2x2 grid */}
-            <Grid item xs={6} sm={4} md={2}>
+            <Grid xs={6} sm={4} md={2}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -821,7 +828,7 @@ export default function WorkOrders() {
               </Card>
             </Grid>
             
-            <Grid item xs={6} sm={4} md={2.4}>
+            <Grid xs={6} sm={4} md={2.4}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -876,7 +883,7 @@ export default function WorkOrders() {
               </Card>
             </Grid>
             
-            <Grid item xs={6} sm={4} md={2.4}>
+            <Grid xs={6} sm={4} md={2.4}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -931,7 +938,7 @@ export default function WorkOrders() {
               </Card>
             </Grid>
             
-            <Grid item xs={6} sm={4} md={2.4}>
+            <Grid xs={6} sm={4} md={2.4}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -986,7 +993,7 @@ export default function WorkOrders() {
               </Card>
             </Grid>
             
-            <Grid item xs={12} sm={8} md={2.4}>
+            <Grid xs={12} sm={8} md={2.4}>
               <Card sx={{ 
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',

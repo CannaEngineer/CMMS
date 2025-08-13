@@ -221,7 +221,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
       <DialogContent sx={{ p: 3 }}>
         <Grid container spacing={3}>
           {/* Asset Information Card */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -262,7 +262,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
           </Grid>
 
           {/* Schedule Information Card */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card elevation={2} sx={{ height: '100%', borderRadius: 2 }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -317,7 +317,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
 
           {/* Description Card */}
           {pmItem.description && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Card elevation={2} sx={{ borderRadius: 2 }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -343,7 +343,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
           )}
 
           {/* Status Information */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card 
               elevation={2} 
               sx={{ 
@@ -360,7 +360,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
                 </Typography>
                 <Divider sx={{ my: 2 }} />
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
+                  <Grid xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Priority Level
@@ -373,7 +373,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
                       </Box>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Criticality
@@ -383,7 +383,7 @@ const PMDetailModal: React.FC<PMDetailModalProps> = ({
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid xs={12} sm={4}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                         Days Until Due

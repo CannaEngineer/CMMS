@@ -201,7 +201,7 @@ export default function LocationForm({
 
   const renderViewMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -219,7 +219,7 @@ export default function LocationForm({
 
             <Grid container spacing={2}>
               {formData.address && (
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Typography variant="subtitle2" color="text.secondary">Address</Typography>
                   <Typography variant="body1">{formData.address}</Typography>
                 </Grid>
@@ -230,7 +230,7 @@ export default function LocationForm({
         </Card>
       </Grid>
 
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Statistics</Typography>
@@ -281,9 +281,9 @@ export default function LocationForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={8}>
+      <Grid xs={12} md={8}>
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <FormField
               type="text"
               name="name"
@@ -295,7 +295,7 @@ export default function LocationForm({
               disabled={mode === 'view'}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <FormField
               type="textarea"
               name="description"
@@ -306,7 +306,7 @@ export default function LocationForm({
               rows={3}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <FormField
               type="select"
               name="parentId"
@@ -320,7 +320,7 @@ export default function LocationForm({
               disabled={mode === 'view'}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <FormField
               type="textarea"
               name="address"
@@ -334,7 +334,7 @@ export default function LocationForm({
         </Grid>
       </Grid>
 
-      <Grid item xs={12} md={4}>
+      <Grid xs={12} md={4}>
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Location Hierarchy</Typography>

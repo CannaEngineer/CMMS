@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Box,
   Button,
-  Grid,
   Paper,
   Typography,
   Card,
@@ -51,6 +50,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
@@ -209,16 +209,17 @@ export default function Assets() {
       // Create the asset first
       const createdAsset = await assetsService.create(assetData);
       
-      // Generate QR code with the actual asset ID
-      const qrCodeUrl = await generateAssetQRCode({ ...assetData, id: createdAsset.id });
-      
-      // Update the asset with the QR code if generation succeeded
-      if (qrCodeUrl && createdAsset.id) {
-        await assetsService.update(createdAsset.id.toString(), {
-          ...createdAsset,
-          barcode: qrCodeUrl
-        });
-      }
+      // TODO: Re-enable QR code generation after fixing the update issue
+      // // Generate QR code with the actual asset ID
+      // const qrCodeUrl = await generateAssetQRCode({ ...assetData, id: createdAsset.id });
+      // 
+      // // Update the asset with the QR code if generation succeeded
+      // if (qrCodeUrl && createdAsset.id) {
+      //   await assetsService.update(createdAsset.id.toString(), {
+      //     ...createdAsset,
+      //     barcode: qrCodeUrl
+      //   });
+      // }
       
       return createdAsset;
     },
@@ -401,7 +402,9 @@ export default function Assets() {
 
   const handleSubmitAsset = (data: any) => {
     if (formMode === 'create') {
-      createAssetMutation.mutate(data);
+      // Remove id field when creating a new asset to avoid confusion with update
+      const { id, ...createData } = data;
+      createAssetMutation.mutate(createData);
     } else if (formMode === 'edit' && selectedAsset) {
       updateAssetMutation.mutate({ id: selectedAsset.id.toString(), data });
     }
@@ -1360,7 +1363,7 @@ export default function Assets() {
       {/* Desktop grid view */}
       <Grid container spacing={3}>
         {sortedAssets.map((asset) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={asset.id}>
+          <Grid xs={12} sm={6} md={4} lg={3} key={asset.id}>
             <Card
               sx={{
                 height: '100%',
