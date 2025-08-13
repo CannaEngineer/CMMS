@@ -6,6 +6,8 @@ const locationSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   address: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
   organizationId: z.number(),
   parentId: z.number().optional(),
 });

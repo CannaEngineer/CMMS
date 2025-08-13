@@ -8,15 +8,29 @@ async function main() {
 
   // Clean database
   console.log('🧹 Cleaning database...');
-  await prisma.workOrderShare.deleteMany();
-  await prisma.workOrderTimeLog.deleteMany();
+  try {
+    await prisma.workOrderShare.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.workOrderTimeLog.deleteMany();
+  } catch (e) {}
   await prisma.workOrder.deleteMany();
-  await prisma.portalSubmission.deleteMany();
-  await prisma.portalField.deleteMany();
-  await prisma.portal.deleteMany();
-  await prisma.pMTrigger.deleteMany();
+  try {
+    await prisma.portalSubmission.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.portalField.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.portal.deleteMany();
+  } catch (e) {}
+  try {
+    await prisma.pMTrigger.deleteMany();
+  } catch (e) {}
   await prisma.pMSchedule.deleteMany();
-  await prisma.pMTask.deleteMany();
+  try {
+    await prisma.pMTask.deleteMany();
+  } catch (e) {}
   await prisma.part.deleteMany();
   await prisma.supplier.deleteMany();
   await prisma.asset.deleteMany();
@@ -47,7 +61,10 @@ async function main() {
       password: hashedPassword,
       name: 'Admin User',
       role: 'ADMIN',
-      organizationId: organization.id
+      organizationId: organization.id,
+      isOnline: false,
+      lastSeen: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+      lastActivity: new Date(Date.now() - 1000 * 60 * 30)
     }
   });
 
@@ -57,7 +74,10 @@ async function main() {
       password: hashedPassword,
       name: 'John Technician',
       role: 'TECHNICIAN',
-      organizationId: organization.id
+      organizationId: organization.id,
+      isOnline: false,
+      lastSeen: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
+      lastActivity: new Date(Date.now() - 1000 * 60 * 15)
     }
   });
 
@@ -66,8 +86,37 @@ async function main() {
       email: 'manager@demo.com',
       password: hashedPassword,
       name: 'Jane Manager',
+      role: 'MANAGER',
+      organizationId: organization.id,
+      isOnline: false,
+      lastSeen: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
+      lastActivity: new Date(Date.now() - 1000 * 60 * 5)
+    }
+  });
+
+  const techUser2 = await prisma.user.create({
+    data: {
+      email: 'mike@demo.com',
+      password: hashedPassword,
+      name: 'Mike Rodriguez',
       role: 'TECHNICIAN',
-      organizationId: organization.id
+      organizationId: organization.id,
+      isOnline: false,
+      lastSeen: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+      lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 2)
+    }
+  });
+
+  const techUser3 = await prisma.user.create({
+    data: {
+      email: 'sarah@demo.com',
+      password: hashedPassword,
+      name: 'Sarah Johnson',
+      role: 'TECHNICIAN',
+      organizationId: organization.id,
+      isOnline: false,
+      lastSeen: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+      lastActivity: new Date(Date.now() - 1000 * 60 * 60 * 24)
     }
   });
 
@@ -76,7 +125,10 @@ async function main() {
   const mainBuilding = await prisma.location.create({
     data: {
       name: 'Main Building',
-      address: '100 Main Street',
+      description: 'Primary office and administrative building',
+      address: '100 Main Street, New York, NY 10001',
+      latitude: 40.7484,
+      longitude: -73.9857,
       organizationId: organization.id
     }
   });
@@ -84,7 +136,10 @@ async function main() {
   const warehouseA = await prisma.location.create({
     data: {
       name: 'Warehouse A',
-      address: '200 Industrial Drive',
+      description: 'Primary storage facility for equipment and parts',
+      address: '250 Industrial Drive, Brooklyn, NY 11201',
+      latitude: 40.6892,
+      longitude: -73.9442,
       organizationId: organization.id
     }
   });
@@ -92,7 +147,10 @@ async function main() {
   const productionFloor = await prisma.location.create({
     data: {
       name: 'Production Floor',
-      address: '100 Main Street',
+      description: 'Manufacturing and assembly area',
+      address: '100 Main Street, New York, NY 10001',
+      latitude: 40.7485,
+      longitude: -73.9856,
       parentId: mainBuilding.id,
       organizationId: organization.id
     }
@@ -101,13 +159,27 @@ async function main() {
   const officeArea = await prisma.location.create({
     data: {
       name: 'Office Area',
-      address: '100 Main Street',
+      description: 'Administrative offices and meeting rooms',
+      address: '100 Main Street, New York, NY 10001',
+      latitude: 40.7483,
+      longitude: -73.9858,
       parentId: mainBuilding.id,
       organizationId: organization.id
     }
   });
+
+  const outdoorYard = await prisma.location.create({
+    data: {
+      name: 'Outdoor Yard',
+      description: 'Equipment storage and vehicle maintenance area',
+      address: '350 Yard Street, Queens, NY 11385',
+      latitude: 40.7011,
+      longitude: -73.8370,
+      organizationId: organization.id
+    }
+  });
   
-  const locations = [mainBuilding, warehouseA, productionFloor, officeArea];
+  const locations = [mainBuilding, warehouseA, productionFloor, officeArea, outdoorYard];
 
   // Create Suppliers
   console.log('🚚 Creating suppliers...');

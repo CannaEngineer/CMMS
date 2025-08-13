@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { locationsService } from '../../services/api';
+import { geocodingService } from '../../services/geocoding.service';
 import {
   Box,
   Grid,
@@ -14,6 +15,8 @@ import {
   ListItemText,
   ListItemIcon,
   Chip,
+  Button,
+  CircularProgress,
 } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
@@ -25,6 +28,7 @@ import {
   Home as HomeIcon,
   Apartment as ApartmentIcon,
   Factory as FactoryIcon,
+  MyLocation as MyLocationIcon,
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
@@ -36,6 +40,8 @@ interface LocationFormData {
   name: string;
   description?: string;
   address?: string;
+  latitude?: number;
+  longitude?: number;
   organizationId: number;
   parentId?: number;
 }
@@ -102,12 +108,15 @@ export default function LocationForm({
     name: '',
     description: '',
     address: '',
+    latitude: undefined,
+    longitude: undefined,
     organizationId: 1,
     parentId: undefined,
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Fetch real locations data
   const { data: locations, isLoading: locationsLoading } = useQuery({
@@ -163,6 +172,36 @@ export default function LocationForm({
     setFormData({ ...formData, [name]: value });
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
+    }
+  };
+
+  const handleGeocode = async () => {
+    if (!formData.address) {
+      setErrors({ ...errors, address: 'Please enter an address first' });
+      return;
+    }
+
+    setIsGeocoding(true);
+    try {
+      const result = await geocodingService.geocodeAddress(formData.address);
+      if (result) {
+        setFormData({
+          ...formData,
+          latitude: result.lat,
+          longitude: result.lng,
+        });
+        // Clear any address error
+        if (errors.address) {
+          setErrors({ ...errors, address: '' });
+        }
+      } else {
+        setErrors({ ...errors, address: 'Could not find coordinates for this address' });
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      setErrors({ ...errors, address: 'Error getting coordinates' });
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
@@ -222,6 +261,14 @@ export default function LocationForm({
                 <Grid xs={12}>
                   <Typography variant="subtitle2" color="text.secondary">Address</Typography>
                   <Typography variant="body1">{formData.address}</Typography>
+                </Grid>
+              )}
+              {(formData.latitude && formData.longitude) && (
+                <Grid xs={12}>
+                  <Typography variant="subtitle2" color="text.secondary">GPS Coordinates</Typography>
+                  <Typography variant="body1">
+                    {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                  </Typography>
                 </Grid>
               )}
             </Grid>
@@ -329,6 +376,44 @@ export default function LocationForm({
               onChange={handleFieldChange}
               disabled={mode === 'view'}
               rows={2}
+              error={errors.address}
+            />
+          </Grid>
+          {formData.address && mode !== 'view' && (
+            <Grid xs={12}>
+              <Button
+                variant="outlined"
+                startIcon={isGeocoding ? <CircularProgress size={20} /> : <MyLocationIcon />}
+                onClick={handleGeocode}
+                disabled={isGeocoding || !formData.address}
+                fullWidth
+              >
+                {isGeocoding ? 'Getting Coordinates...' : 'Get GPS Coordinates from Address'}
+              </Button>
+            </Grid>
+          )}
+          <Grid xs={12} md={6}>
+            <FormField
+              type="number"
+              name="latitude"
+              label="Latitude"
+              value={formData.latitude}
+              onChange={handleFieldChange}
+              disabled={mode === 'view'}
+              inputProps={{ step: "any", min: -90, max: 90 }}
+              helperText="GPS latitude coordinate (-90 to 90)"
+            />
+          </Grid>
+          <Grid xs={12} md={6}>
+            <FormField
+              type="number"
+              name="longitude"
+              label="Longitude"
+              value={formData.longitude}
+              onChange={handleFieldChange}
+              disabled={mode === 'view'}
+              inputProps={{ step: "any", min: -180, max: 180 }}
+              helperText="GPS longitude coordinate (-180 to 180)"
             />
           </Grid>
         </Grid>

@@ -1,14 +1,7 @@
 import { Request, Response } from 'express';
 import { parse } from 'csv-parse/sync';
 import { ImportService, ImportRequest } from './import.service';
-
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    organizationId: number;
-    role: string;
-  };
-}
+import { AuthenticatedRequest } from '../../middleware/auth.middleware';
 
 export class ImportController {
   // Parse and analyze CSV file

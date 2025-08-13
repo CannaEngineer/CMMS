@@ -1,3 +1,4 @@
-Name,Description,Serial Number,Location,Status,Criticality
-Test Asset 1,A test asset for import,SN001,Test Location,ONLINE,HIGH
-Test Asset 2,Another test asset,SN002,Test Location,OFFLINE,MEDIUM
+Name,Description,Location,Status,Criticality,Manufacturer,Model,Serial Number
+Quest Dehumidifier 1,Primary dehumidifier for processing,Processing Lab,ONLINE,HIGH,Quest,506,QD-001-2024
+Mitsubishi Air Handler,HVAC unit for dry room,Dry Room A,ONLINE,MEDIUM,Mitsubishi,PVA-A24A77,MH-002-2024
+Storage Shelving Unit,Metal shelving for storage,Storage Room,ONLINE,LOW,Industrial Storage,ISU-500,SS-003-2024

@@ -78,6 +78,17 @@ export class WebSocketService {
       // Track user connections
       if (!this.userConnections.has(userId)) {
         this.userConnections.set(userId, new Set());
+        // Update user status to online in database
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            isOnline: true,
+            lastSeen: new Date(),
+            lastActivity: new Date()
+          }
+        }).catch(error => {
+          console.error('Error updating user online status:', error);
+        });
       }
       this.userConnections.get(userId)!.add(socket.id);
       this.socketUsers.set(socket.id, userId);
@@ -136,7 +147,7 @@ export class WebSocketService {
       });
 
       // Handle disconnection
-      socket.on('disconnect', (reason) => {
+      socket.on('disconnect', async (reason) => {
         console.log(`User ${userId} disconnected (${socket.id}): ${reason}`);
         
         // Clean up user connections
@@ -145,6 +156,18 @@ export class WebSocketService {
           userSockets.delete(socket.id);
           if (userSockets.size === 0) {
             this.userConnections.delete(userId);
+            // Update user status to offline when all connections are closed
+            try {
+              await prisma.user.update({
+                where: { id: userId },
+                data: {
+                  isOnline: false,
+                  lastSeen: new Date()
+                }
+              });
+            } catch (error) {
+              console.error('Error updating user offline status:', error);
+            }
           }
         }
         this.socketUsers.delete(socket.id);

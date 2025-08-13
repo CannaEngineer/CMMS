@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { ImportController } from './import.controller';
+import { requireAdmin } from '../../middleware/auth.middleware';
 
 const router = Router();
 
@@ -18,6 +19,9 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024, // 10MB limit
   }
 });
+
+// All import routes require admin access
+router.use(requireAdmin);
 
 // Routes
 router.get('/entity-configs', ImportController.getEntityConfigs);

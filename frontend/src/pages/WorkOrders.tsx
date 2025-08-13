@@ -74,6 +74,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
+import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
+import { ViewProvider } from '../contexts/ViewContext';
 import { workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import { qrService } from '../services/qrService';

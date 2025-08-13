@@ -24,6 +24,10 @@ export const getAllLocations = async (organizationId: number) => {
     const location = {
       ...loc,
       assetCount: loc.assets?.length || 0,
+      coordinates: loc.latitude && loc.longitude ? {
+        lat: loc.latitude,
+        lng: loc.longitude
+      } : undefined,
       children: []
     };
     locationMap.set(loc.id, location);

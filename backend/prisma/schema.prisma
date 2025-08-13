@@ -201,6 +201,11 @@ model User {
   role           UserRole     @default(TECHNICIAN)
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // User status tracking fields
+  isOnline       Boolean      @default(false)
+  lastSeen       DateTime?
+  lastActivity   DateTime?
   workOrders     WorkOrder[]
   
   // New relationships for PM system
@@ -304,6 +309,8 @@ model Location {
   name           String
   description    String?
   address        String?
+  latitude       Float?       // GPS latitude coordinate
+  longitude      Float?       // GPS longitude coordinate
   barcode        String?      // QR/Bar code from CSV
   url            String?      // URL from CSV
   organizationId Int
@@ -322,6 +329,7 @@ model Location {
 
 model WorkOrder {
   id           Int               @id @default(autoincrement())
+  uniqueId     String?           @unique @default(cuid()) // Unique ID number for main entities
   legacyId     Int?              @unique
   title        String
   description  String?
@@ -329,8 +337,10 @@ model WorkOrder {
   priority     WorkOrderPriority @default(MEDIUM)
   assetId      Int?
   assignedToId Int?
+  pmScheduleId Int?              // Link to PM schedule that generated this work order
   asset        Asset?            @relation(fields: [assetId], references: [id], onDelete: Cascade)
   assignedTo   User?             @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  pmSchedule   PMSchedule?       @relation(fields: [pmScheduleId], references: [id], onDelete: SetNull)
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   
@@ -360,10 +370,12 @@ model WorkOrder {
   @@index([status])
   @@index([priority])
   @@index([createdAt])
+  @@index([pmScheduleId])  // Index for PM schedule relationship
 }
 
 model PMSchedule {
   id          Int      @id @default(autoincrement())
+  uniqueId    String?  @unique @default(cuid()) // Unique ID number for main entities
   legacyId    Int?     @unique
   title       String
   description String?
@@ -375,6 +387,7 @@ model PMSchedule {
   // New relationships for advanced PM system
   triggers           PMTrigger[]
   tasks              PMScheduleTask[]
+  workOrders         WorkOrder[]           // Work orders generated from this PM schedule
   maintenanceHistory MaintenanceHistory[]
 
   createdAt DateTime @default(now())

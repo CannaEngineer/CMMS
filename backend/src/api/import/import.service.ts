@@ -132,7 +132,7 @@ export class ImportService {
 
     const fuse = new Fuse(config.fields, {
       keys: ['key', 'label'],
-      threshold: 0.6,
+      threshold: 0.3, // Stricter threshold for better matches
       includeScore: true
     });
 
@@ -140,10 +140,16 @@ export class ImportService {
       const searchResults = fuse.search(csvColumn);
       if (searchResults.length > 0) {
         const bestMatch = searchResults[0];
+        const confidence = Math.round((1 - (bestMatch.score || 0)) * 100);
+        
+        // Only auto-assign if confidence is 85% or higher (near-perfect match)
+        // This requires very close matches like "name" -> "name" or "email" -> "email"
+        const shouldAutoAssign = confidence >= 85;
+        
         return {
           csvColumn,
-          targetField: bestMatch.item.key,
-          confidence: Math.round((1 - (bestMatch.score || 0)) * 100),
+          targetField: shouldAutoAssign ? bestMatch.item.key : '',
+          confidence,
           required: bestMatch.item.required
         };
       }
@@ -594,6 +600,9 @@ export class ImportService {
         for (let i = 0; i < resolvedData.length; i++) {
           const row = resolvedData[i];
           console.log(`Processing row ${i + 1}:`, row);
+          
+          // CRITICAL: Ensure organizationId is ALWAYS included for organization isolation
+          row.organizationId = organizationId;
           
           try {
             // Special handling for different entity types

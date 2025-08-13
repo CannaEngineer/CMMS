@@ -47,6 +47,7 @@ export class WorkOrderGeneratorService {
         status: 'OPEN',
         priority,
         assetId: pmSchedule.assetId,
+        pmScheduleId: pmScheduleId, // Link to PM schedule
         organizationId: pmSchedule.asset.organizationId,
         // Don't assign yet - let managers assign
       }

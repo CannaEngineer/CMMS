@@ -34,7 +34,8 @@
       "mcp__playwright__browser_network_requests",
       "Bash(rm:*)",
       "Bash(find:*)",
-      "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwLCJpYXQiOjE3NTUwNDgyODMsImV4cCI6MTc1NTA1MTg4M30.vSzv9ffwuKylHA-lZqcjy-oykNEL-XMwQcvsPGnXp-M\")"
+      "Bash(export TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMwLCJpYXQiOjE3NTUwNDgyODMsImV4cCI6MTc1NTA1MTg4M30.vSzv9ffwuKylHA-lZqcjy-oykNEL-XMwQcvsPGnXp-M\")",
+      "Bash(sqlite3:*)"
     ],
     "deny": []
   }
