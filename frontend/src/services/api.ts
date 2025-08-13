@@ -176,10 +176,17 @@ class ApiClient {
           
           // Handle authentication errors
           if (finalResponse.status === 401) {
-            // Clear auth data and redirect to login
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+            // Don't redirect if we're already on login/signup pages or public pages
+            const currentPath = window.location.pathname;
+            const publicPaths = ['/login', '/signup', '/portal/', '/portals/public/', '/p/', '/public/share/'];
+            const isPublicPath = publicPaths.some(path => currentPath.includes(path));
+            
+            if (!isPublicPath) {
+              // Clear auth data and redirect to login
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            }
             return Promise.reject(error);
           }
           

@@ -47,12 +47,13 @@ export const createWorkOrder = async (req: Request, res: Response) => {
   try {
     const validatedData = workOrderSchema.parse(req.body);
     const organizationId = req.user?.organizationId;
+    const userId = req.user?.id;
     
     if (!organizationId) {
       return res.status(400).json({ error: 'Organization ID required' });
     }
     
-    const workOrder = await workOrderService.createWorkOrder(validatedData, organizationId);
+    const workOrder = await workOrderService.createWorkOrder(validatedData, organizationId, userId);
     res.status(201).json(workOrder);
   } catch (error) {
     console.error('Error creating work order:', error);
@@ -71,8 +72,8 @@ export const updateWorkOrder = async (req: Request, res: Response) => {
     };
     
     const data = workOrderSchema.partial().parse(processedBody);
-    const { organizationId } = req.user;
-    const workOrder = await workOrderService.updateWorkOrder(Number(req.params.id), data, organizationId);
+    const { organizationId, id: userId } = req.user;
+    const workOrder = await workOrderService.updateWorkOrder(Number(req.params.id), data, organizationId, userId);
     
     if (!workOrder) {
       return res.status(404).json({ error: 'Work Order not found' });

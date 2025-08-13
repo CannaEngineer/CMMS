@@ -153,6 +153,43 @@ enum PortalFieldValidationType {
   FILE_TYPE
 }
 
+enum NotificationType {
+  ALERT       // Critical issues requiring immediate attention
+  WARNING     // Important issues that should be addressed soon
+  INFO        // General information updates
+  SUCCESS     // Positive confirmations and completions
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM  
+  HIGH
+  URGENT
+}
+
+enum NotificationChannel {
+  IN_APP      // In-application notifications
+  EMAIL       // Email notifications
+  SMS         // SMS notifications (future)
+  PUSH        // Push notifications (future)
+}
+
+enum NotificationCategory {
+  WORK_ORDER           // Work order related notifications
+  ASSET               // Asset status and maintenance
+  MAINTENANCE         // PM schedules and overdue items
+  INVENTORY           // Stock levels and reorder alerts
+  USER                // User assignments and mentions
+  SYSTEM              // System maintenance and updates
+  PORTAL              // Portal submissions and communications
+}
+
+enum NotificationFrequency {
+  IMMEDIATE   // Send immediately when triggered
+  DIGEST      // Bundle into digest emails
+  DISABLED    // Don't send this type
+}
+
 
 // MODELS
 model User {
@@ -189,6 +226,12 @@ model User {
   timeLogs         WorkOrderTimeLog[] @relation("TimeLogUser")
   createdShares    WorkOrderShare[]   @relation("ShareCreator")
   moderatedComments PublicComment[]   @relation("CommentModerator")
+
+  // Notification relationships
+  notifications            Notification[] @relation("UserNotifications")
+  createdNotifications     Notification[] @relation("NotificationCreator")
+  notificationPreferences  NotificationPreference[]
+  notificationDevices      NotificationDevice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -982,4 +1025,236 @@ model ShareAuditLog {
   @@index([shareId])
   @@index([timestamp])
   @@index([ipAddressHash])
+}
+
+// ===================== NOTIFICATION SYSTEM MODELS =====================
+
+// Core notification model
+model Notification {
+  id               String            @id @default(cuid())
+  
+  // Basic notification properties
+  title            String            // Brief notification title
+  message          String            // Detailed notification message  
+  type             NotificationType  @default(INFO)
+  priority         NotificationPriority @default(MEDIUM)
+  category         NotificationCategory @default(SYSTEM)
+  
+  // Target user and organization
+  userId           Int
+  organizationId   Int
+  user             User              @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Status tracking
+  isRead           Boolean           @default(false)
+  readAt           DateTime?
+  isArchived       Boolean           @default(false)
+  archivedAt       DateTime?
+  
+  // Polymorphic reference to related entities
+  relatedEntityType String?          // "workOrder", "asset", "pmSchedule", etc.
+  relatedEntityId   Int?             // ID of the related entity
+  
+  // Action information
+  actionUrl        String?           // URL to navigate to when clicked
+  actionLabel      String?           // Label for the action button
+  
+  // Rich content support
+  data             Json?             // Additional structured data
+  imageUrl         String?           // Optional notification image
+  
+  // Metadata
+  expiresAt        DateTime?         // When notification should be auto-removed
+  channels         Json?             // Array of NotificationChannel enum values
+  
+  // Delivery tracking
+  emailSent        Boolean           @default(false)
+  emailSentAt      DateTime?
+  smsSent          Boolean           @default(false)
+  smsSentAt        DateTime?
+  pushSent         Boolean           @default(false)
+  pushSentAt       DateTime?
+  
+  // Creator information
+  createdById      Int?              // User who triggered the notification (optional)
+  createdBy        User?             @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@index([isRead])
+  @@index([category])
+  @@index([priority])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([userId, isRead])
+  @@index([userId, category])
+}
+
+// User notification preferences
+model NotificationPreference {
+  id               Int                   @id @default(autoincrement())
+  userId           Int
+  organizationId   Int
+  
+  // Notification category and settings
+  category         NotificationCategory
+  channel          NotificationChannel
+  frequency        NotificationFrequency @default(IMMEDIATE)
+  enabled          Boolean               @default(true)
+  
+  // Time-based preferences
+  quietHoursStart  String?               // HH:MM format
+  quietHoursEnd    String?               // HH:MM format
+  weekdaysOnly     Boolean               @default(false)
+  
+  // Priority filtering
+  minimumPriority  NotificationPriority  @default(LOW)
+  
+  // Relationships
+  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  
+  @@unique([userId, category, channel])
+  @@index([userId])
+  @@index([category])
+  @@index([channel])
+}
+
+// Notification rules for automated notifications
+model NotificationRule {
+  id               Int                   @id @default(autoincrement())
+  organizationId   Int
+  
+  // Rule identification
+  name             String
+  description      String?
+  isActive         Boolean               @default(true)
+  
+  // Trigger conditions
+  triggerType      String                // "work_order_status", "asset_offline", "maintenance_due", etc.
+  triggerCondition Json                  // Complex condition logic
+  
+  // Notification template
+  titleTemplate    String
+  messageTemplate  String
+  type             NotificationType      @default(INFO)
+  priority         NotificationPriority  @default(MEDIUM)
+  category         NotificationCategory
+  
+  // Target settings
+  targetUsers      Json?                 // Array of user IDs or role-based targeting
+  channels         Json?                 // Array of NotificationChannel enum values
+  
+  // Throttling to prevent spam
+  cooldownMinutes  Int                   @default(0)
+  maxPerDay        Int?
+  
+  // Action configuration
+  actionUrl        String?
+  actionLabel      String?
+  
+  // Metadata
+  lastTriggered    DateTime?
+  triggerCount     Int                   @default(0)
+  
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  
+  @@index([organizationId])
+  @@index([triggerType])
+  @@index([isActive])
+}
+
+// Notification delivery log for auditing
+model NotificationDelivery {
+  id               String               @id @default(cuid())
+  notificationId   String
+  
+  // Delivery details
+  channel          NotificationChannel
+  status           String               @default("PENDING") // PENDING, SENT, FAILED, BOUNCED
+  attemptedAt      DateTime             @default(now())
+  deliveredAt      DateTime?
+  failedAt         DateTime?
+  
+  // Error information
+  errorMessage     String?
+  errorCode        String?
+  retryCount       Int                  @default(0)
+  
+  // Channel-specific data
+  recipientAddress String?              // Email address, phone number, etc.
+  providerResponse Json?                // Response from email/SMS provider
+  
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  
+  @@index([notificationId])
+  @@index([channel])
+  @@index([status])
+  @@index([attemptedAt])
+}
+
+// Device registration for push notifications (future)
+model NotificationDevice {
+  id               String               @id @default(cuid())
+  userId           Int
+  
+  // Device information
+  deviceType       String               // "web", "ios", "android"
+  deviceToken      String               @unique // FCM token, APNS token, etc.
+  deviceInfo       Json?                // Additional device metadata
+  
+  // Status
+  isActive         Boolean              @default(true)
+  lastUsedAt       DateTime             @default(now())
+  
+  // Relationships
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  
+  @@index([userId])
+  @@index([deviceType])
+  @@index([isActive])
+}
+
+// Notification templates for consistency
+model NotificationTemplate {
+  id               Int                  @id @default(autoincrement())
+  organizationId   Int
+  
+  // Template identification
+  key              String               // Unique identifier for the template
+  name             String
+  description      String?
+  
+  // Template content
+  titleTemplate    String
+  messageTemplate  String
+  emailTemplate    String?              // HTML email template
+  smsTemplate      String?              // SMS template
+  
+  // Default settings
+  defaultType      NotificationType     @default(INFO)
+  defaultPriority  NotificationPriority @default(MEDIUM)
+  defaultCategory  NotificationCategory
+  
+  // Variables that can be used in templates
+  availableVariables Json               // Array of variable names and descriptions
+  
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@index([key])
 }

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { notificationTriggersService } from '../../services/notification-triggers.service';
 import type {
   Portal,
   PortalSubmission,
@@ -274,6 +275,9 @@ export class PortalService {
     if (portal.autoCreateWorkOrders) {
       await this.createWorkOrderFromSubmission(submission.id);
     }
+
+    // Trigger notification for new submission
+    await notificationTriggersService.onPortalSubmission(submission.id);
 
     return {
       submissionId: submission.id.toString(),

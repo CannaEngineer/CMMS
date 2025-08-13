@@ -2,6 +2,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import http from 'http';
 import authRouter from './api/auth/auth.router';
 import assetRouter from './api/asset/asset.router';
 import locationRouter from './api/location/location.router';
@@ -20,8 +21,11 @@ import commentRouter from './api/comment/comment.router';
 import importRouter from './api/import/import.router';
 import publicShareRouter from './api/public/publicShare.router';
 import organizationRouter from './api/organization/organization.router';
+import { notificationRouter } from './api/notification/notification.router';
 import { authenticate } from './middleware/auth.middleware';
 import { uploadService } from './services/uploadService';
+import { WebSocketService } from './services/websocket.service';
+import { notificationTriggersService } from './services/notification-triggers.service';
 import { 
   errorHandler, 
   notFoundHandler, 
@@ -30,7 +34,11 @@ import {
 } from './middleware/errorHandler.middleware';
 
 const app = express();
+const server = http.createServer(app);
 const port = process.env.PORT || 5000;
+
+// Initialize WebSocket service
+WebSocketService.getInstance().initialize(server);
 
 // Middleware
 app.use(cors());
@@ -66,6 +74,7 @@ app.use('/api/meter-readings', authenticate, meterReadingRouter);
 app.use('/api/maintenance-history', authenticate, maintenanceHistoryRouter);
 app.use('/api/comments', authenticate, commentRouter);
 app.use('/api/import', authenticate, importRouter);
+app.use('/api/notifications', authenticate, notificationRouter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -118,6 +127,17 @@ app.use('/api/portals', authenticate, portalRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(port, () => {
+// Set up periodic notification checks (run every 5 minutes)
+setInterval(() => {
+  notificationTriggersService.runPeriodicChecks();
+}, 5 * 60 * 1000);
+
+// Cleanup old notifications every hour
+setInterval(() => {
+  notificationTriggersService.cleanupOldNotifications();
+}, 60 * 60 * 1000);
+
+server.listen(port, () => {
   console.log(`Backend server is running on http://localhost:${port}`);
+  console.log(`WebSocket server initialized`);
 });

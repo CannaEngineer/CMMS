@@ -1,0 +1,540 @@
+import { PrismaClient, NotificationType, NotificationPriority, NotificationCategory, NotificationChannel, NotificationFrequency } from '@prisma/client';
+import { WebSocketService } from '../../services/websocket.service';
+
+const prisma = new PrismaClient();
+
+interface CreateNotificationData {
+  userId: number;
+  organizationId: number;
+  title: string;
+  message: string;
+  type?: NotificationType;
+  priority?: NotificationPriority;
+  category: NotificationCategory;
+  relatedEntityType?: string;
+  relatedEntityId?: number;
+  actionUrl?: string;
+  actionLabel?: string;
+  imageUrl?: string;
+  data?: any;
+  channels?: NotificationChannel[];
+  expiresAt?: Date;
+  createdById?: number;
+}
+
+interface NotificationFilters {
+  category?: NotificationCategory;
+  type?: NotificationType;
+  priority?: NotificationPriority;
+  isRead?: boolean;
+  isArchived?: boolean;
+}
+
+export class NotificationService {
+  private webSocketService: WebSocketService;
+
+  constructor() {
+    this.webSocketService = WebSocketService.getInstance();
+  }
+
+  async createNotification(data: CreateNotificationData) {
+    try {
+      // Check if user should receive this type of notification
+      const userPreferences = await this.getUserPreferences(data.userId);
+      const relevantPreference = userPreferences.find(pref => 
+        pref.category === data.category && 
+        pref.channel === NotificationChannel.IN_APP
+      );
+
+      if (relevantPreference && !relevantPreference.enabled) {
+        console.log(`Notification blocked by user preference: ${data.userId}, ${data.category}`);
+        return null;
+      }
+
+      // Check priority filtering
+      if (relevantPreference && this.comparePriority(data.priority || NotificationPriority.MEDIUM, relevantPreference.minimumPriority) < 0) {
+        console.log(`Notification blocked by priority filter: ${data.priority} < ${relevantPreference.minimumPriority}`);
+        return null;
+      }
+
+      // Check quiet hours
+      if (relevantPreference && !this.isWithinActiveHours(relevantPreference)) {
+        console.log(`Notification blocked by quiet hours for user ${data.userId}`);
+        return null;
+      }
+
+      const notification = await prisma.notification.create({
+        data: {
+          title: data.title,
+          message: data.message,
+          type: data.type || NotificationType.INFO,
+          priority: data.priority || NotificationPriority.MEDIUM,
+          category: data.category,
+          userId: data.userId,
+          organizationId: data.organizationId,
+          relatedEntityType: data.relatedEntityType,
+          relatedEntityId: data.relatedEntityId,
+          actionUrl: data.actionUrl,
+          actionLabel: data.actionLabel,
+          imageUrl: data.imageUrl,
+          data: data.data,
+          channels: data.channels || [NotificationChannel.IN_APP],
+          expiresAt: data.expiresAt,
+          createdById: data.createdById
+        },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      // Send real-time notification via WebSocket
+      this.webSocketService.sendNotificationToUser(data.userId, notification);
+
+      return notification;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw new Error('Failed to create notification');
+    }
+  }
+
+  async getUserNotifications(
+    userId: number, 
+    page: number = 1, 
+    limit: number = 50, 
+    filters: NotificationFilters = {}
+  ) {
+    try {
+      const offset = (page - 1) * limit;
+      
+      const where: any = {
+        userId,
+        isArchived: filters.isArchived || false,
+        ...(filters.isRead !== undefined && { isRead: filters.isRead }),
+        ...(filters.category && { category: filters.category }),
+        ...(filters.type && { type: filters.type }),
+        ...(filters.priority && { priority: filters.priority }),
+        // Don't show expired notifications
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } }
+        ]
+      };
+
+      const [notifications, total] = await Promise.all([
+        prisma.notification.findMany({
+          where,
+          orderBy: [
+            { priority: 'desc' },
+            { createdAt: 'desc' }
+          ],
+          skip: offset,
+          take: limit,
+          include: {
+            createdBy: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }),
+        prisma.notification.count({ where })
+      ]);
+
+      return {
+        notifications,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching user notifications:', error);
+      throw new Error('Failed to fetch notifications');
+    }
+  }
+
+  async getNotificationStats(userId: number) {
+    try {
+      const stats = await prisma.notification.aggregate({
+        where: {
+          userId,
+          isArchived: false,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        },
+        _count: {
+          id: true
+        }
+      });
+
+      const unreadCount = await prisma.notification.count({
+        where: {
+          userId,
+          isRead: false,
+          isArchived: false,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        }
+      });
+
+      const urgentCount = await prisma.notification.count({
+        where: {
+          userId,
+          priority: NotificationPriority.URGENT,
+          isRead: false,
+          isArchived: false,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        }
+      });
+
+      const categoryStats = await prisma.notification.groupBy({
+        by: ['category'],
+        where: {
+          userId,
+          isArchived: false,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date() } }
+          ]
+        },
+        _count: {
+          id: true
+        }
+      });
+
+      return {
+        total: stats._count.id,
+        unread: unreadCount,
+        urgent: urgentCount,
+        byCategory: categoryStats.reduce((acc, stat) => {
+          acc[stat.category] = stat._count.id;
+          return acc;
+        }, {} as Record<string, number>)
+      };
+    } catch (error) {
+      console.error('Error fetching notification stats:', error);
+      throw new Error('Failed to fetch notification stats');
+    }
+  }
+
+  async markAsRead(notificationId: string, userId: number) {
+    try {
+      const notification = await prisma.notification.updateMany({
+        where: {
+          id: notificationId,
+          userId
+        },
+        data: {
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+
+      if (notification.count === 0) {
+        throw new Error('Notification not found or access denied');
+      }
+
+      // Send updated stats via WebSocket
+      const stats = await this.getNotificationStats(userId);
+      this.webSocketService.sendNotificationStatsToUser(userId, stats);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  async markMultipleAsRead(notificationIds: string[], userId: number) {
+    try {
+      const result = await prisma.notification.updateMany({
+        where: {
+          id: { in: notificationIds },
+          userId
+        },
+        data: {
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+
+      // Send updated stats via WebSocket
+      const stats = await this.getNotificationStats(userId);
+      this.webSocketService.sendNotificationStatsToUser(userId, stats);
+
+      return { updated: result.count };
+    } catch (error) {
+      console.error('Error marking multiple notifications as read:', error);
+      throw new Error('Failed to mark notifications as read');
+    }
+  }
+
+  async markAllAsRead(userId: number, category?: NotificationCategory) {
+    try {
+      const where: any = {
+        userId,
+        isRead: false,
+        isArchived: false
+      };
+
+      if (category) {
+        where.category = category;
+      }
+
+      const result = await prisma.notification.updateMany({
+        where,
+        data: {
+          isRead: true,
+          readAt: new Date()
+        }
+      });
+
+      // Send updated stats via WebSocket
+      const stats = await this.getNotificationStats(userId);
+      this.webSocketService.sendNotificationStatsToUser(userId, stats);
+
+      return { updated: result.count };
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw new Error('Failed to mark all notifications as read');
+    }
+  }
+
+  async archiveNotification(notificationId: string, userId: number) {
+    try {
+      const notification = await prisma.notification.updateMany({
+        where: {
+          id: notificationId,
+          userId
+        },
+        data: {
+          isArchived: true,
+          archivedAt: new Date()
+        }
+      });
+
+      if (notification.count === 0) {
+        throw new Error('Notification not found or access denied');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error archiving notification:', error);
+      throw error;
+    }
+  }
+
+  async deleteNotification(notificationId: string, userId: number) {
+    try {
+      const result = await prisma.notification.deleteMany({
+        where: {
+          id: notificationId,
+          userId
+        }
+      });
+
+      if (result.count === 0) {
+        throw new Error('Notification not found or access denied');
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      throw error;
+    }
+  }
+
+  async getNotificationById(notificationId: string, userId: number) {
+    try {
+      const notification = await prisma.notification.findFirst({
+        where: {
+          id: notificationId,
+          userId
+        },
+        include: {
+          createdBy: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      });
+
+      return notification;
+    } catch (error) {
+      console.error('Error fetching notification by ID:', error);
+      throw new Error('Failed to fetch notification');
+    }
+  }
+
+  async getUserPreferences(userId: number) {
+    try {
+      const preferences = await prisma.notificationPreference.findMany({
+        where: { userId }
+      });
+
+      // If no preferences exist, create defaults
+      if (preferences.length === 0) {
+        return this.createDefaultPreferences(userId);
+      }
+
+      return preferences;
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+      throw new Error('Failed to fetch notification preferences');
+    }
+  }
+
+  async updateUserPreferences(userId: number, preferences: any[]) {
+    try {
+      // Delete existing preferences
+      await prisma.notificationPreference.deleteMany({
+        where: { userId }
+      });
+
+      // Create new preferences
+      const createdPreferences = await prisma.notificationPreference.createMany({
+        data: preferences.map(pref => ({
+          ...pref,
+          userId
+        }))
+      });
+
+      return this.getUserPreferences(userId);
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+      throw new Error('Failed to update notification preferences');
+    }
+  }
+
+  async cleanupOldNotifications(organizationId: number, daysOld: number = 30) {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+      const result = await prisma.notification.deleteMany({
+        where: {
+          organizationId,
+          createdAt: { lt: cutoffDate },
+          OR: [
+            { isArchived: true },
+            { isRead: true }
+          ]
+        }
+      });
+
+      return { deleted: result.count };
+    } catch (error) {
+      console.error('Error cleaning up old notifications:', error);
+      throw new Error('Failed to cleanup notifications');
+    }
+  }
+
+  private async createDefaultPreferences(userId: number) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { organizationId: true }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const defaultPreferences = [
+      // Work Order notifications
+      { category: NotificationCategory.WORK_ORDER, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.LOW },
+      { category: NotificationCategory.WORK_ORDER, channel: NotificationChannel.EMAIL, enabled: true, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.MEDIUM },
+      
+      // Asset notifications
+      { category: NotificationCategory.ASSET, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.MEDIUM },
+      { category: NotificationCategory.ASSET, channel: NotificationChannel.EMAIL, enabled: false, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.HIGH },
+      
+      // Maintenance notifications
+      { category: NotificationCategory.MAINTENANCE, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.LOW },
+      { category: NotificationCategory.MAINTENANCE, channel: NotificationChannel.EMAIL, enabled: true, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.MEDIUM },
+      
+      // Inventory notifications
+      { category: NotificationCategory.INVENTORY, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.MEDIUM },
+      { category: NotificationCategory.INVENTORY, channel: NotificationChannel.EMAIL, enabled: false, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.HIGH },
+      
+      // User notifications
+      { category: NotificationCategory.USER, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.LOW },
+      { category: NotificationCategory.USER, channel: NotificationChannel.EMAIL, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.MEDIUM },
+      
+      // System notifications
+      { category: NotificationCategory.SYSTEM, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.MEDIUM },
+      { category: NotificationCategory.SYSTEM, channel: NotificationChannel.EMAIL, enabled: false, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.HIGH },
+      
+      // Portal notifications
+      { category: NotificationCategory.PORTAL, channel: NotificationChannel.IN_APP, enabled: true, frequency: NotificationFrequency.IMMEDIATE, minimumPriority: NotificationPriority.LOW },
+      { category: NotificationCategory.PORTAL, channel: NotificationChannel.EMAIL, enabled: true, frequency: NotificationFrequency.DIGEST, minimumPriority: NotificationPriority.MEDIUM }
+    ];
+
+    await prisma.notificationPreference.createMany({
+      data: defaultPreferences.map(pref => ({
+        ...pref,
+        userId,
+        organizationId: user.organizationId
+      }))
+    });
+
+    return this.getUserPreferences(userId);
+  }
+
+  private comparePriority(priority1: NotificationPriority, priority2: NotificationPriority): number {
+    const priorities = {
+      [NotificationPriority.LOW]: 1,
+      [NotificationPriority.MEDIUM]: 2,
+      [NotificationPriority.HIGH]: 3,
+      [NotificationPriority.URGENT]: 4
+    };
+
+    return priorities[priority1] - priorities[priority2];
+  }
+
+  private isWithinActiveHours(preference: any): boolean {
+    if (!preference.quietHoursStart || !preference.quietHoursEnd) {
+      return true;
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTime = currentHour * 60 + currentMinute;
+
+    const [startHour, startMinute] = preference.quietHoursStart.split(':').map(Number);
+    const [endHour, endMinute] = preference.quietHoursEnd.split(':').map(Number);
+    const startTime = startHour * 60 + startMinute;
+    const endTime = endHour * 60 + endMinute;
+
+    // Check if we're in quiet hours
+    let inQuietHours = false;
+    if (startTime <= endTime) {
+      // Normal case: quiet hours within same day
+      inQuietHours = currentTime >= startTime && currentTime <= endTime;
+    } else {
+      // Edge case: quiet hours cross midnight
+      inQuietHours = currentTime >= startTime || currentTime <= endTime;
+    }
+
+    // Check weekdays only preference
+    if (preference.weekdaysOnly) {
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      if (isWeekend) {
+        return false; // Don't send notifications on weekends if weekdaysOnly is true
+      }
+    }
+
+    return !inQuietHours;
+  }
+}

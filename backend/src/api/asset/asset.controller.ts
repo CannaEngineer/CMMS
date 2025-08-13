@@ -49,9 +49,9 @@ export const createAsset = async (req: Request, res: Response) => {
 
 export const updateAsset = async (req: Request, res: Response) => {
   try {
-    const { organizationId } = req.user;
+    const { organizationId, id: userId } = req.user;
     const data = assetSchema.partial().parse(req.body);
-    const asset = await assetService.updateAsset(Number(req.params.id), data, organizationId);
+    const asset = await assetService.updateAsset(Number(req.params.id), data, organizationId, userId);
     res.status(200).json(asset);
   } catch (error) {
     res.status(400).json({ error: error.message });

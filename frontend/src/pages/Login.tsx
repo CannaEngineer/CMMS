@@ -68,13 +68,17 @@ export default function Login() {
         localStorage.setItem('token', responseData.token);
         localStorage.setItem('user', JSON.stringify(responseData.user));
         
-        // Route based on user role
+        // Force a small delay to ensure localStorage is set before navigation
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Use window.location.href for full page reload to ensure auth state is fresh
         if (responseData.user.role === 'TECHNICIAN') {
-          navigate('/tech/dashboard');
+          window.location.href = '/tech/dashboard';
         } else {
           // ADMIN and MANAGER go to main dashboard
-          navigate('/dashboard');
+          window.location.href = '/dashboard';
         }
+        return; // Prevent further execution
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Invalid email or password');

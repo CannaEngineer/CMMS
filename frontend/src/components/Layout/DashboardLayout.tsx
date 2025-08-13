@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import NotificationCenter from '../Notifications/NotificationCenter';
+import { notificationService } from '../../services/notificationService';
 import {
   Box,
   Drawer,
@@ -70,6 +72,50 @@ export default function DashboardLayout() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [notificationPreferencesOpen, setNotificationPreferencesOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Initialize notification service and WebSocket
+  useEffect(() => {
+    notificationService.initializeWebSocket();
+    
+    // Load initial notification stats
+    const loadStats = async () => {
+      try {
+        const stats = await notificationService.getNotificationStats();
+        setUnreadCount(stats.unread);
+      } catch (error) {
+        console.error('Failed to load notification stats:', error);
+      }
+    };
+
+    loadStats();
+
+    // Set up event listeners
+    const handleNewNotification = () => {
+      loadStats(); // Reload stats when new notification arrives
+    };
+
+    const handleStatsUpdated = (stats: any) => {
+      setUnreadCount(stats.unread);
+    };
+
+    const handleConnectionStatus = (status: any) => {
+      setIsConnected(status.connected);
+    };
+
+    notificationService.on('new_notification', handleNewNotification);
+    notificationService.on('stats_updated', handleStatsUpdated);
+    notificationService.on('connection_status', handleConnectionStatus);
+
+    return () => {
+      notificationService.off('new_notification', handleNewNotification);
+      notificationService.off('stats_updated', handleStatsUpdated);
+      notificationService.off('connection_status', handleConnectionStatus);
+      notificationService.cleanup();
+    };
+  }, []);
   
   // Get user data from localStorage
   const userStr = localStorage.getItem('user');
@@ -94,6 +140,17 @@ export default function DashboardLayout() {
 
   const handleNotificationClose = () => {
     setNotificationAnchor(null);
+  };
+
+  const handleNotificationSettingsClick = () => {
+    console.log('Notification settings clicked - TODO: Implement preferences dialog');
+    setNotificationAnchor(null);
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    if (notification.actionUrl) {
+      navigate(notification.actionUrl);
+    }
   };
 
   const drawer = (
@@ -198,8 +255,8 @@ export default function DashboardLayout() {
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 } }}>
-            {/* Sync Status Indicator - Hidden on small mobile */}
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+            {/* Connection Status Indicators - Hidden on small mobile */}
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
               <Chip
                 icon={isOnline ? <SyncIcon /> : <SyncDisabledIcon />}
                 label={isOnline ? 'Online' : 'Offline'}
@@ -212,6 +269,18 @@ export default function DashboardLayout() {
                   }
                 }}
               />
+              {isConnected && (
+                <Chip
+                  label="Live"
+                  color="success"
+                  size="small"
+                  sx={{ 
+                    '& .MuiChip-label': {
+                      fontSize: { xs: '0.75rem', sm: '0.8125rem' }
+                    }
+                  }}
+                />
+              )}
             </Box>
 
             {/* Notifications */}
@@ -225,7 +294,7 @@ export default function DashboardLayout() {
                 minHeight: 44
               }}
             >
-              <Badge badgeContent={4} color="error">
+              <Badge badgeContent={unreadCount} color="error" max={99}>
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -292,52 +361,15 @@ export default function DashboardLayout() {
         </MenuItem>
       </Menu>
 
-      {/* Notification Menu */}
-      <Menu
+      {/* Notification Center */}
+      <NotificationCenter
         anchorEl={notificationAnchor}
         open={Boolean(notificationAnchor)}
         onClose={handleNotificationClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: { 
-            width: { xs: 280, sm: 320 }, 
-            maxHeight: { xs: 350, sm: 400 },
-            maxWidth: 'calc(100vw - 32px)'
-          }
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Typography variant="h6">Notifications</Typography>
-        </Box>
-        <Divider />
-        <MenuItem onClick={handleNotificationClose}>
-          <Box>
-            <Typography variant="body2" fontWeight={600}>
-              Urgent: Pump #3 Failure
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              5 minutes ago
-            </Typography>
-          </Box>
-        </MenuItem>
-        <MenuItem onClick={handleNotificationClose}>
-          <Box>
-            <Typography variant="body2" fontWeight={600}>
-              Maintenance Due: Conveyor Belt A
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              1 hour ago
-            </Typography>
-          </Box>
-        </MenuItem>
-      </Menu>
+        onSettingsClick={handleNotificationSettingsClick}
+      />
+
+      {/* TODO: Add notification preferences dialog and toast notifications */}
 
       {/* Drawer */}
       <Box

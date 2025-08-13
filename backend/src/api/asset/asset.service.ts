@@ -1,5 +1,6 @@
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, AssetStatus } from '@prisma/client';
+import { notificationTriggersService } from '../../services/notification-triggers.service';
 
 const prisma = new PrismaClient();
 
@@ -87,14 +88,32 @@ export const createAsset = async (data: any, organizationId: number) => {
   });
 };
 
-export const updateAsset = async (id: number, data: any, organizationId: number) => {
-  return prisma.asset.updateMany({
+export const updateAsset = async (id: number, data: any, organizationId: number, updatedById?: number) => {
+  // Get current asset to check for status changes
+  const currentAsset = await prisma.asset.findUnique({
+    where: { id },
+    select: { status: true }
+  });
+
+  const result = await prisma.asset.updateMany({
     where: { 
       id,
       organizationId,
     },
     data,
   });
+
+  // Trigger notifications for status changes
+  if (currentAsset && data.status && currentAsset.status !== data.status) {
+    await notificationTriggersService.onAssetStatusChange(
+      id,
+      currentAsset.status as AssetStatus,
+      data.status as AssetStatus,
+      updatedById
+    );
+  }
+
+  return result;
 };
 
 export const deleteAsset = async (id: number, organizationId: number) => {
