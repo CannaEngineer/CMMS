@@ -3,6 +3,12 @@ const { execSync } = require('child_process');
 
 console.log('Building for deployment...');
 
+// Set DATABASE_URL if not already set
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'file:./dev.db';
+  console.log('Setting DATABASE_URL to default SQLite database');
+}
+
 try {
   // Try normal build first
   execSync('tsc', { stdio: 'inherit' });
