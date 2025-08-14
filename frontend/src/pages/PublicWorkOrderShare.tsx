@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Container,
@@ -18,7 +18,6 @@ import {
   CircularProgress,
   Avatar,
   Stack,
-  IconButton,
   Fab,
   useTheme,
   useMediaQuery,
@@ -81,7 +80,6 @@ export default function PublicWorkOrderShare() {
   const { shareToken } = useParams<{ shareToken: string }>();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const queryClient = useQueryClient();
   
   const [comment, setComment] = useState('');
   const [authorName, setAuthorName] = useState('');

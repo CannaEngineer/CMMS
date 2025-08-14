@@ -8,9 +8,6 @@ import {
   DialogActions,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardActions,
   FormControl,
   InputLabel,
   Select,
@@ -27,8 +24,6 @@ import {
   CircularProgress,
   Alert,
   Stack,
-  Fade,
-  Collapse,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -40,20 +35,17 @@ import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Preview as PreviewIcon,
-  Settings as SettingsIcon,
-  Label as LabelIcon,
   ContentCopy as CopyIcon,
-  CheckCircle as CheckIcon,
 } from '@mui/icons-material';
 import { qrService } from '../../services/qrService';
-import { 
+import type { 
   QRLabel,
   QRLabelTemplate,
   QRCodeType,
   QRGenerationRequest,
-  QRBatchOperation,
-  QR_LABEL_TEMPLATES 
+  QRBatchOperation
 } from '../../types/qr';
+import { QR_LABEL_TEMPLATES } from '../../types/qr';
 
 interface QRCodeManagerProps {
   open: boolean;
@@ -65,7 +57,6 @@ interface QRCodeManagerProps {
     subtitle?: string;
     additionalInfo?: string[];
   }>;
-  defaultType?: QRCodeType;
   allowBatchGeneration?: boolean;
 }
 
@@ -73,7 +64,6 @@ export default function QRCodeManager({
   open,
   onClose,
   items = [],
-  defaultType = 'asset',
   allowBatchGeneration = true,
 }: QRCodeManagerProps) {
   const theme = useTheme();

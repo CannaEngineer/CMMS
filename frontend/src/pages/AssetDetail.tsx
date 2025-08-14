@@ -99,9 +99,25 @@ export default function AssetDetail() {
     },
   });
 
+  // Update mutation
+  const updateAssetMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => assetsService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset', id] });
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      setEditDialogOpen(false);
+    },
+  });
+
   const handleDelete = () => {
     if (asset && window.confirm(`Are you sure you want to delete "${asset.name}"?`)) {
       deleteAssetMutation.mutate(asset.id.toString());
+    }
+  };
+
+  const handleSubmit = (data: any) => {
+    if (asset?.id) {
+      updateAssetMutation.mutate({ id: asset.id.toString(), data });
     }
   };
 
@@ -504,8 +520,10 @@ export default function AssetDetail() {
       <AssetForm
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
+        onSubmit={handleSubmit}
         initialData={asset}
         mode="edit"
+        loading={updateAssetMutation.isPending}
       />
     </Container>
   );

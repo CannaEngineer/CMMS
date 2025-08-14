@@ -17,7 +17,6 @@ import {
   InputLabel,
   Select,
   Alert,
-  useTheme,
 } from '@mui/material';
 import {
   QrCode as QrCodeIcon,
@@ -59,7 +58,6 @@ export default function QRCodeDisplay({
   showLabel = true,
   showActions = true,
 }: QRCodeDisplayProps) {
-  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState(400);

@@ -114,9 +114,25 @@ export default function MaintenanceScheduleDetail() {
     },
   });
 
+  // Update mutation
+  const updateScheduleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => pmService.updateSchedule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pmSchedule', id] });
+      queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
+      setEditDialogOpen(false);
+    },
+  });
+
   const handleDelete = () => {
     if (schedule && window.confirm(`Are you sure you want to delete "${schedule.name}"?`)) {
       deleteScheduleMutation.mutate(schedule.id.toString());
+    }
+  };
+
+  const handleSubmit = (data: any) => {
+    if (schedule?.id) {
+      updateScheduleMutation.mutate({ id: schedule.id.toString(), data });
     }
   };
 
@@ -354,7 +370,7 @@ export default function MaintenanceScheduleDetail() {
               </Typography>
               {schedule.tasks && schedule.tasks.length > 0 ? (
                 <List>
-                  {schedule.tasks.map((task, index) => (
+                  {schedule.tasks.map((task: any, index: number) => (
                     <React.Fragment key={index}>
                       <ListItem>
                         <ListItemText
@@ -385,7 +401,7 @@ export default function MaintenanceScheduleDetail() {
         </Grid>
 
         {/* Sidebar */}
-        <Grid xs={12} lg={4}>
+        <Grid item xs={12} lg={4}>
           {/* QR Code */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>
@@ -454,8 +470,10 @@ export default function MaintenanceScheduleDetail() {
       <MaintenanceScheduleForm
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
+        onSubmit={handleSubmit}
         initialData={schedule}
         mode="edit"
+        loading={updateScheduleMutation.isPending}
       />
     </Container>
   );

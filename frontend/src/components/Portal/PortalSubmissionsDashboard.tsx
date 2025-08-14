@@ -31,7 +31,6 @@ import {
   CircularProgress,
   Badge,
   Avatar,
-  Tooltip,
   Divider,
   List,
   ListItem,
@@ -53,7 +52,6 @@ import {
   Cancel as RejectIcon,
   Person as PersonIcon,
   Schedule as TimeIcon,
-  LocationOn as LocationIcon,
   AttachFile as AttachmentIcon,
   FilterList as FilterIcon,
   Search as SearchIcon,
@@ -66,8 +64,8 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, formatDistanceToNow } from 'date-fns';
-import { portalSubmissionService, workOrdersService } from '../../services/portalService';
-import {
+import { portalSubmissionService } from '../../services/portalService';
+import type {
   PortalSubmission,
   SubmissionStatus
 } from '../../types/portal';
@@ -107,13 +105,13 @@ const PortalSubmissionsDashboard: React.FC<PortalSubmissionsDashboardProps> = ({
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [showWorkOrderDialog, setShowWorkOrderDialog] = useState(false);
   const [showCommunicationDialog, setShowCommunicationDialog] = useState(false);
-  const [filters, setFilters] = useState<any>({});
+  const [filters] = useState<any>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   
   // New status and notes for updates
-  const [newStatus, setNewStatus] = useState<SubmissionStatus>('submitted');
+  const [newStatus, setNewStatus] = useState<SubmissionStatus>('SUBMITTED');
   const [statusNotes, setStatusNotes] = useState('');
   const [communicationMessage, setCommunicationMessage] = useState('');
 
@@ -210,11 +208,11 @@ const PortalSubmissionsDashboard: React.FC<PortalSubmissionsDashboardProps> = ({
         setShowDetails(true);
         break;
       case 'approve':
-        setNewStatus('approved');
+        setNewStatus('APPROVED');
         setShowStatusDialog(true);
         break;
       case 'reject':
-        setNewStatus('rejected');
+        setNewStatus('REJECTED');
         setShowStatusDialog(true);
         break;
       case 'create-work-order':
@@ -316,7 +314,7 @@ const PortalSubmissionsDashboard: React.FC<PortalSubmissionsDashboardProps> = ({
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={selectedTab} onChange={(e, newValue) => setSelectedTab(newValue)}>
+        <Tabs value={selectedTab} onChange={(_, newValue) => setSelectedTab(newValue)}>
           <Tab label="All" />
           <Tab 
             label={
@@ -534,7 +532,7 @@ const PortalSubmissionsDashboard: React.FC<PortalSubmissionsDashboardProps> = ({
             component="div"
             count={filteredSubmissions.length}
             page={page}
-            onPageChange={(e, newPage) => setPage(newPage)}
+            onPageChange={(_, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={(e) => {
               setRowsPerPage(parseInt(e.target.value, 10));
@@ -816,7 +814,7 @@ const SubmissionDetailsDialog: React.FC<{
       <DialogContent dividers>
         <Grid container spacing={3}>
           {/* Quick Actions */}
-          <Grid xs={12}>
+          <Grid item xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'primary.main' }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom color="primary">
@@ -917,7 +915,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submitter Information */}
-          <Grid xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -960,7 +958,7 @@ const SubmissionDetailsDialog: React.FC<{
                   <ListItem>
                     <ListItemText
                       primary="IP Address"
-                      secondary={submission.submitterIp || 'Not recorded'}
+                      secondary={submission.ipAddress || 'Not recorded'}
                     />
                   </ListItem>
                 </List>
@@ -969,7 +967,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submission Information */}
-          <Grid xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>

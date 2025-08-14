@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -15,7 +15,6 @@ import {
   ListItemIcon,
   Alert,
   CircularProgress,
-  IconButton,
   TextField,
   Button,
   Dialog,
@@ -208,7 +207,7 @@ export default function PartDetail() {
 
       <Grid container spacing={3}>
         {/* Main Part Information */}
-        <Grid xs={12} md={8}>
+        <Grid item xs={12} md={8}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -11,10 +11,7 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Menu,
   MenuItem,
-  Breadcrumbs,
-  Link,
   List,
   ListItem,
   ListItemText,
@@ -24,31 +21,19 @@ import {
   useMediaQuery,
   LinearProgress,
   Alert,
-  CircularProgress,
   Fab,
-  Drawer,
   AppBar,
   Toolbar,
   Container,
   Stack,
   Badge,
-  Avatar,
   SwipeableDrawer,
   FormControl,
   Select,
   InputLabel,
-  OutlinedInput,
   Skeleton,
   alpha,
   Collapse,
-  BottomNavigation,
-  BottomNavigationAction,
-  Slide,
-  Fade,
-  Grow,
-  Dialog,
-  DialogContent,
-  DialogActions,
 } from '@mui/material';
 import { Grid } from '@mui/material';
 import {
@@ -56,26 +41,15 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon,
   QrCodeScanner as QrScannerIcon,
-  Print as PrintIcon,
-  MoreVert as MoreVertIcon,
   Build as BuildIcon,
   CheckCircle as OnlineIcon,
-  CheckCircle,
   Cancel as OfflineIcon,
   Warning as WarningIcon,
-  NavigateNext as NavigateNextIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Visibility as ViewIcon,
   Close as CloseIcon,
-  Tune as TuneIcon,
-  SwipeDown as SwipeDownIcon,
-  SwipeUp as SwipeUpIcon,
-  Refresh as RefreshIcon,
   Clear as ClearIcon,
-  ArrowBack as ArrowBackIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
   LocationOn as LocationIcon,
   Schedule as ScheduleIcon,
   Assignment as WorkOrderIcon,
@@ -85,17 +59,15 @@ import {
   ViewList as ViewListIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { statusColors } from '../theme/theme';
 import AssetForm from '../components/Forms/AssetForm';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { assetsService } from '../services/api';
 import { useSwipeable } from 'react-swipeable';
 import QRScanner from '../components/QR/QRScanner';
 import QRActionHandler from '../components/QR/QRActionHandler';
-import { QRScanResult } from '../types/qr';
+import type { QRScanResult } from '../types/qr';
 import { qrService } from '../services/qrService';
 import { useNavigate } from 'react-router-dom';
-import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 
 interface Asset {
   id: number;
@@ -134,7 +106,6 @@ interface Asset {
 export default function Assets() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.between('md', 'lg'));
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -143,8 +114,6 @@ export default function Assets() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'view'>('create');
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
   
   // Mobile-specific state
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);

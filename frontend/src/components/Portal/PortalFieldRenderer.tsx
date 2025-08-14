@@ -17,15 +17,9 @@ import {
   Typography,
   Button,
   Rating,
-  Slider,
-  Switch,
-  Autocomplete,
   Card,
   CardContent,
-  Grid,
-  Alert,
-  IconButton,
-  InputAdornment
+  Alert
 } from '@mui/material';
 import {
   DatePicker,
@@ -39,14 +33,12 @@ import {
   LocationOn as LocationIcon,
   Inventory as AssetIcon,
   Star as StarIcon,
-  Help as HelpIcon,
   PhotoCamera as CameraIcon,
   Edit as SignatureIcon
 } from '@mui/icons-material';
-import {
+import type {
   PortalField,
-  PortalBranding,
-  FieldType
+  PortalBranding
 } from '../../types/portal';
 
 interface PortalFieldRendererProps {
@@ -66,14 +58,14 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
   branding,
   disabled = false
 }) => {
-  const [signatureData, setSignatureData] = useState<string>('');
+  const [, setSignatureData] = useState<string>('');
 
   // Common props for all fields
   const commonProps = {
     fullWidth: true,
     disabled,
     error: Boolean(error),
-    helperText: error || field.helpText,
+    helperText: error || field.fieldDescription,
     required: field.isRequired,
     sx: {
       '& .MuiOutlinedInput-root': {
@@ -89,7 +81,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 
   // Handle different field types
   const renderField = () => {
-    switch (field.type) {
+    switch (field.fieldType) {
       case 'text':
         return (
           <TextField
@@ -549,14 +541,14 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       default:
         return (
           <Alert severity="warning">
-            Unsupported field type: {field.type}
+            Unsupported field type: {field.fieldType}
           </Alert>
         );
     }
   };
 
   // Don't render hidden fields
-  if (field.type === 'hidden' || !field.isVisible) {
+  if (field.fieldType === 'hidden' || !field.isVisible) {
     return null;
   }
 

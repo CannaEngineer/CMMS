@@ -17,11 +17,10 @@ import {
   PhoneAndroid as MobileIcon,
   Computer as DesktopIcon
 } from '@mui/icons-material';
-import { PortalCreationRequest } from '../../types/portal';
-import PublicPortalForm from './PublicPortalForm';
+import { CreatePortalRequest } from '../../types/portal';
 
 interface PortalPreviewProps {
-  portalData: Partial<PortalCreationRequest>;
+  portalData: Partial<CreatePortalRequest>;
   open: boolean;
   onClose: () => void;
 }

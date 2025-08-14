@@ -1,10 +1,8 @@
 // Public Portal Page - Public-facing portal for external submissions
 import React, { useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Box, Container, Alert, CircularProgress, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { Container, Alert } from '@mui/material';
 import PublicPortalForm from '../components/Portal/PublicPortalForm';
-import { publicPortalService } from '../services/portalService';
 
 const PublicPortalPage: React.FC = () => {
   const { portalSlug } = useParams<{ portalSlug: string }>();

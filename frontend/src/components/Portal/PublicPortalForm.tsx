@@ -7,15 +7,8 @@ import {
   Typography,
   TextField,
   Button,
-  FormControl,
-  FormLabel,
-  RadioGroup,
   FormControlLabel,
-  Radio,
   Checkbox,
-  Select,
-  MenuItem,
-  InputLabel,
   Chip,
   Alert,
   CircularProgress,
@@ -23,40 +16,28 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Card,
-  CardContent,
-  Fab,
-  Snackbar,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton,
-  Tooltip,
   useTheme,
   useMediaQuery
 } from '@mui/material';
 import {
   PhotoCamera as CameraIcon,
   AttachFile as AttachIcon,
-  LocationOn as LocationIcon,
   Send as SendIcon,
   CheckCircle as SuccessIcon,
   ArrowBack as BackIcon,
   ArrowForward as ForwardIcon,
-  Close as CloseIcon,
-  Help as HelpIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon
+  Help as HelpIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { publicPortalService, portalSubmissionService } from '../../services/portalService';
 import { 
-  PublicPortalInfo, 
-  PortalSubmissionRequest, 
+  SubmitPortalRequest, 
   PortalField, 
   FieldType,
-  SubmitterInfo 
+  Portal
 } from '../../types/portal';
 import PortalFieldRenderer from './PortalFieldRenderer';
 import LocationPicker from './LocationPicker';

@@ -5,7 +5,6 @@ import {
   Paper, 
   Tabs, 
   Tab, 
-  Divider,
   Switch,
   FormControl,
   FormControlLabel,
@@ -33,7 +32,6 @@ import {
   Security as SecurityIcon,
   Save as SaveIcon,
   Language as LanguageIcon,
-  AccessTime as TimezoneIcon,
   ColorLens as ThemeIcon
 } from '@mui/icons-material';
 import ImportManager from '../components/ImportManager';
@@ -99,7 +97,7 @@ const SettingsPage: React.FC = () => {
     ipRestriction: false
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 

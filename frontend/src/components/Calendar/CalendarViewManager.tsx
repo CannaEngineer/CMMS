@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   Box,
   Grid,
@@ -11,11 +11,8 @@ import {
   useTheme,
   Fade,
   Grow,
-  Zoom,
-  Collapse,
   Avatar,
   Stack,
-  Tooltip,
   Badge,
   LinearProgress,
 } from '@mui/material';
@@ -24,17 +21,13 @@ import {
   ChevronRight,
   Schedule as ScheduleIcon,
   Assignment as WorkOrderIcon,
-  Warning as WarningIcon,
   CheckCircle as CompletedIcon,
   PlayCircle as InProgressIcon,
   PauseCircle as PausedIcon,
-  AccessTime as TimeIcon,
-  Person as PersonIcon,
-  LocationOn as LocationIcon,
   DragIndicator as DragIcon,
 } from '@mui/icons-material';
 import dayjs, { Dayjs } from 'dayjs';
-import { CalendarItem, CalendarFilters } from '../../types/calendar';
+import type { CalendarItem, CalendarFilters } from '../../types/calendar';
 import {
   DndContext,
   closestCenter,
@@ -42,12 +35,13 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+} from '@dnd-kit/core';
+import type {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -91,8 +85,7 @@ const CalendarViewManager: React.FC<CalendarViewManagerProps> = ({
   mobile = false,
 }) => {
   const theme = useTheme();
-  const dragCounterRef = useRef(0);
-  const [draggedItem, setDraggedItem] = useState<CalendarItem | null>(null);
+  const [, setDraggedItem] = useState<CalendarItem | null>(null);
   const [dragOverDate, setDragOverDate] = useState<Dayjs | null>(null);
   const [animatingItems, setAnimatingItems] = useState<Set<number>>(new Set());
 
@@ -429,9 +422,8 @@ const CalendarViewManager: React.FC<CalendarViewManagerProps> = ({
   });
 
   // Day cell component with drop capabilities
-  const DayCell = React.memo(({ dayData, cellIndex }: { 
-    dayData: CalendarDayData; 
-    cellIndex: number;
+  const DayCell = React.memo(({ dayData }: { 
+    dayData: CalendarDayData;
   }) => {
     const hasOverdue = dayData.items.some(item => item.isOverdue);
     const isHighlighted = dragOverDate?.isSame(dayData.date, 'day');
@@ -614,7 +606,7 @@ const CalendarViewManager: React.FC<CalendarViewManagerProps> = ({
           bgcolor: theme.palette.background.default,
         }}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <Grid key={day} xs={12/7}>
+            <Grid item key={day} xs={12/7}>
               <Box sx={{ 
                 p: mobile ? 1 : 2, 
                 textAlign: 'center',
@@ -636,12 +628,13 @@ const CalendarViewManager: React.FC<CalendarViewManagerProps> = ({
       <Grid container spacing={viewType === 'month' ? 0 : 1} sx={{ p: viewType === 'month' ? 0 : 2 }}>
         {calendarData.map((dayData, index) => (
           <Grid 
+            item
             key={dayData.date.format('YYYY-MM-DD')} 
             xs={viewType === 'month' ? 12/7 : viewType === 'week' ? true : 12}
           >
             <Grow in timeout={300 + (index * 50)}>
               <div>
-                <DayCell dayData={dayData} cellIndex={index} />
+                <DayCell dayData={dayData} />
               </div>
             </Grow>
           </Grid>

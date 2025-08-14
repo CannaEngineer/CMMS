@@ -24,7 +24,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { portalService } from '../../services/portalService';
 import { transformPortalForBackend } from '../../utils/portalTransforms';
-import { Portal, PortalType, UpdatePortalRequest } from '../../types/portal';
+import type { Portal, PortalType, UpdatePortalRequest } from '../../types/portal';
 
 interface PortalEditDialogProps {
   open: boolean;
@@ -99,17 +99,17 @@ const PortalEditDialog: React.FC<PortalEditDialogProps> = ({
         allowAnonymous: portal.allowAnonymous,
         autoCreateWorkOrders: portal.autoCreateWorkOrders,
         qrEnabled: portal.qrEnabled,
-        // Map additional portal properties
-        primaryColor: portal.primaryColor || '#1976d2',
-        secondaryColor: portal.secondaryColor || '#ffffff',
-        accentColor: portal.accentColor || '#ff4081',
-        notificationEmails: portal.notificationEmails || '',
-        autoResponderEnabled: portal.autoResponderEnabled,
-        autoResponderMessage: portal.autoResponderMessage || '',
-        rateLimitEnabled: portal.rateLimitEnabled,
-        rateLimitRequests: portal.rateLimitRequests || 10,
-        rateLimitWindow: portal.rateLimitWindow || 3600,
-        maxSubmissionsPerDay: portal.maxSubmissionsPerDay,
+        // Map additional portal properties from branding
+        primaryColor: portal.branding?.primaryColor || '#1976d2',
+        secondaryColor: portal.branding?.secondaryColor || '#ffffff',
+        accentColor: portal.branding?.primaryColor || '#ff4081',
+        notificationEmails: '',
+        autoResponderEnabled: false,
+        autoResponderMessage: '',
+        rateLimitEnabled: false,
+        rateLimitRequests: portal.rateLimitPerHour || 10,
+        rateLimitWindow: 3600,
+        maxSubmissionsPerDay: portal.rateLimitPerDay,
       });
     }
   }, [portal]);
@@ -147,7 +147,6 @@ const PortalEditDialog: React.FC<PortalEditDialogProps> = ({
       requiresApproval: formData.requiresApproval,
       allowAnonymous: formData.allowAnonymous,
       autoCreateWorkOrders: formData.autoCreateWorkOrders,
-      qrEnabled: formData.qrEnabled,
       // Include all the additional fields
       primaryColor: formData.primaryColor,
       secondaryColor: formData.secondaryColor,

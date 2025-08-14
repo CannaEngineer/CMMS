@@ -220,62 +220,45 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
           </Typography>
           
           <Grid container spacing={2}>
-            <Grid xs={12} md={6}>
+            <Grid item xs={12} md={6}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Fields Included:</strong>
               </Typography>
               <Box sx={{ pl: 2 }}>
-                {selectedTemplate.configuration?.fields?.slice(0, 5).map((field) => (
+                {selectedTemplate.templateConfig?.fields?.slice(0, 5).map((field: any) => (
                   <Typography key={field.id} variant="body2" sx={{ mb: 0.5 }}>
                     • {field.label} ({field.type})
                   </Typography>
                 ))}
-                {selectedTemplate.configuration?.fields?.length > 5 && (
+                {selectedTemplate.templateConfig?.fields?.length > 5 && (
                   <Typography variant="body2" color="text.secondary">
-                    ... and {selectedTemplate.configuration.fields.length - 5} more
+                    ... and {selectedTemplate.templateConfig.fields.length - 5} more
                   </Typography>
                 )}
               </Box>
             </Grid>
             
-            <Grid xs={12} md={6}>
+            <Grid item xs={12} md={6}>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 <strong>Features:</strong>
               </Typography>
               <Box sx={{ pl: 2 }}>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • File uploads: {selectedTemplate.configuration?.allowFileUploads ? 'Enabled' : 'Disabled'}
+                  • File uploads: {selectedTemplate.templateConfig?.settings?.allowedFileTypes?.length ? 'Enabled' : 'Disabled'}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • Anonymous submissions: {selectedTemplate.configuration?.allowAnonymous ? 'Allowed' : 'Not allowed'}
+                  • Anonymous submissions: {selectedTemplate.templateConfig?.settings?.allowAnonymous ? 'Allowed' : 'Not allowed'}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • Auto work orders: {selectedTemplate.configuration?.autoCreateWorkOrder ? 'Yes' : 'No'}
+                  • Auto work orders: {selectedTemplate.templateConfig?.settings?.autoCreateWorkOrders ? 'Yes' : 'No'}
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  • Email notifications: {selectedTemplate.configuration?.emailNotifications?.notifySubmitter ? 'Enabled' : 'Disabled'}
+                  • Email notifications: Enabled
                 </Typography>
               </Box>
             </Grid>
           </Grid>
 
-          {selectedTemplate.previewImageUrl && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                <strong>Preview:</strong>
-              </Typography>
-              <img
-                src={selectedTemplate.previewImageUrl}
-                alt="Template Preview"
-                style={{
-                  maxWidth: '100%',
-                  height: 'auto',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '4px'
-                }}
-              />
-            </Box>
-          )}
         </Box>
       )}
 

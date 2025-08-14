@@ -13,7 +13,7 @@ import {
   CalendarMonth as CalendarIcon,
 } from '@mui/icons-material';
 import { PMCalendar } from '../components/PMCalendar';
-import { PMScheduleItem, CalendarFilters } from '../types/pmCalendar';
+import type { PMScheduleItem, CalendarFilters } from '../types/pmCalendar';
 import { mockPMSchedules } from '../data/mockPMData';
 
 const PMCalendarPage: React.FC = () => {
@@ -190,8 +190,8 @@ const PMCalendarPage: React.FC = () => {
 
       {/* PM Calendar */}
       <PMCalendar
-        pmSchedules={pmSchedules}
-        onPMClick={handlePMClick}
+        pmSchedules={pmSchedules.map(pm => ({ ...pm, id: pm.id.toString() }))}
+        onPMClick={(pm) => handlePMClick({ ...pm, id: parseInt(pm.id) })}
         onPMReschedule={handlePMReschedule}
         onDateClick={handleDateClick}
         filters={filters}

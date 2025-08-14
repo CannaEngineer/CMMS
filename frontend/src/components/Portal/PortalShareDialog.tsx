@@ -32,7 +32,7 @@ import {
   Download as DownloadIcon,
   Print as PrintIcon,
 } from '@mui/icons-material';
-import { Portal } from '../../types/portal';
+import type { Portal } from '../../types/portal';
 import { qrService } from '../../services/qrService';
 
 interface PortalShareDialogProps {
@@ -162,7 +162,7 @@ const PortalShareDialog: React.FC<PortalShareDialogProps> = ({
     if (!qrCodeDataUrl) return;
     
     try {
-      const qrData = qrService.createQRCodeData('portal', portal.slug, {
+      qrService.createQRCodeData('portal', portal.slug, {
         portalName: portal.name,
         portalType: portal.type
       });
@@ -207,7 +207,7 @@ const PortalShareDialog: React.FC<PortalShareDialogProps> = ({
 
       <DialogContent dividers>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)}>
+          <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
             <Tab label="URLs & Links" icon={<LinkIcon />} />
             <Tab label="QR Code" icon={<QrCodeIcon />} />
             <Tab label="Share Options" icon={<ShareIcon />} />
