@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+frontend/dist/
+backend/dist/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.development
+.vercel
+
+# Database
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads
+backend/uploads/
+uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Cypress
+frontend/cypress/videos/
+frontend/cypress/screenshots/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build artifacts
+*.tsbuildinfo

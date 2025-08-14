@@ -141,7 +141,13 @@ setInterval(() => {
   notificationTriggersService.cleanupOldNotifications();
 }, 60 * 60 * 1000);
 
-server.listen(port, () => {
-  console.log(`Backend server is running on http://localhost:${port}`);
-  console.log(`WebSocket server initialized`);
-});
+// For local development, start the server
+if (process.env.NODE_ENV !== 'production') {
+  server.listen(port, () => {
+    console.log(`Backend server is running on http://localhost:${port}`);
+    console.log(`WebSocket server initialized`);
+  });
+}
+
+// Export the app for Vercel serverless deployment
+export default app;
