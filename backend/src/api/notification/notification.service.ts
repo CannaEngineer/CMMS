@@ -41,7 +41,7 @@ export class NotificationService {
     try {
       // Check if user should receive this type of notification
       const userPreferences = await this.getUserPreferences(data.userId);
-      const relevantPreference = userPreferences.find(pref => 
+      const relevantPreference = userPreferences.find((pref: any) => 
         pref.category === data.category && 
         pref.channel === NotificationChannel.IN_APP
       );
@@ -376,7 +376,7 @@ export class NotificationService {
     }
   }
 
-  async getUserPreferences(userId: number) {
+  async getUserPreferences(userId: number): Promise<any[]> {
     try {
       const preferences = await prisma.notificationPreference.findMany({
         where: { userId }
@@ -439,7 +439,7 @@ export class NotificationService {
     }
   }
 
-  private async createDefaultPreferences(userId: number) {
+  private async createDefaultPreferences(userId: number): Promise<any[]> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { organizationId: true }

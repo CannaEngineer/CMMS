@@ -394,7 +394,7 @@ export class PMReschedulerService {
         organizationId: workOrder.organizationId,
         OR: [
           { id: workOrder.assignedToId }, // Assigned technician
-          { role: rule.escalateToRole || 'MANAGER' } // Escalation role
+          { role: (rule.escalateToRole || 'MANAGER') as any } // Escalation role
         ]
       }
     });

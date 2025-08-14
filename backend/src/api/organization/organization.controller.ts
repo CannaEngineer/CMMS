@@ -48,7 +48,7 @@ export const updateOrganization = async (req: Request, res: Response) => {
     res.json(organization);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid input', details: error.errors });
+      return res.status(400).json({ error: 'Invalid input', details: error.issues });
     }
     res.status(500).json({ error: error.message });
   }
@@ -96,7 +96,7 @@ export const inviteUser = async (req: Request, res: Response) => {
     res.status(201).json(invitation);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: 'Invalid input', details: error.errors });
+      return res.status(400).json({ error: 'Invalid input', details: error.issues });
     }
     res.status(500).json({ error: error.message });
   }

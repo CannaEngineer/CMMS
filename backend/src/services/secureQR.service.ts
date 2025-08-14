@@ -234,18 +234,23 @@ export class SecureQRService {
    * Encrypt organization ID to prevent enumeration
    */
   private encryptOrganizationId(organizationId: number): string {
-    const cipher = crypto.createCipher('aes-256-cbc', this.config.encryptionKey);
+    const iv = crypto.randomBytes(16);
+    const key = crypto.scryptSync(this.config.encryptionKey, 'salt', 32);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(organizationId.toString(), 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    return encrypted;
+    return iv.toString('hex') + ':' + encrypted;
   }
 
   /**
    * Decrypt organization ID
    */
   private decryptOrganizationId(encryptedOrgId: string): number {
-    const decipher = crypto.createDecipher('aes-256-cbc', this.config.encryptionKey);
-    let decrypted = decipher.update(encryptedOrgId, 'hex', 'utf8');
+    const [ivHex, encrypted] = encryptedOrgId.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const key = crypto.scryptSync(this.config.encryptionKey, 'salt', 32);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return parseInt(decrypted, 10);
   }
@@ -254,11 +259,13 @@ export class SecureQRService {
    * Encrypt sensitive metadata
    */
   private encryptMetadata(metadata: Record<string, any>): Record<string, any> {
-    const cipher = crypto.createCipher('aes-256-cbc', this.config.encryptionKey);
+    const iv = crypto.randomBytes(16);
+    const key = crypto.scryptSync(this.config.encryptionKey, 'salt', 32);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     const jsonString = JSON.stringify(metadata);
     let encrypted = cipher.update(jsonString, 'utf8', 'hex');
     encrypted += cipher.final('hex');
-    return { _encrypted: encrypted };
+    return { _encrypted: iv.toString('hex') + ':' + encrypted };
   }
 
   /**
@@ -269,8 +276,11 @@ export class SecureQRService {
       return encryptedMetadata;
     }
     
-    const decipher = crypto.createDecipher('aes-256-cbc', this.config.encryptionKey);
-    let decrypted = decipher.update(encryptedMetadata._encrypted, 'hex', 'utf8');
+    const [ivHex, encrypted] = encryptedMetadata._encrypted.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const key = crypto.scryptSync(this.config.encryptionKey, 'salt', 32);
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return JSON.parse(decrypted);
   }

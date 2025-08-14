@@ -66,10 +66,10 @@ export class WorkOrderTaskService {
             description: scheduleTask.pmTask.description,
             procedure: scheduleTask.pmTask.procedure,
             orderIndex: scheduleTask.orderIndex,
-            estimatedMinutes: scheduleTask.pmTask.estimatedMinutes,
-            safetyRequirements: scheduleTask.pmTask.safetyRequirements,
-            toolsRequired: scheduleTask.pmTask.toolsRequired,
-            partsRequired: scheduleTask.pmTask.partsRequired,
+            // estimatedMinutes: scheduleTask.pmTask.estimatedMinutes,
+            // safetyRequirements: scheduleTask.pmTask.safetyRequirements,
+            // toolsRequired: scheduleTask.pmTask.toolsRequired,
+            // partsRequired: scheduleTask.pmTask.partsRequired,
             status: 'NOT_STARTED'
           }
         })
@@ -148,7 +148,7 @@ export class WorkOrderTaskService {
       skipped: tasks.filter(t => t.status === 'SKIPPED').length,
       failed: tasks.filter(t => t.status === 'FAILED').length,
       completionRate: 0,
-      estimatedTotalMinutes: tasks.reduce((sum, t) => sum + (t.estimatedMinutes || 0), 0),
+      estimatedTotalMinutes: tasks.reduce((sum, t) => sum + (0), 0),
       actualTotalMinutes: tasks.reduce((sum, t) => sum + (t.actualMinutes || 0), 0)
     };
 
@@ -177,6 +177,6 @@ export class WorkOrderTaskService {
       })
     );
 
-    return prisma.$transaction(updatePromises);
+    return Promise.all(updatePromises);
   }
 }

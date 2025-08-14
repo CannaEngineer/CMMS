@@ -28,7 +28,7 @@ export class ImportController {
         return res.status(400).json({ error: 'CSV file is empty or invalid' });
       }
 
-      const headers = Object.keys(parsedData[0]);
+      const headers = Object.keys(parsedData[0] || {});
       
       // Generate intelligent column mappings
       const columnMappings = ImportService.generateColumnMappings(headers, entityType);

@@ -74,8 +74,8 @@ export class UserService {
     // Only include valid User model fields
     const validFields = ['email', 'name', 'role', 'isOnline', 'lastSeen', 'lastActivity'];
     validFields.forEach(field => {
-      if (data[field] !== undefined) {
-        updateData[field] = data[field];
+      if ((data as any)[field] !== undefined) {
+        (updateData as any)[field] = (data as any)[field];
       }
     });
     

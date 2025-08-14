@@ -440,7 +440,7 @@ async function checkQRGenerationPermission(
     switch (resourceType) {
       case 'asset':
         const asset = await prisma.asset.findFirst({
-          where: { id: resourceId, organizationId }
+          where: { id: parseInt(resourceId), organizationId }
         });
         if (!asset) {
           return { allowed: false, reason: 'Asset not found or access denied' };
@@ -449,7 +449,7 @@ async function checkQRGenerationPermission(
         
       case 'work-order':
         const workOrder = await prisma.workOrder.findFirst({
-          where: { id: resourceId, organizationId }
+          where: { id: parseInt(resourceId), organizationId }
         });
         if (!workOrder) {
           return { allowed: false, reason: 'Work order not found or access denied' };
@@ -458,7 +458,7 @@ async function checkQRGenerationPermission(
         
       case 'location':
         const location = await prisma.location.findFirst({
-          where: { id: resourceId, organizationId }
+          where: { id: parseInt(resourceId), organizationId }
         });
         if (!location) {
           return { allowed: false, reason: 'Location not found or access denied' };

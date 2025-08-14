@@ -273,12 +273,12 @@ export class PartService {
         const duplicates = allParts.filter(p => 
           p.id !== part.id && 
           p.sku && 
-          p.sku.trim() === part.sku.trim()
+          p.sku?.trim() === part.sku?.trim()
         );
         
         if (duplicates.length > 0) {
           duplicatesFound.push({ primary: part, duplicates });
-          processedSKUs.add(part.sku.trim());
+          processedSKUs.add(part.sku?.trim() || '');
         }
       }
     }

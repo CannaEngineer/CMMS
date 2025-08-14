@@ -103,7 +103,7 @@ export const generateCSRFTokenEndpoint = async (
     // Generate new CSRF token
     const token = generateCSRFToken();
     const expires = Date.now() + defaultConfig.tokenExpiry;
-    const sessionId = req.sessionID || req.headers['x-session-id'] as string;
+    const sessionId = (req as any).sessionID || req.headers['x-session-id'] as string;
     
     const tokenKey = generateTokenKey(user.id, sessionId);
     
@@ -240,7 +240,7 @@ export const csrfProtection = (
     }
 
     // Find token in store
-    const sessionId = req.sessionID || req.headers['x-session-id'] as string;
+    const sessionId = (req as any).sessionID || req.headers['x-session-id'] as string;
     const tokenKey = generateTokenKey(user.id, sessionId);
     
     let storedTokenData = csrfTokenStore.get(tokenKey);
@@ -329,11 +329,11 @@ export const csrfProtection = (
       });
     }
 
-    Logger.debug('CSRF token validated successfully', {
-      userId: user.id,
-      tokenKey,
-      path: req.path
-    });
+    // Logger.debug('CSRF token validated successfully', {
+    //   userId: user.id,
+    //   tokenKey,
+    //   path: req.path
+    // });
 
     next();
 

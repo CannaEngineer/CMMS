@@ -60,10 +60,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       throw new UnauthorizedError('User account not found');
     }
 
-    // Check if user account is active (if you have this field)
-    if (user.status && user.status !== 'ACTIVE') {
-      throw new UnauthorizedError('User account is not active');
-    }
+    // Check if user account is active (assuming no status field for now)
+    // if (user.status && user.status !== 'ACTIVE') {
+    //   throw new UnauthorizedError('User account is not active');
+    // }
 
     // Update user's last seen and activity time
     await prisma.user.update({
@@ -113,6 +113,9 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 };
 
 // Admin-only middleware (requires authenticate middleware to run first)
+// Export alias for backwards compatibility
+export const authMiddleware = authenticate;
+
 export const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {

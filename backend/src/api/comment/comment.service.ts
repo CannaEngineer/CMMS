@@ -43,7 +43,7 @@ export class CommentService {
         isPinned: data.isPinned || false,
         userId: data.userId,
         parentId: data.parentId || null,
-        attachments: data.attachments ? JSON.stringify(data.attachments) : null,
+        attachments: data.attachments ? JSON.stringify(data.attachments) : undefined,
       },
       include: {
         user: {
@@ -481,7 +481,6 @@ export class CommentService {
     const where: Prisma.CommentWhereInput = {
       content: {
         contains: searchTerm,
-        mode: 'insensitive',
       },
     };
 

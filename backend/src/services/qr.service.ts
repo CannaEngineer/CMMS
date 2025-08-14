@@ -72,7 +72,8 @@ export class QRService {
   // Encrypt sensitive metadata
   private static encryptMetadata(metadata: Record<string, any>): string {
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipher(this.ALGORITHM, this.ENCRYPTION_KEY);
+    const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
+    const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
     let encrypted = cipher.update(JSON.stringify(metadata), 'utf8', 'hex');
     encrypted += cipher.final('hex');
     return iv.toString('hex') + ':' + encrypted;
@@ -82,7 +83,9 @@ export class QRService {
   private static decryptMetadata(encryptedMetadata: string): Record<string, any> {
     try {
       const [ivHex, encrypted] = encryptedMetadata.split(':');
-      const decipher = crypto.createDecipher(this.ALGORITHM, this.ENCRYPTION_KEY);
+      const iv = Buffer.from(ivHex, 'hex');
+      const key = crypto.scryptSync(this.ENCRYPTION_KEY, 'salt', 32);
+      const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
       return JSON.parse(decrypted);
@@ -139,7 +142,7 @@ export class QRService {
         secureToken,
         organizationId,
         qrCodeDataUrl,
-        metadata: encryptedMetadata,
+        metadata: encryptedMetadata as any,
         status: QRCodeStatus.ACTIVE,
         isPublic: request.isPublic || false,
         allowedUserRoles: request.allowedUserRoles,
@@ -267,7 +270,7 @@ export class QRService {
       data: {
         operationType: QRBatchOperationType.GENERATE,
         totalItems: request.items.length,
-        options: request.options,
+        options: request.options as any,
         organizationId: request.organizationId,
         createdById,
         startedAt: new Date()

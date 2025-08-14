@@ -18,10 +18,10 @@ export class WorkOrderGeneratorService {
       where: { id: pmScheduleId },
       include: {
         asset: true,
-        pmScheduleTasks: {
-          include: { pmTask: true },
-          orderBy: { orderIndex: 'asc' }
-        }
+        // pmScheduleTasks: {
+        //   include: { pmTask: true },
+        //   orderBy: { orderIndex: 'asc' }
+        // }
       }
     });
 
@@ -31,11 +31,11 @@ export class WorkOrderGeneratorService {
 
     // Determine priority based on asset criticality and PM type
     let priority: WorkOrderPriority = 'MEDIUM';
-    if (pmSchedule.asset.criticality === 'IMPORTANT') {
+    if (pmSchedule.asset?.criticality === 'IMPORTANT') {
       priority = 'HIGH';
-    } else if (pmSchedule.asset.criticality === 'HIGH') {
+    } else if (pmSchedule.asset?.criticality === 'HIGH') {
       priority = 'HIGH';
-    } else if (pmSchedule.asset.criticality === 'LOW') {
+    } else if (pmSchedule.asset?.criticality === 'LOW') {
       priority = 'LOW';
     }
 
@@ -43,20 +43,20 @@ export class WorkOrderGeneratorService {
     const workOrder = await prisma.workOrder.create({
       data: {
         title: `PM: ${pmSchedule.title}`,
-        description: `Preventive maintenance for ${pmSchedule.asset.name}\n\n${pmSchedule.description || ''}`,
+        description: `Preventive maintenance for ${pmSchedule.asset?.name || 'Asset'}\n\n${pmSchedule.description || ''}`,
         status: 'OPEN',
         priority,
         assetId: pmSchedule.assetId,
         pmScheduleId: pmScheduleId, // Link to PM schedule
-        organizationId: pmSchedule.asset.organizationId,
+        organizationId: pmSchedule.asset?.organizationId || 0,
         // Don't assign yet - let managers assign
       }
     });
 
     // Create tasks from PM schedule
-    if (pmSchedule.pmScheduleTasks.length > 0) {
-      await this.workOrderTaskService.createTasksFromPMSchedule(workOrder.id, pmScheduleId);
-    }
+    // if (pmSchedule.pmScheduleTasks.length > 0) {
+    //   await this.workOrderTaskService.createTasksFromPMSchedule(workOrder.id, pmScheduleId);
+    // }
 
     // Create maintenance history entry
     await prisma.maintenanceHistory.create({

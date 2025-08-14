@@ -32,7 +32,7 @@ export const NonNegativeIntegerSchema = z.number().int().min(0, 'Must be non-neg
 // =====================================================
 
 export const QRCodeConfigSchema = z.object({
-  format: QRFormatSchema.optional().default('PNG'),
+  format: QRFormatSchema.optional().default(QRFormat.PNG),
   size: z.number().int().min(50).max(2000).optional().default(200),
   color: HexColorSchema.optional().default('#000000'),
   backgroundColor: HexColorSchema.optional().default('#FFFFFF'),
@@ -48,7 +48,7 @@ export const QRCodeSecuritySchema = z.object({
   requiresAuth: z.boolean().optional().default(true),
   allowedRoles: z.array(z.string()).optional().default([]),
   accessPermissions: z.record(z.string(), z.boolean()).optional().default({}),
-  ipWhitelist: z.array(z.string().ip()).optional(),
+  ipWhitelist: z.array(z.string()).optional(),
   timeRestrictions: z.object({
     startTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
     endTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:MM)'),
@@ -94,7 +94,7 @@ export const UpdateQRCodeSchema = z.object({
 
 export const QRScanSchema = z.object({
   qrData: z.string().min(1, 'QR data cannot be empty'),
-  scanAction: QRScanActionSchema.optional().default('VIEW'),
+  scanAction: QRScanActionSchema.optional().default(QRScanAction.VIEW),
   location: z.object({
     latitude: z.number().min(-90).max(90),
     longitude: z.number().min(-180).max(180)
@@ -206,7 +206,7 @@ export const QRBatchListQuerySchema = z.object({
 }).strict();
 
 export const DownloadQRCodeQuerySchema = z.object({
-  format: QRFormatSchema.optional().default('PNG'),
+  format: QRFormatSchema.optional().default(QRFormat.PNG),
   size: z.coerce.number().int().min(50).max(2000).optional().default(200),
   includeLabel: z.coerce.boolean().optional().default(false),
   labelTemplate: z.string().optional()
@@ -373,7 +373,7 @@ export const validateWithSchema = <T>(schema: z.ZodSchema<T>, data: unknown): { 
 };
 
 export const formatValidationErrors = (error: z.ZodError): Array<{ field: string; message: string }> => {
-  return error.errors.map(err => ({
+  return error.issues.map(err => ({
     field: err.path.join('.'),
     message: err.message
   }));

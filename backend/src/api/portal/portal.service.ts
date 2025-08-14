@@ -102,7 +102,7 @@ export class PortalService {
               // Ensure options is properly formatted as JSON
               options: field.options || undefined,
               // Ensure validations is properly formatted as JSON  
-              validations: field.validation || undefined
+              validations: field.validations || undefined
             };
           })
         } : undefined
@@ -184,9 +184,16 @@ export class PortalService {
     // Create new fields
     const created = await prisma.portalField.createMany({
       data: fields.map((field, index) => ({
-        ...field,
+        name: field.name || 'Unnamed Field',
+        label: field.label,
+        type: field.type,
+        isRequired: field.isRequired || false,
         portalId,
-        orderIndex: index
+        orderIndex: index,
+        options: field.options,
+        validations: field.validations,
+        placeholder: field.placeholder,
+        helpText: field.helpText
       }))
     });
 
@@ -321,8 +328,8 @@ export class PortalService {
 
     const workOrder = await prisma.workOrder.create({
       data: {
-        title: submission.submissionData.title || `Portal Request - ${submission.portal.name}`,
-        description: submission.submissionData.description || JSON.stringify(submission.submissionData),
+        title: (submission.submissionData as any)?.title || `Portal Request - ${submission.portal.name}`,
+        description: (submission.submissionData as any)?.description || JSON.stringify(submission.submissionData),
         priority: submission.priority,
         organizationId: submission.portal.organizationId,
         assetId: submission.assetId,

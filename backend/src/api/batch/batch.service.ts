@@ -16,7 +16,7 @@ export class BatchService {
           switch (endpoint) {
             case '/work-orders':
               if (method === 'GET') {
-                return await getAllWorkOrders();
+                return await getAllWorkOrders(organizationId);
               }
               break;
             case '/dashboard/stats':
@@ -74,7 +74,7 @@ export class BatchService {
           case 'work-orders':
             if (method === 'PUT' || method === 'PATCH') {
               const id = parseInt(urlParts[1]);
-              result = await updateWorkOrder(id, { ...data, organizationId });
+              result = await updateWorkOrder(id, { ...data, organizationId }, organizationId);
             }
             break;
           // Add more entity handlers as needed
@@ -109,17 +109,17 @@ export class BatchService {
             return await updateWorkOrder(workOrderId, { 
               status: data.status,
               organizationId 
-            });
+            }, organizationId);
           case 'assignTechnician':
             return await updateWorkOrder(workOrderId, { 
               assignedTo: data.assignedTo,
               organizationId 
-            });
+            }, organizationId);
           case 'updatePriority':
             return await updateWorkOrder(workOrderId, { 
               priority: data.priority,
               organizationId 
-            });
+            }, organizationId);
           default:
             throw new Error(`Unsupported action type: ${actionType}`);
         }

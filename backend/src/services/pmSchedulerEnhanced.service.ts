@@ -105,8 +105,8 @@ export class PMSchedulerEnhancedService {
           await this.notificationService.createNotification({
             userId: manager.id,
             organizationId: workOrder.organizationId,
-            title: `URGENT: Critical PM Overdue - ${workOrder.asset.name}`,
-            message: `Work Order ${workOrder.uniqueId} for ${workOrder.asset.name} is ${hoursOverdue} hours overdue. Asset criticality: ${workOrder.asset.criticality}. ${workOrder.assignedTo ? `Assigned to: ${workOrder.assignedTo.name}` : 'Not assigned'}.`,
+            title: `URGENT: Critical PM Overdue - ${workOrder.asset?.name || 'Asset'}`,
+            message: `Work Order ${workOrder.uniqueId} for ${workOrder.asset?.name || 'Asset'} is ${hoursOverdue} hours overdue. Asset criticality: ${workOrder.asset?.criticality || 'Unknown'}. ${workOrder.assignedTo ? `Assigned to: ${workOrder.assignedTo.name}` : 'Not assigned'}.`,
             type: 'ALERT',
             priority: 'URGENT',
             category: 'MAINTENANCE',

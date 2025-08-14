@@ -105,7 +105,7 @@ export const updateAsset = async (id: number, data: any, organizationId: number,
 
   // Trigger notifications for status changes
   if (currentAsset && data.status && currentAsset.status !== data.status) {
-    await notificationTriggersService.onAssetStatusChange(
+    await notificationTriggersService.onAssetStatusChanged(
       id,
       currentAsset.status as AssetStatus,
       data.status as AssetStatus,
