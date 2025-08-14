@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { PMScheduleService } from './pmSchedule.service';
+import { AuthenticatedRequest } from '../../types/auth';
 
 const pmScheduleService = new PMScheduleService();
 
 export class PMScheduleController {
-  async getAllPMSchedules(req: Request, res: Response) {
+  async getAllPMSchedules(req: AuthenticatedRequest, res: Response) {
     try {
-      const schedules = await pmScheduleService.getAllPMSchedules();
+      const organizationId = req.user?.organizationId;
+      const schedules = await pmScheduleService.getAllPMSchedules(organizationId);
       res.json(schedules);
     } catch (error) {
       console.error('Error fetching PM schedules:', error);

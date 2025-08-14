@@ -19,6 +19,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { DatePicker, DateTimePicker } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
 import { CloudUpload as UploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 interface Option {
@@ -263,8 +264,16 @@ export default function FormField({
         return (
           <DatePicker
             label={label}
-            value={value ? new Date(value) : null}
-            onChange={(newValue) => handleChange(newValue?.toISOString().split('T')[0] || '')}
+            value={value ? dayjs(value) : null}
+            onChange={(newValue) => {
+              // Handle dayjs objects
+              if (newValue && dayjs.isDayjs(newValue)) {
+                const dateString = newValue.format('YYYY-MM-DD');
+                handleChange(dateString);
+              } else {
+                handleChange('');
+              }
+            }}
             disabled={disabled}
             slotProps={{
               textField: {

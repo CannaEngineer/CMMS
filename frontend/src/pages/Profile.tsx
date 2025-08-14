@@ -122,6 +122,7 @@ export default function Profile() {
       await usersService.update(user.id.toString(), {
         currentPassword: passwordData.currentPassword,
         password: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
       });
 
       setPasswordData({

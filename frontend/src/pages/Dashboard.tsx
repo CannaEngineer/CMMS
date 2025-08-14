@@ -34,6 +34,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { Grid } from '@mui/material';
 import {
@@ -58,11 +60,14 @@ import StatCard from '../components/Common/StatCard';
 import StatusIndicator from '../components/Common/StatusIndicator';
 import { useNetworkStatus } from '../hooks/useData';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { dashboardService, workOrdersService, assetsService, pmService } from '../services/api';
+import { dashboardService, workOrdersService, assetsService, pmService, calendarService } from '../services/api';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import AssetForm from '../components/Forms/AssetForm';
 import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm';
 import { PMCalendar } from '../components/PMCalendar';
+import { CalendarDashboard } from '../components/Calendar';
+import UnifiedCalendar from '../components/UnifiedCalendar/UnifiedCalendar';
+import { CalendarItem, CalendarStats, calendarItemsToPMScheduleItems } from '../types/calendar';
 import dayjs from 'dayjs';
 
 interface QuickAction {
@@ -80,6 +85,11 @@ export default function Dashboard() {
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [selectedTab, setSelectedTab] = useState(0);
   const [showFab, setShowFab] = useState(false);
+  
+  // New calendar-centered view toggle
+  const [useCalendarView, setUseCalendarView] = useState(() => {
+    return localStorage.getItem('dashboard-view') === 'calendar' || isMobile;
+  });
   
   // Form dialog states
   const [workOrderFormOpen, setWorkOrderFormOpen] = useState(false);
@@ -137,11 +147,21 @@ export default function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
-  // Fetch PM schedules for calendar
-  const { data: pmSchedules, isLoading: pmSchedulesLoading } = useQuery({
-    queryKey: ['pmSchedules'],
-    queryFn: pmService.getSchedules,
+  // Fetch unified calendar data for calendar modal
+  const { data: calendarItems, isLoading: calendarItemsLoading } = useQuery({
+    queryKey: ['calendar-items'],
+    queryFn: () => calendarService.getCalendarItems({
+      startDate: dayjs().startOf('month').format('YYYY-MM-DD'),
+      endDate: dayjs().endOf('month').add(1, 'month').format('YYYY-MM-DD'), // Get current + next month
+    }),
     enabled: maintenanceCalendarOpen, // Only fetch when calendar is opened
+  });
+
+  // Also fetch enhanced calendar stats
+  const { data: calendarStats, isLoading: calendarStatsLoading } = useQuery({
+    queryKey: ['calendar-stats'],
+    queryFn: calendarService.getCalendarStats,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   // Mutations for quick actions
@@ -195,30 +215,42 @@ export default function Dashboard() {
 
   // Transform maintenance schedule data to match expected format
   const maintenanceSchedule = useMemo(() => {
+    // Use enhanced calendar stats if available, fallback to original data
+    if (calendarStats) {
+      return {
+        today: calendarStats.today || 0,
+        thisWeek: calendarStats.thisWeek || 0,
+        activeWorkOrders: calendarStats.activeWorkOrders || 0,
+        totalScheduledItems: calendarStats.totalScheduledItems || 0,
+      };
+    }
     return maintenanceScheduleData || { today: 0, thisWeek: 0 };
-  }, [maintenanceScheduleData]);
+  }, [maintenanceScheduleData, calendarStats]);
 
-  // Memoized PM schedules transformation to prevent infinite re-renders
-  const transformedPMSchedules = useMemo(() => {
-    if (!pmSchedules) return [];
+  // Transform unified calendar items to PMScheduleItem format for backward compatibility
+  const transformedCalendarItems = useMemo(() => {
+    if (!calendarItems) return [];
     
-    return pmSchedules.map((schedule: any) => ({
-      id: schedule.id,
-      title: schedule.title,
-      assetName: schedule.asset?.name || 'Unknown Asset',
-      assetId: schedule.assetId || 0,
-      scheduledDate: dayjs(schedule.nextDue).toDate(),
-      estimatedDuration: schedule.estimatedDuration || 60,
-      priority: schedule.priority || 'MEDIUM',
-      criticality: schedule.criticality || 'MEDIUM',
-      taskType: schedule.taskType || 'INSPECTION',
-      assignedTechnician: schedule.assignedTechnician,
-      location: schedule.asset?.location?.name || 'Unknown Location',
-      isOverdue: dayjs(schedule.nextDue).isBefore(dayjs(), 'day'),
-      description: schedule.description,
-      status: 'SCHEDULED',
+    return calendarItems.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      assetName: item.assetName || 'Unknown Asset',
+      assetId: item.assetId || 0,
+      scheduledDate: new Date(item.scheduledDate),
+      estimatedDuration: item.estimatedDuration || 60,
+      priority: item.priority || 'MEDIUM',
+      criticality: item.criticality || 'MEDIUM',
+      taskType: item.taskType || (item.type === 'WORK_ORDER' ? 'REPAIR' : 'INSPECTION'),
+      assignedTechnician: item.assignedTo,
+      location: item.location || 'Unknown Location',
+      isOverdue: item.isOverdue || false,
+      description: item.description,
+      status: item.status || 'SCHEDULED',
+      // Additional fields for distinguishing types
+      itemType: item.type, // 'PM_SCHEDULE' or 'WORK_ORDER'
+      originalId: item.originalId,
     }));
-  }, [pmSchedules]);
+  }, [calendarItems]);
 
   // Combined loading and error states
   const isLoading = statsLoading || scheduleLoading;
@@ -238,6 +270,12 @@ export default function Dashboard() {
 
   const handleScheduleMaintenance = useCallback(() => {
     setMaintenanceFormOpen(true);
+  }, []);
+
+  // Handle view toggle
+  const handleViewToggle = useCallback((useCalendar: boolean) => {
+    setUseCalendarView(useCalendar);
+    localStorage.setItem('dashboard-view', useCalendar ? 'calendar' : 'classic');
   }, []);
 
   // Stat card click handlers - memoized to prevent re-renders
@@ -648,7 +686,7 @@ export default function Dashboard() {
           </Typography>
           <Grid container spacing={2}>
             {quickActions.map((action, index) => (
-              <Grid xs={12} sm={4} key={index}>
+              <Grid size={{ xs: 12, sm: 4 }} key={index}>
                 <Grow in timeout={1000 + (index * 200)}>
                   <Button
                     fullWidth
@@ -712,7 +750,7 @@ export default function Dashboard() {
 
   const KeyMetricsSection = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
-      <Grid xs={6} sm={3}>
+      <Grid size={{ xs: 6, sm: 3 }}>
         <Grow in timeout={1200}>
           <div>
             <StatCard
@@ -726,7 +764,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid xs={6} sm={3}>
+      <Grid size={{ xs: 6, sm: 3 }}>
         <Grow in timeout={1400}>
           <div>
             <StatCard
@@ -740,7 +778,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid xs={6} sm={3}>
+      <Grid size={{ xs: 6, sm: 3 }}>
         <Grow in timeout={1600}>
           <div>
             <StatCard
@@ -754,7 +792,7 @@ export default function Dashboard() {
           </div>
         </Grow>
       </Grid>
-      <Grid xs={6} sm={3}>
+      <Grid size={{ xs: 6, sm: 3 }}>
         <Grow in timeout={1800}>
           <div>
             <StatCard
@@ -1090,6 +1128,83 @@ export default function Dashboard() {
     </Card>
   );
 
+  // If calendar view is enabled, render the new calendar dashboard
+  if (useCalendarView) {
+    return (
+      <PageLayout
+        title={isMobile ? "Dashboard" : "Maintenance Dashboard"}
+        loading={statsLoading}
+        error={statsError ? "Failed to load dashboard data. Please try again later." : null}
+        onRefresh={refresh}
+        maxWidth="xl"
+      >
+        <Box sx={{ position: 'relative' }}>
+          {/* View Toggle - Desktop Only */}
+          {!isMobile && (
+            <Box sx={{ 
+              position: 'absolute',
+              top: -60,
+              right: 0,
+              zIndex: 1,
+            }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={useCalendarView}
+                    onChange={(e) => handleViewToggle(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label={
+                  <Typography variant="body2" color="text.secondary">
+                    Calendar View
+                  </Typography>
+                }
+                labelPlacement="start"
+                sx={{
+                  bgcolor: 'background.paper',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 2,
+                  border: `1px solid ${theme.palette.divider}`,
+                  boxShadow: theme.shadows[1],
+                }}
+              />
+            </Box>
+          )}
+
+          {/* Status Hero Section */}
+          <StatusHeroSection />
+          
+          {/* Quick Actions */}
+          {!isMobile && <QuickActionsSection />}
+          
+          {/* Unified Calendar */}
+          <Box sx={{ mb: 3 }}>
+            <UnifiedCalendar
+              height={isMobile ? 500 : 700}
+              onItemClick={(item: CalendarItem) => {
+                if (item.type === 'WORK_ORDER') {
+                  navigate(`/work-orders/${item.id}`);
+                } else {
+                  // Open PM schedule details
+                  console.log('PM Schedule clicked:', item);
+                }
+              }}
+              onDateClick={(date: Date) => {
+                console.log('Date clicked:', date);
+                // Could open new task creation for that date
+              }}
+            />
+          </Box>
+          
+          {/* Mobile Quick Actions */}
+          {isMobile && <QuickActionsSection />}
+        </Box>
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout
       title={isMobile ? "Dashboard" : "Maintenance Dashboard"}
@@ -1099,6 +1214,41 @@ export default function Dashboard() {
       maxWidth="xl"
     >
       <Box sx={{ position: 'relative' }}>
+        {/* View Toggle - Desktop Only */}
+        {!isMobile && (
+          <Box sx={{ 
+            position: 'absolute',
+            top: -60,
+            right: 0,
+            zIndex: 1,
+          }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useCalendarView}
+                  onChange={(e) => handleViewToggle(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label={
+                <Typography variant="body2" color="text.secondary">
+                  Calendar View
+                </Typography>
+              }
+              labelPlacement="start"
+              sx={{
+                bgcolor: 'background.paper',
+                px: 2,
+                py: 0.5,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: theme.shadows[1],
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Classic Dashboard Layout */}
         {/* Mobile: Single column layout - Field Technician Focused */}
         {isMobile ? (
           <Container maxWidth="sm" disableGutters>
@@ -1145,7 +1295,7 @@ export default function Dashboard() {
             
             <Grid container spacing={3}>
               {/* Left Column */}
-              <Grid xs={12} md={8}>
+              <Grid size={{ xs: 12, md: 8 }}>
                 <QuickActionsSection />
                 <KeyMetricsSection />
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
@@ -1169,7 +1319,7 @@ export default function Dashboard() {
               </Grid>
               
               {/* Right Column */}
-              <Grid xs={12} md={4}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <RecentActivitySection />
                 
                 {/* Additional side panel content for desktop */}
@@ -1285,22 +1435,30 @@ export default function Dashboard() {
           </Button>
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
-          {pmSchedulesLoading ? (
+          {calendarItemsLoading ? (
             <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
               <CircularProgress />
             </Box>
           ) : (
             <PMCalendar
-              pmSchedules={transformedPMSchedules}
-              onPMClick={(pm) => {
-                console.log('PM clicked:', pm);
-                // Could open maintenance details or edit form
+              pmSchedules={transformedCalendarItems}
+              onPMClick={(item) => {
+                console.log('Calendar item clicked:', item);
+                // Navigate to appropriate detail view based on type
+                if (item.itemType === 'WORK_ORDER') {
+                  navigate(`/work-orders/${item.originalId}`);
+                } else if (item.itemType === 'PM_SCHEDULE') {
+                  // Navigate to PM schedule or maintenance detail
+                  navigate(`/maintenance/${item.originalId}`);
+                }
               }}
               onDateClick={(date) => {
                 console.log('Date clicked:', date);
                 // Could open new maintenance schedule form for that date
+                setMaintenanceCalendarOpen(false);
+                setMaintenanceFormOpen(true);
               }}
-              loading={pmSchedulesLoading}
+              loading={calendarItemsLoading}
             />
           )}
         </DialogContent>

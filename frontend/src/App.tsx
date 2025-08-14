@@ -37,6 +37,7 @@ import Portals from './pages/Portals';
 import PublicPortal from './pages/PublicPortal';
 import PortalDetailView from './components/Portal/PortalDetailView';
 import PublicWorkOrderShare from './pages/PublicWorkOrderShare';
+import TimeTracking from './pages/TimeTracking';
 
 // Create a client with enhanced error handling
 const queryClient = new QueryClient({
@@ -115,6 +116,7 @@ function App() {
             }>
               <Route index element={<Navigate to="/tech/dashboard" replace />} />
               <Route path="dashboard" element={<TechnicianDashboard />} />
+              <Route path="time" element={<TimeTracking />} />
               <Route path="work-orders/:id" element={<WorkOrderDetail />} />
               <Route path="assets" element={<Assets />} />
               <Route path="assets/:id" element={<AssetDetail />} />

@@ -45,7 +45,7 @@ export class WebSocketService {
           return next(new Error('Authentication error: No token provided'));
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as any;
         
         // Verify user exists and get organization info
         const user = await prisma.user.findUnique({

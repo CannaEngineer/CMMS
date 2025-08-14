@@ -22,6 +22,7 @@ import importRouter from './api/import/import.router';
 import publicShareRouter from './api/public/publicShare.router';
 import organizationRouter from './api/organization/organization.router';
 import { notificationRouter } from './api/notification/notification.router';
+import calendarRouter from './api/calendar/calendar.router';
 import qrRouter from './api/qr/qr.router';
 import { authenticate } from './middleware/auth.middleware';
 import { uploadService } from './services/uploadService';
@@ -67,6 +68,7 @@ app.use('/api/users', authenticate, userRouter);
 app.use('/api/organization', authenticate, organizationRouter);
 
 app.use('/api/dashboard', authenticate, dashboardRouter);
+app.use('/api/calendar', authenticate, calendarRouter);
 app.use('/api/maintenance', authenticate, maintenanceRouter);
 app.use('/api/pm-schedules', authenticate, pmScheduleRouter);
 app.use('/api/pm-tasks', authenticate, pmTaskRouter);

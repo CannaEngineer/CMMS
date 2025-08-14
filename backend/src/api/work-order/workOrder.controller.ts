@@ -86,6 +86,52 @@ export const updateWorkOrder = async (req: Request, res: Response) => {
   }
 };
 
+export const updateWorkOrderStatus = async (req: Request, res: Response) => {
+  try {
+    const { status, notes } = req.body;
+    
+    if (!status) {
+      return res.status(400).json({ error: 'Status is required' });
+    }
+    
+    // Validate status is a valid enum value
+    const statusSchema = z.enum(['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELED']);
+    const validatedStatus = statusSchema.parse(status);
+    
+    const { organizationId, id: userId } = req.user;
+    const workOrderId = Number(req.params.id);
+    
+    // Update work order with new status
+    const data: any = { status: validatedStatus };
+    
+    // If notes are provided, we could store them separately
+    // For now, we'll just update the status
+    const workOrder = await workOrderService.updateWorkOrder(workOrderId, data, organizationId, userId);
+    
+    if (!workOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    // If notes were provided, add them as a note
+    if (notes && notes.trim()) {
+      try {
+        await notesService.addNote(workOrderId, userId, notes.trim(), false);
+      } catch (noteError) {
+        console.error('Error adding status note:', noteError);
+        // Don't fail the status update if note fails
+      }
+    }
+    
+    res.status(200).json({
+      ...workOrder,
+      message: 'Status updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating work order status:', error);
+    res.status(400).json({ error: error.message || 'Invalid request. Please check your input.' });
+  }
+};
+
 export const deleteWorkOrder = async (req: Request, res: Response) => {
   const { organizationId } = req.user;
   await workOrderService.deleteWorkOrder(Number(req.params.id), organizationId);

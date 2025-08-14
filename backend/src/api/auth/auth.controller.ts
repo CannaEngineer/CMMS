@@ -46,3 +46,36 @@ export const login = async (req: Request, res: Response) => {
     }
   }
 };
+
+// Check if email is available
+export const checkEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.params;
+    
+    if (!email || !z.string().email().safeParse(email).success) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const existingUser = await authService.checkEmailExists(email);
+    res.status(200).json({ available: !existingUser });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to check email availability' });
+  }
+};
+
+// Check if organization name is available
+export const checkOrganization = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.params;
+    
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Organization name too short' });
+    }
+
+    const existingOrg = await authService.checkOrganizationExists(name);
+    res.status(200).json({ available: !existingOrg });
+  } catch (error) {
+    console.error('checkOrganization controller error:', error);
+    res.status(500).json({ error: 'Failed to check organization availability' });
+  }
+};

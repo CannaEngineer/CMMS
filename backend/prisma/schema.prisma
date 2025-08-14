@@ -347,6 +347,7 @@ model WorkOrder {
   description  String?
   status       WorkOrderStatus   @default(OPEN)
   priority     WorkOrderPriority @default(MEDIUM)
+  dueDate      DateTime?         // When this work order is due/scheduled to be completed
   assetId      Int?
   assignedToId Int?
   pmScheduleId Int?              // Link to PM schedule that generated this work order

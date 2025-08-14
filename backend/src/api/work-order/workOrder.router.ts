@@ -8,6 +8,7 @@ router.get('/recent', workOrderController.getRecentWorkOrders);
 router.get('/:id', workOrderController.getWorkOrderById);
 router.post('/', workOrderController.createWorkOrder);
 router.put('/:id', workOrderController.updateWorkOrder);
+router.put('/:id/status', workOrderController.updateWorkOrderStatus);
 router.delete('/:id', workOrderController.deleteWorkOrder);
 
 // Time logging routes

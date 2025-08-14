@@ -84,11 +84,31 @@ export class UserController {
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
-      const user = await userService.updateUser(parseInt(id), organizationId, req.body);
-      res.json(user);
+      // Separate password changes from other updates
+      const { currentPassword, password, confirmPassword, ...updateData } = req.body;
+
+      // If this is a password change request
+      if (currentPassword && password) {
+        if (password !== confirmPassword) {
+          return res.status(400).json({ error: 'New passwords do not match' });
+        }
+
+        const user = await userService.updatePassword(parseInt(id), organizationId, currentPassword, password);
+        res.json(user);
+      } else {
+        // Regular profile update
+        const user = await userService.updateUser(parseInt(id), organizationId, updateData);
+        res.json(user);
+      }
     } catch (error) {
       console.error('Error updating user:', error);
-      res.status(500).json({ error: 'Failed to update user' });
+      if (error.message === 'Current password is incorrect') {
+        res.status(400).json({ error: 'Invalid current password' });
+      } else if (error.message === 'User not found') {
+        res.status(404).json({ error: 'User not found' });
+      } else {
+        res.status(500).json({ error: 'Failed to update user' });
+      }
     }
   }
 

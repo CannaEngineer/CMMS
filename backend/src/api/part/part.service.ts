@@ -186,6 +186,15 @@ export class PartService {
   }
 
   async updateStockLevel(id: number, organizationId: number, quantity: number) {
+    // First verify the part belongs to the organization for security
+    const existingPart = await prisma.part.findFirst({
+      where: { id, organizationId }
+    });
+    
+    if (!existingPart) {
+      throw new Error('Part not found or access denied');
+    }
+    
     return prisma.part.update({
       where: { id },
       data: {

@@ -587,6 +587,62 @@ class NotificationTriggersService {
     }
   }
 
+  // Trigger notification when portal submission is created
+  async onPortalSubmission(submissionId: number) {
+    try {
+      const submission = await prisma.portalSubmission.findUnique({
+        where: { id: submissionId },
+        include: {
+          portal: true,
+          assignedTo: true
+        }
+      });
+
+      if (!submission) return;
+
+      // Determine who should be notified
+      const targetUsers: number[] = [];
+      
+      if (submission.assignedTo) {
+        targetUsers.push(submission.assignedTo.id);
+      } else {
+        // Get portal managers and admins if no specific assignment
+        const portalManagers = await prisma.user.findMany({
+          where: {
+            organizationId: submission.portal.organizationId,
+            role: {
+              in: ['MANAGER', 'ADMIN']
+            }
+          },
+          select: { id: true }
+        });
+        targetUsers.push(...portalManagers.map(u => u.id));
+      }
+
+      for (const userId of targetUsers) {
+        await this.notificationService.createNotification({
+          userId,
+          organizationId: submission.portal.organizationId,
+          title: 'New Portal Submission',
+          message: `New ${submission.portal.type.toLowerCase().replace('_', ' ')} submission received through portal "${submission.portal.name}".`,
+          type: NotificationType.INFO,
+          priority: submission.priority === 'URGENT' ? NotificationPriority.HIGH : 
+                   submission.priority === 'HIGH' ? NotificationPriority.MEDIUM : NotificationPriority.LOW,
+          category: NotificationCategory.PORTAL,
+          relatedEntityType: 'portalSubmission',
+          relatedEntityId: submission.id,
+          actionUrl: `/portals/${submission.portal.id}/submissions/${submission.id}`,
+          actionLabel: 'Review Submission',
+          channels: ['IN_APP']
+        });
+      }
+
+      console.log(`Sent portal submission notification for submission ${submissionId}`);
+    } catch (error) {
+      console.error('Error sending portal submission notification:', error);
+    }
+  }
+
   // Clean up old notifications
   async cleanupOldNotifications() {
     try {

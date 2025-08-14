@@ -69,9 +69,17 @@ export class UserService {
   }
 
   async updateUser(id: number, organizationId: number, data: Partial<User>) {
-    const updateData: any = { ...data };
+    const updateData: any = {};
     
-    // Hash password if provided
+    // Only include valid User model fields
+    const validFields = ['email', 'name', 'role', 'isOnline', 'lastSeen', 'lastActivity'];
+    validFields.forEach(field => {
+      if (data[field] !== undefined) {
+        updateData[field] = data[field];
+      }
+    });
+    
+    // Handle password update separately with validation
     if (data.password) {
       updateData.password = await bcrypt.hash(data.password, 10);
     }
@@ -80,6 +88,45 @@ export class UserService {
       where: { id },
       data: {
         ...updateData,
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isOnline: true,
+        lastSeen: true,
+        lastActivity: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updatePassword(id: number, organizationId: number, currentPassword: string, newPassword: string) {
+    // First verify the current password
+    const user = await prisma.user.findFirst({
+      where: { id, organizationId },
+      select: { password: true }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // Hash and update the new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    return prisma.user.update({
+      where: { id },
+      data: {
+        password: hashedNewPassword,
         updatedAt: new Date(),
       },
       select: {

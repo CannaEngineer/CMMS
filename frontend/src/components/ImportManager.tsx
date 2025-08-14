@@ -106,8 +106,16 @@ const ImportManager = () => {
         { key: 'description', label: 'Description', required: false, type: 'string' },
         { key: 'status', label: 'Status', required: false, type: 'enum', enumValues: ['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELED'] },
         { key: 'priority', label: 'Priority', required: false, type: 'enum', enumValues: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
-        { key: 'assetName', label: 'Asset Name', required: false, type: 'string' },
-        { key: 'assignedTo', label: 'Assigned To', required: false, type: 'string' }
+        { key: 'workType', label: 'Work Type', required: false, type: 'string' },
+        { key: 'recurrence', label: 'Recurrence', required: false, type: 'string' },
+        { key: 'assetName', label: 'Asset', required: false, type: 'string' },
+        { key: 'locationName', label: 'Location', required: false, type: 'string' },
+        { key: 'assignedTo', label: 'Assigned to', required: false, type: 'string' },
+        { key: 'requestedBy', label: 'Requested by', required: false, type: 'string' },
+        { key: 'createdBy', label: 'Created by', required: false, type: 'string' },
+        { key: 'estimatedTime', label: 'Estimated Time', required: false, type: 'string' },
+        { key: 'dueDate', label: 'Due date', required: false, type: 'date' },
+        { key: 'plannedStartDate', label: 'Planned Start Date', required: false, type: 'date' }
       ]
     },
     {
@@ -165,7 +173,7 @@ const ImportManager = () => {
   const generateColumnMappings = (csvHeaders: string[], entityFields: EntityTypeConfig['fields']) => {
     const fuse = new Fuse(entityFields, {
       keys: ['key', 'label'],
-      threshold: 0.6,
+      threshold: 0.3, // Stricter threshold for better matches
       includeScore: true
     });
 
@@ -173,10 +181,15 @@ const ImportManager = () => {
       const searchResults = fuse.search(csvColumn);
       if (searchResults.length > 0) {
         const bestMatch = searchResults[0];
+        const confidence = Math.round((1 - (bestMatch.score || 0)) * 100);
+        
+        // Only auto-assign if confidence is 100% (perfect match)
+        const shouldAutoAssign = confidence >= 100;
+        
         return {
           csvColumn,
-          targetField: bestMatch.item.key,
-          confidence: Math.round((1 - (bestMatch.score || 0)) * 100),
+          targetField: shouldAutoAssign ? bestMatch.item.key : '',
+          confidence,
           required: bestMatch.item.required
         };
       }
@@ -319,7 +332,14 @@ const ImportManager = () => {
       console.log('Import response data:', result);
       
       if (result.success) {
-        alert(`Import completed successfully! ${result.importedCount} records imported.${result.skippedCount > 0 ? ` (${result.skippedCount} skipped)` : ''}`);
+        let successMessage = `Import completed successfully! ${result.importedCount} records imported.${result.skippedCount > 0 ? ` (${result.skippedCount} skipped)` : ''}`;
+        
+        // Add PM conversion summary if available
+        if (result.pmConversionSummary) {
+          successMessage += `\n\n${result.pmConversionSummary}`;
+        }
+        
+        alert(successMessage);
         
         // Reset state after successful import
         setCsvData(null);
@@ -558,6 +578,11 @@ const ImportManager = () => {
 
                 <Alert severity="info" sx={{ mb: 2 }}>
                   You are about to import {csvData.totalRows} {currentEntityConfig?.label.toLowerCase()} records.
+                  {selectedEntityType === 'workorders' && (
+                    <Box sx={{ mt: 1, fontWeight: 'medium' }}>
+                      📋 Smart PM Detection: Work orders with Work Type = "PREVENTIVE" will be automatically converted to PM tasks and schedules. REACTIVE work orders will remain as regular work orders.
+                    </Box>
+                  )}
                 </Alert>
 
                 {isImporting && (

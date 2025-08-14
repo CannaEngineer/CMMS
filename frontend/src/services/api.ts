@@ -1,5 +1,6 @@
 // API service for dashboard and other data fetching
 import type { DashboardStats, WorkOrderTrends, MaintenanceScheduleItem } from '../hooks/useData';
+import type { CalendarItem, CalendarStats, CalendarFilters, MonthData } from '../types/calendar';
 
 // Base API configuration - proxy handles the /api prefix
 // In development, use empty string to let Vite proxy handle /api routes
@@ -885,7 +886,7 @@ export const partsService = {
 export const pmService = {
   async getTasks(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/pm-tasks');
+      const result = await apiClient.get<any[]>('/api/pm-tasks');
       return result || [];
     } catch (error) {
       console.warn('PM Tasks API not available');
@@ -895,7 +896,7 @@ export const pmService = {
 
   async createTask(task: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/pm-tasks', task);
+      return await apiClient.post<any>('/api/pm-tasks', task);
     } catch (error) {
       throw new Error('Failed to create PM task');
     }
@@ -903,7 +904,7 @@ export const pmService = {
 
   async getTriggers(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/pm-triggers');
+      const result = await apiClient.get<any[]>('/api/pm-triggers');
       return result || [];
     } catch (error) {
       console.warn('PM Triggers API not available');
@@ -913,7 +914,7 @@ export const pmService = {
 
   async createTrigger(trigger: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/pm-triggers', trigger);
+      return await apiClient.post<any>('/api/pm-triggers', trigger);
     } catch (error) {
       throw new Error('Failed to create PM trigger');
     }
@@ -921,7 +922,7 @@ export const pmService = {
 
   async getSchedules(): Promise<any[]> {
     try {
-      const result = await apiClient.get<any[]>('/pm-schedules');
+      const result = await apiClient.get<any[]>('/api/pm-schedules');
       return result || [];
     } catch (error) {
       console.warn('PM Schedules API not available');
@@ -931,7 +932,7 @@ export const pmService = {
 
   async createSchedule(schedule: any): Promise<any> {
     try {
-      return await apiClient.post<any>('/pm-schedules', schedule);
+      return await apiClient.post<any>('/api/pm-schedules', schedule);
     } catch (error) {
       throw new Error('Failed to create PM schedule');
     }
@@ -939,7 +940,7 @@ export const pmService = {
 
   async updateSchedule(id: string, schedule: any): Promise<any> {
     try {
-      return await apiClient.put<any>(`/pm-schedules/${id}`, schedule);
+      return await apiClient.put<any>(`/api/pm-schedules/${id}`, schedule);
     } catch (error) {
       throw new Error(`Failed to update PM schedule ${id}`);
     }
@@ -947,7 +948,7 @@ export const pmService = {
 
   async deleteSchedule(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/pm-schedules/${id}`);
+      await apiClient.delete(`/api/pm-schedules/${id}`);
     } catch (error) {
       throw new Error(`Failed to delete PM schedule ${id}`);
     }
@@ -955,9 +956,179 @@ export const pmService = {
 
   async getScheduleById(id: string): Promise<any> {
     try {
-      return await apiClient.get<any>(`/pm-schedules/${id}`);
+      return await apiClient.get<any>(`/api/pm-schedules/${id}`);
     } catch (error) {
       throw new Error(`Failed to fetch PM schedule ${id}`);
+    }
+  },
+};
+
+// Calendar service for unified calendar data
+export const calendarService = {
+  async getCalendarItems(filters?: CalendarFilters): Promise<CalendarItem[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (filters?.startDate) {
+        queryParams.append('startDate', filters.startDate.toISOString());
+      }
+      if (filters?.endDate) {
+        queryParams.append('endDate', filters.endDate.toISOString());
+      }
+      if (filters?.type && filters.type !== 'ALL') {
+        queryParams.append('type', filters.type);
+      }
+      if (filters?.assetId) {
+        queryParams.append('assetId', filters.assetId.toString());
+      }
+      if (filters?.locationId) {
+        queryParams.append('locationId', filters.locationId.toString());
+      }
+      if (filters?.assignedToId) {
+        queryParams.append('assignedToId', filters.assignedToId.toString());
+      }
+
+      const url = `/api/calendar/items${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await apiClient.get<CalendarItem[]>(url);
+      
+      // Transform dates from strings to Date objects
+      return response.map(item => ({
+        ...item,
+        scheduledDate: new Date(item.scheduledDate),
+      }));
+    } catch (error) {
+      console.error('Failed to fetch calendar items:', error);
+      throw new Error('Failed to fetch calendar items');
+    }
+  },
+
+  async getCalendarItemsForDate(date: Date, type?: 'PM_SCHEDULE' | 'WORK_ORDER' | 'ALL'): Promise<CalendarItem[]> {
+    try {
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const queryParams = new URLSearchParams();
+      if (type && type !== 'ALL') {
+        queryParams.append('type', type);
+      }
+      
+      const url = `/api/calendar/items/${dateStr}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await apiClient.get<CalendarItem[]>(url);
+      
+      // Transform dates from strings to Date objects
+      return response.map(item => ({
+        ...item,
+        scheduledDate: new Date(item.scheduledDate),
+      }));
+    } catch (error) {
+      console.error(`Failed to fetch calendar items for date ${date}:`, error);
+      throw new Error(`Failed to fetch calendar items for date`);
+    }
+  },
+
+  async getCalendarStats(): Promise<CalendarStats> {
+    try {
+      const response = await apiClient.get<CalendarStats>('/api/calendar/stats');
+      return response;
+    } catch (error) {
+      console.error('Failed to fetch calendar stats:', error);
+      throw new Error('Failed to fetch calendar stats');
+    }
+  },
+
+  async getCalendarMonth(year: number, month: number): Promise<MonthData> {
+    try {
+      const response = await apiClient.get<MonthData>(`/api/calendar/month/${year}/${month}`);
+      
+      // Transform dates from strings to Date objects
+      return {
+        ...response,
+        startDate: new Date(response.startDate),
+        endDate: new Date(response.endDate),
+        itemsByDate: Object.fromEntries(
+          Object.entries(response.itemsByDate).map(([dateKey, items]) => [
+            dateKey,
+            items.map(item => ({
+              ...item,
+              scheduledDate: new Date(item.scheduledDate),
+            })),
+          ])
+        ),
+      };
+    } catch (error) {
+      console.error(`Failed to fetch calendar month ${year}-${month}:`, error);
+      throw new Error(`Failed to fetch calendar month ${year}-${month}`);
+    }
+  },
+
+  async getCurrentMonth(): Promise<MonthData> {
+    try {
+      const response = await apiClient.get<MonthData>('/api/calendar/current-month');
+      
+      // Transform dates from strings to Date objects
+      return {
+        ...response,
+        startDate: new Date(response.startDate),
+        endDate: new Date(response.endDate),
+        itemsByDate: Object.fromEntries(
+          Object.entries(response.itemsByDate).map(([dateKey, items]) => [
+            dateKey,
+            items.map(item => ({
+              ...item,
+              scheduledDate: new Date(item.scheduledDate),
+            })),
+          ])
+        ),
+      };
+    } catch (error) {
+      console.error('Failed to fetch current month data:', error);
+      throw new Error('Failed to fetch current month data');
+    }
+  },
+
+  async getTodaysItems(type?: 'PM_SCHEDULE' | 'WORK_ORDER' | 'ALL'): Promise<CalendarItem[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (type && type !== 'ALL') {
+        queryParams.append('type', type);
+      }
+      
+      const url = `/api/calendar/today${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const response = await apiClient.get<CalendarItem[]>(url);
+      
+      // Transform dates from strings to Date objects
+      return response.map(item => ({
+        ...item,
+        scheduledDate: new Date(item.scheduledDate),
+      }));
+    } catch (error) {
+      console.error('Failed to fetch today\'s items:', error);
+      throw new Error('Failed to fetch today\'s items');
+    }
+  },
+
+  async createWorkOrderFromPM(pmId: number, assignedToId?: number, dueDate?: Date): Promise<any> {
+    try {
+      const response = await apiClient.post<any>(`/api/calendar/pm/${pmId}/create-work-order`, {
+        assignedToId,
+        dueDate: dueDate?.toISOString(),
+      });
+      return response;
+    } catch (error) {
+      console.error(`Failed to create work order from PM ${pmId}:`, error);
+      throw new Error(`Failed to create work order from PM ${pmId}`);
+    }
+  },
+  
+  async rescheduleItem(itemId: number, itemType: 'PM_SCHEDULE' | 'WORK_ORDER', newDate: Date): Promise<any> {
+    try {
+      const response = await apiClient.put<any>('/api/calendar/reschedule', {
+        itemId,
+        itemType,
+        newDate: newDate.toISOString(),
+      });
+      return response;
+    } catch (error) {
+      console.error(`Failed to reschedule ${itemType} ${itemId}:`, error);
+      throw new Error(`Failed to reschedule item`);
     }
   },
 };

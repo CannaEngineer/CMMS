@@ -1,0 +1,35 @@
+{
+  "csvData": [
+    {
+      "Title": "Test Preventive Task",
+      "Status": "OPEN",
+      "Priority": "MEDIUM",
+      "Work Type": "PREVENTIVE",
+      "Description": "Test preventive maintenance task",
+      "Recurrence": "Monthly|1",
+      "Location": "Farmhouse",
+      "Asset": "Composting Toilet"
+    },
+    {
+      "Title": "Test Reactive Task",
+      "Status": "OPEN",
+      "Priority": "HIGH",
+      "Work Type": "REACTIVE",
+      "Description": "Test reactive work order",
+      "Recurrence": "",
+      "Location": "Processing",
+      "Asset": ""
+    }
+  ],
+  "mappings": [
+    {"csvField": "Title", "targetField": "title", "confidence": 100},
+    {"csvField": "Status", "targetField": "status", "confidence": 100},
+    {"csvField": "Priority", "targetField": "priority", "confidence": 100},
+    {"csvField": "Work Type", "targetField": "workType", "confidence": 100},
+    {"csvField": "Description", "targetField": "description", "confidence": 100},
+    {"csvField": "Recurrence", "targetField": "recurrence", "confidence": 100},
+    {"csvField": "Location", "targetField": "locationName", "confidence": 100},
+    {"csvField": "Asset", "targetField": "assetName", "confidence": 100}
+  ],
+  "entityType": "workorders"
+}

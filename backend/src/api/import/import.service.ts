@@ -25,6 +25,7 @@ export interface ImportResult {
   errors: string[];
   duplicates: string[];
   importId: string;
+  pmConversionSummary?: string;
 }
 
 export interface EntityConfig {
@@ -69,8 +70,11 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: 'description', label: 'Description', required: false, type: 'string' },
       { key: 'status', label: 'Status', required: false, type: 'enum', enumValues: ['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CANCELED'] },
       { key: 'priority', label: 'Priority', required: false, type: 'enum', enumValues: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] },
-      { key: 'assetName', label: 'Asset Name', required: false, type: 'string', relationField: 'assetId', relationTable: 'asset' },
-      { key: 'assignedTo', label: 'Assigned To', required: false, type: 'string', relationField: 'assignedToId', relationTable: 'user' }
+      { key: 'workType', label: 'Work Type', required: false, type: 'string' },
+      { key: 'recurrence', label: 'Recurrence', required: false, type: 'string' },
+      { key: 'assetName', label: 'Asset', required: false, type: 'string', relationField: 'assetId', relationTable: 'asset' },
+      { key: 'assignedTo', label: 'Assigned to', required: false, type: 'string', relationField: 'assignedToId', relationTable: 'user' },
+      { key: 'estimatedHours', label: 'Estimated Hours', required: false, type: 'number' }
     ]
   },
   users: {
@@ -119,6 +123,30 @@ const entityConfigs: Record<string, EntityConfig> = {
       { key: 'phone', label: 'Phone Number', required: false, type: 'string' },
       { key: 'email', label: 'Email', required: false, type: 'string' }
     ]
+  },
+  pmtasks: {
+    tableName: 'pMTask',
+    fields: [
+      { key: 'title', label: 'Title', required: true, type: 'string' },
+      { key: 'description', label: 'Description', required: false, type: 'string' },
+      { key: 'type', label: 'Type', required: false, type: 'enum', enumValues: ['INSPECTION', 'CLEANING', 'LUBRICATION', 'REPLACEMENT', 'CALIBRATION', 'TESTING', 'REPAIR', 'OTHER'] },
+      { key: 'procedure', label: 'Procedure', required: false, type: 'string' },
+      { key: 'safetyRequirements', label: 'Safety Requirements', required: false, type: 'string' },
+      { key: 'toolsRequired', label: 'Tools Required', required: false, type: 'string' },
+      { key: 'partsRequired', label: 'Parts Required', required: false, type: 'string' },
+      { key: 'estimatedMinutes', label: 'Estimated Minutes', required: false, type: 'number' }
+    ]
+  },
+  pmschedules: {
+    tableName: 'pMSchedule',
+    fields: [
+      { key: 'title', label: 'Title', required: true, type: 'string' },
+      { key: 'description', label: 'Description', required: false, type: 'string' },
+      { key: 'frequency', label: 'Frequency', required: true, type: 'string' },
+      { key: 'nextDue', label: 'Next Due', required: false, type: 'date' },
+      { key: 'assetName', label: 'Asset Name', required: false, type: 'string', relationField: 'assetId', relationTable: 'asset' },
+      { key: 'locationName', label: 'Location Name', required: false, type: 'string', relationField: 'locationId', relationTable: 'location' }
+    ]
   }
 };
 
@@ -142,9 +170,9 @@ export class ImportService {
         const bestMatch = searchResults[0];
         const confidence = Math.round((1 - (bestMatch.score || 0)) * 100);
         
-        // Only auto-assign if confidence is 85% or higher (near-perfect match)
-        // This requires very close matches like "name" -> "name" or "email" -> "email"
-        const shouldAutoAssign = confidence >= 85;
+        // Only auto-assign if confidence is 100% (perfect match)
+        // This requires exact matches like "name" -> "name" or "email" -> "email"
+        const shouldAutoAssign = confidence >= 100;
         
         return {
           csvColumn,
@@ -215,7 +243,7 @@ export class ImportService {
         const field = config.fields.find(f => f.key === mapping.targetField);
         if (!field) continue;
 
-        const value = row[mapping.csvColumn];
+        const value = mapping.csvColumn ? row[mapping.csvColumn] : undefined;
         
         // Skip validation for empty optional fields
         if (!value && !field.required) continue;
@@ -275,7 +303,7 @@ export class ImportService {
       for (const mapping of mappings) {
         if (!mapping.targetField || !uniqueFields.includes(mapping.targetField)) continue;
         
-        const value = row[mapping.csvColumn];
+        const value = mapping.csvColumn ? row[mapping.csvColumn] : undefined;
         if (!value) continue;
 
         const key = `${mapping.targetField}:${value.toLowerCase()}`;
@@ -294,7 +322,7 @@ export class ImportService {
       const skuMapping = mappings.find(m => m.targetField === 'sku');
 
       if (nameMapping) {
-        const names = csvData.map(row => row[nameMapping.csvColumn]).filter(Boolean);
+        const names = nameMapping?.csvColumn ? csvData.map(row => row[nameMapping.csvColumn]).filter(Boolean) : [];
         if (names.length > 0) {
           const existing = await (prisma as any)[config.tableName].findMany({
             where: {
@@ -311,7 +339,7 @@ export class ImportService {
       }
 
       if (emailMapping && entityType === 'users') {
-        const emails = csvData.map(row => row[emailMapping.csvColumn]).filter(Boolean);
+        const emails = emailMapping?.csvColumn ? csvData.map(row => row[emailMapping.csvColumn]).filter(Boolean) : [];
         if (emails.length > 0) {
           const existing = await prisma.user.findMany({
             where: {
@@ -328,7 +356,7 @@ export class ImportService {
       }
 
       if (skuMapping && entityType === 'parts') {
-        const skus = csvData.map(row => row[skuMapping.csvColumn]).filter(Boolean);
+        const skus = skuMapping?.csvColumn ? csvData.map(row => row[skuMapping.csvColumn]).filter(Boolean) : [];
         if (skus.length > 0) {
           const existing = await prisma.part.findMany({
             where: {
@@ -363,16 +391,35 @@ export class ImportService {
     const relationFields = config.fields.filter(field => field.relationField);
     const relationFieldTargets = new Set(relationFields.map(field => field.relationField));
 
+    // Get metadata fields that should be filtered out during transformation
+    const metadataFields = new Set(['workType', 'recurrence']);
+
     return csvData.map(row => {
       const transformed: Record<string, any> = {};
       
       mappings.forEach(mapping => {
-        if (!mapping.targetField) return;
+        if (!mapping || !mapping.targetField || !mapping.csvColumn) return;
         
         const field = config.fields.find(f => f.key === mapping.targetField);
         if (!field) return;
 
-        let value = row[mapping.csvColumn];
+        // Skip metadata fields that are used for PM detection but not stored in the entity
+        if (mapping.targetField === 'workType' || mapping.targetField === 'recurrence') {
+          return; // Skip these metadata fields
+        }
+
+        // Use bracket notation with trimmed field name to avoid any string issues
+        let fieldName: string;
+        try {
+          fieldName = mapping.csvColumn.trim();
+        } catch (error) {
+          console.error('Error trimming csvColumn:', mapping.csvColumn, error);
+          return;
+        }
+        
+        if (!fieldName) return;
+        let value = row[fieldName];
+        
         if (value === undefined || value === null || value === '') return;
 
         // DEFENSIVE CHECK: Skip processing target fields of relationships if the lookup field is also mapped
@@ -386,6 +433,20 @@ export class ImportService {
           if (hasRelationshipMapping) {
             // Skip this field - the relationship resolution will handle it
             return;
+          }
+        }
+
+        // Special handling for estimatedHours field to convert time strings to hours
+        if (mapping.targetField === 'estimatedHours' && typeof value === 'string') {
+          // Convert time string like "2:30:00" or "1.5" to hours as float
+          if (value.includes(':')) {
+            const parts = value.split(':');
+            const hours = parseInt(parts[0]) || 0;
+            const minutes = parseInt(parts[1]) || 0;
+            const seconds = parseInt(parts[2]) || 0;
+            value = hours + (minutes / 60) + (seconds / 3600);
+          } else {
+            value = parseFloat(value) || null;
           }
         }
 
@@ -517,6 +578,251 @@ export class ImportService {
     });
   }
 
+  // Smart PM Task Detection - converts preventative/routine work orders to PM tasks and schedules
+  static detectAndConvertPMTasks(
+    csvData: Record<string, any>[],
+    mappings: ColumnMapping[],
+    entityType: string
+  ): { pmTasks: Record<string, any>[]; pmSchedules: Record<string, any>[]; remainingWorkOrders: Record<string, any>[] } {
+    if (entityType !== 'workorders') {
+      return { pmTasks: [], pmSchedules: [], remainingWorkOrders: csvData };
+    }
+
+    const pmTasks: Record<string, any>[] = [];
+    const pmSchedules: Record<string, any>[] = [];
+    const remainingWorkOrders: Record<string, any>[] = [];
+
+    // Get field mappings for analysis
+    const titleMapping = mappings.find(m => m.targetField === 'title');
+    const descriptionMapping = mappings.find(m => m.targetField === 'description');
+    const assetMapping = mappings.find(m => m.targetField === 'assetName');
+    const locationMapping = mappings.find(m => m.targetField === 'locationName');
+    
+    // Look for Work Type and Recurrence fields specifically
+    const workTypeMapping = mappings.find(m => m.targetField === 'workType');
+    const recurrenceMapping = mappings.find(m => m.targetField === 'recurrence');
+
+    csvData.forEach((row, index) => {
+      const title = titleMapping?.csvColumn ? row[titleMapping.csvColumn] : '';
+      const description = descriptionMapping?.csvColumn ? row[descriptionMapping.csvColumn] : '';
+      const assetName = assetMapping?.csvColumn ? row[assetMapping.csvColumn] : '';
+      const locationName = locationMapping?.csvColumn ? row[locationMapping.csvColumn] : '';
+      const workType = workTypeMapping?.csvColumn ? row[workTypeMapping.csvColumn] : '';
+      const recurrence = recurrenceMapping?.csvColumn ? row[recurrenceMapping.csvColumn] : '';
+
+      // Check if this is a PREVENTIVE work order
+      const isPreventive = workType && workType.toUpperCase() === 'PREVENTIVE';
+
+      if (isPreventive) {
+        // Create PM Task
+        const pmTask = {
+          title: title || `PM Task ${index + 1}`,
+          description: description || '',
+          type: this.mapToTaskType(title, description, workType),
+          procedure: description || '',
+          estimatedMinutes: this.estimateTaskDuration(title, description, workType),
+          organizationId: 0 // Will be set during import
+        };
+        pmTasks.push(pmTask);
+
+        // Create PM Schedule if we have recurrence and a valid asset
+        // PM Schedules require an asset to be linked to
+        if (recurrence && assetName && assetName.trim() !== '') {
+          const pmSchedule = {
+            title: title,
+            description: description || `Preventive maintenance: ${title}`,
+            frequency: this.normalizeRecurrence(recurrence),
+            assetName: assetName.trim(),
+            locationName: locationName || undefined,
+            nextDue: this.calculateNextDueFromRecurrence(recurrence),
+            organizationId: 0 // Will be set during import
+          };
+          pmSchedules.push(pmSchedule);
+        } else if (recurrence && !assetName) {
+          // Log that we're skipping PM schedule creation due to missing asset
+          console.log(`Skipping PM schedule for "${title}" - no asset specified`);
+        }
+      } else {
+        // Keep as regular work order (REACTIVE, etc.)
+        remainingWorkOrders.push(row);
+      }
+    });
+
+    return { pmTasks, pmSchedules, remainingWorkOrders };
+  }
+
+  // Check if a work order should be converted to a PM task
+  private static isPMTaskCandidate(title: string, description: string, type: string, frequency: string): boolean {
+    const text = `${title} ${description} ${type} ${frequency}`.toLowerCase();
+    
+    // Look for preventative/routine indicators
+    const pmIndicators = [
+      'preventive', 'preventative', 'routine', 'scheduled', 'maintenance',
+      'inspection', 'check', 'service', 'cleaning', 'lubrication',
+      'calibration', 'test', 'replace', 'change', 'filter'
+    ];
+
+    // Look for frequency indicators
+    const frequencyIndicators = [
+      'daily', 'weekly', 'monthly', 'quarterly', 'annually', 'yearly',
+      'days', 'weeks', 'months', 'hours', 'recurring', 'recurrence',
+      'every', 'schedule', 'regular', 'periodic'
+    ];
+
+    const hasPMIndicator = pmIndicators.some(indicator => text.includes(indicator));
+    const hasFrequencyIndicator = frequencyIndicators.some(indicator => text.includes(indicator));
+
+    return hasPMIndicator || hasFrequencyIndicator;
+  }
+
+  // Map text to TaskType enum
+  private static mapToTaskType(title: string, description: string, type: string): string {
+    const text = `${title} ${description} ${type}`.toLowerCase();
+    
+    if (text.includes('inspect') || text.includes('check')) return 'INSPECTION';
+    if (text.includes('clean')) return 'CLEANING';
+    if (text.includes('lubricate') || text.includes('oil') || text.includes('grease')) return 'LUBRICATION';
+    if (text.includes('replace') || text.includes('change')) return 'REPLACEMENT';
+    if (text.includes('calibrat')) return 'CALIBRATION';
+    if (text.includes('test')) return 'TESTING';
+    if (text.includes('repair') || text.includes('fix')) return 'REPAIR';
+    
+    return 'OTHER';
+  }
+
+  // Estimate task duration based on type and description
+  private static estimateTaskDuration(title: string, description: string, type: string): number {
+    const text = `${title} ${description} ${type}`.toLowerCase();
+    
+    // Basic estimation based on task type
+    if (text.includes('inspect') || text.includes('check')) return 30;
+    if (text.includes('clean')) return 60;
+    if (text.includes('lubricate')) return 45;
+    if (text.includes('replace') || text.includes('change')) return 120;
+    if (text.includes('calibrat')) return 90;
+    if (text.includes('test')) return 60;
+    if (text.includes('repair')) return 180;
+    
+    return 60; // Default 1 hour
+  }
+
+  // Normalize recurrence format from MaintainX CSV (e.g., "Weekly|6|Monday", "Monthly|3|1", "Yearly|1")
+  private static normalizeRecurrence(recurrence: string): string {
+    if (!recurrence) return 'monthly';
+    
+    const parts = recurrence.split('|');
+    const type = parts[0]?.toLowerCase().trim();
+    const interval = parts[1] ? parseInt(parts[1]) : 1;
+    const day = parts[2];
+    
+    switch (type) {
+      case 'daily':
+        return interval === 1 ? 'daily' : `${interval} days`;
+      case 'weekly':
+        return interval === 1 ? 'weekly' : `${interval} weeks`;
+      case 'monthly':
+        return interval === 1 ? 'monthly' : `${interval} months`;
+      case 'yearly':
+        return interval === 1 ? 'annually' : `${interval} years`;
+      default:
+        return recurrence; // Return original if format is unknown
+    }
+  }
+
+  // Normalize frequency text to standard format (legacy method for backwards compatibility)
+  private static normalizeFrequency(frequency: string): string {
+    const freq = frequency.toLowerCase().trim();
+    
+    if (freq.includes('daily') || freq.includes('day')) return 'daily';
+    if (freq.includes('weekly') || freq.includes('week')) return 'weekly';
+    if (freq.includes('monthly') || freq.includes('month')) return 'monthly';
+    if (freq.includes('quarterly') || freq.includes('quarter')) return 'quarterly';
+    if (freq.includes('annually') || freq.includes('yearly') || freq.includes('year')) return 'annually';
+    
+    // Try to extract number patterns like "30 days", "2 weeks"
+    const numberMatch = freq.match(/(\d+)\s*(day|week|month|hour)/);
+    if (numberMatch) {
+      const num = parseInt(numberMatch[1]);
+      const unit = numberMatch[2];
+      
+      if (unit === 'day') return `${num} days`;
+      if (unit === 'week') return `${num} weeks`;
+      if (unit === 'month') return `${num} months`;
+      if (unit === 'hour') return `${num} hours`;
+    }
+    
+    return frequency; // Return original if no pattern matches
+  }
+
+  // Calculate next due date from MaintainX recurrence format
+  private static calculateNextDueFromRecurrence(recurrence: string): Date {
+    const now = new Date();
+    
+    if (!recurrence) {
+      // Default to 30 days from now
+      now.setDate(now.getDate() + 30);
+      return now;
+    }
+    
+    const parts = recurrence.split('|');
+    const type = parts[0]?.toLowerCase().trim();
+    const interval = parts[1] ? parseInt(parts[1]) : 1;
+    
+    switch (type) {
+      case 'daily':
+        now.setDate(now.getDate() + interval);
+        break;
+      case 'weekly':
+        now.setDate(now.getDate() + (interval * 7));
+        break;
+      case 'monthly':
+        now.setMonth(now.getMonth() + interval);
+        break;
+      case 'yearly':
+        now.setFullYear(now.getFullYear() + interval);
+        break;
+      default:
+        // Default to 30 days
+        now.setDate(now.getDate() + 30);
+    }
+    
+    return now;
+  }
+
+  // Calculate next due date based on frequency (legacy method)
+  private static calculateNextDue(frequency: string): Date {
+    const now = new Date();
+    const freq = frequency.toLowerCase();
+    
+    if (freq.includes('daily')) {
+      now.setDate(now.getDate() + 1);
+    } else if (freq.includes('weekly')) {
+      now.setDate(now.getDate() + 7);
+    } else if (freq.includes('monthly')) {
+      now.setMonth(now.getMonth() + 1);
+    } else if (freq.includes('quarterly')) {
+      now.setMonth(now.getMonth() + 3);
+    } else if (freq.includes('annually') || freq.includes('yearly')) {
+      now.setFullYear(now.getFullYear() + 1);
+    } else {
+      // Try to extract number patterns
+      const numberMatch = freq.match(/(\d+)\s*(day|week|month)/);
+      if (numberMatch) {
+        const num = parseInt(numberMatch[1]);
+        const unit = numberMatch[2];
+        
+        if (unit === 'day') now.setDate(now.getDate() + num);
+        if (unit === 'week') now.setDate(now.getDate() + (num * 7));
+        if (unit === 'month') now.setMonth(now.getMonth() + num);
+      } else {
+        // Default to 30 days
+        now.setDate(now.getDate() + 30);
+      }
+    }
+    
+    return now;
+  }
+
   // Execute the import
   static async executeImport(request: ImportRequest, userId: number, organizationId: number): Promise<ImportResult> {
     console.log('ImportService.executeImport called with:', {
@@ -584,9 +890,23 @@ export class ImportService {
     });
 
     try {
+      console.log('Starting smart PM task detection...');
+      // Smart PM detection for work orders
+      const pmConversion = this.detectAndConvertPMTasks(csvData, mappings, entityType);
+      console.log('PM Detection results:', {
+        pmTasks: pmConversion.pmTasks.length,
+        pmSchedules: pmConversion.pmSchedules.length,
+        remainingWorkOrders: pmConversion.remainingWorkOrders.length
+      });
+
+      // Use remaining work orders for regular import if doing work orders
+      const dataToImport = entityType === 'workorders' ? pmConversion.remainingWorkOrders : csvData;
+
       console.log('Starting data transformation...');
+      console.log('Raw data to transform:', JSON.stringify(dataToImport.slice(0, 2), null, 2));
+      console.log('Mappings:', JSON.stringify(mappings, null, 2));
       // Transform data
-      const transformedData = this.transformData(csvData, mappings, entityType);
+      const transformedData = this.transformData(dataToImport, mappings, entityType);
       console.log('Transformed data sample:', transformedData.slice(0, 2));
       
       console.log('Starting relationship resolution...');
@@ -597,6 +917,101 @@ export class ImportService {
       console.log('Starting transaction with', resolvedData.length, 'records...');
       // Import data within a transaction
       await prisma.$transaction(async (tx) => {
+        // First import PM tasks if detected
+        if (pmConversion.pmTasks.length > 0) {
+          console.log(`Importing ${pmConversion.pmTasks.length} PM tasks...`);
+          for (let i = 0; i < pmConversion.pmTasks.length; i++) {
+            const pmTask = pmConversion.pmTasks[i];
+            pmTask.organizationId = organizationId;
+            
+            try {
+              const createdPMTask = await (tx as any).pMTask.create({
+                data: pmTask
+              });
+              console.log(`Successfully created PM task with ID:`, createdPMTask.id);
+              importedRecordIds.push(createdPMTask.id);
+              importedCount++;
+            } catch (error: any) {
+              console.error(`Error importing PM task ${i + 1}:`, error);
+              if (error.code === 'P2002') {
+                duplicates.push(`PM Task ${i + 1}: Duplicate record`);
+              } else {
+                errors.push(`PM Task ${i + 1}: ${error.message}`);
+              }
+              skippedCount++;
+            }
+          }
+        }
+
+        // Then import PM schedules if detected
+        if (pmConversion.pmSchedules.length > 0) {
+          console.log(`Importing ${pmConversion.pmSchedules.length} PM schedules...`);
+          for (let i = 0; i < pmConversion.pmSchedules.length; i++) {
+            const pmSchedule = pmConversion.pmSchedules[i];
+            
+            try {
+              // Resolve asset relationship
+              const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
+              if (resolvedPMSchedule.length > 0) {
+                // Remove organizationId and locationId as PMSchedule doesn't have these fields
+                const { organizationId: _, locationId: __, dueDate: ___, ...scheduleData } = resolvedPMSchedule[0];
+                
+                console.log('Resolved PM Schedule Data:', JSON.stringify(resolvedPMSchedule[0], null, 2));
+                console.log('Cleaned Schedule Data:', JSON.stringify(scheduleData, null, 2));
+                
+                // Check if required assetId was resolved
+                if (!scheduleData.assetId) {
+                  console.log(`Skipping PM schedule ${i + 1}: Asset not found for "${pmSchedule.assetName}"`);
+                  errors.push(`PM Schedule ${i + 1}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
+                  skippedCount++;
+                  continue;
+                }
+                
+                const createdPMSchedule = await (tx as any).pMSchedule.create({
+                  data: scheduleData
+                });
+                console.log(`Successfully created PM schedule with ID:`, createdPMSchedule.id);
+                
+                // Create a work order for this PM schedule
+                const pmWorkOrderData = {
+                  title: pmSchedule.title || `PM: ${scheduleData.title || 'Maintenance Task'}`,
+                  description: pmSchedule.description,
+                  status: 'OPEN',
+                  priority: pmSchedule.priority || 'MEDIUM',
+                  assetId: scheduleData.assetId,
+                  assignedToId: scheduleData.assignedToId,
+                  pmScheduleId: createdPMSchedule.id,
+                  organizationId: organizationId,
+                  estimatedHours: pmSchedule.estimatedHours || null
+                };
+                
+                console.log('PM Work Order Data before create:', JSON.stringify(pmWorkOrderData, null, 2));
+                
+                const createdWorkOrder = await (tx as any).workOrder.create({
+                  data: pmWorkOrderData
+                });
+                console.log(`Successfully created work order ${createdWorkOrder.id} for PM schedule ${createdPMSchedule.id}`);
+                
+                importedRecordIds.push(createdPMSchedule.id);
+                importedCount++;
+              } else {
+                console.log(`Skipping PM schedule ${i + 1}: Could not resolve relationships`);
+                errors.push(`PM Schedule ${i + 1}: Could not resolve asset or location relationships`);
+                skippedCount++;
+              }
+            } catch (error: any) {
+              console.error(`Error importing PM schedule ${i + 1}:`, error);
+              if (error.code === 'P2002') {
+                duplicates.push(`PM Schedule ${i + 1}: Duplicate record`);
+              } else {
+                errors.push(`PM Schedule ${i + 1}: ${error.message}`);
+              }
+              skippedCount++;
+            }
+          }
+        }
+
+        // Import regular data
         for (let i = 0; i < resolvedData.length; i++) {
           const row = resolvedData[i];
           console.log(`Processing row ${i + 1}:`, row);
@@ -615,6 +1030,15 @@ export class ImportService {
                 break;
             }
 
+            // Check for duplicates before creating
+            const isDuplicate = await this.checkForDuplicate(tx, entityType, row, organizationId);
+            if (isDuplicate) {
+              console.log(`Skipping row ${i + 1}: Duplicate record detected`);
+              duplicates.push(`Row ${i + 1}: Duplicate record - already exists in database`);
+              skippedCount++;
+              continue;
+            }
+
             console.log(`Creating ${config.tableName} record with data:`, row);
             // Create record
             const createdRecord = await (tx as any)[config.tableName].create({
@@ -628,11 +1052,32 @@ export class ImportService {
             console.error(`Error importing row ${i + 1}:`, error);
             console.error('Error code:', error.code);
             console.error('Error meta:', error.meta);
+            
+            let userFriendlyMessage = '';
+            
             if (error.code === 'P2002') {
-              duplicates.push(`Row ${i + 1}: Duplicate record (${error.meta?.target || 'unique constraint'})`);
+              // Duplicate key error
+              const field = error.meta?.target?.[0] || 'unique field';
+              duplicates.push(`Row ${i + 1}: Duplicate ${field} - this record already exists`);
+            } else if (error.message.includes('Unknown argument')) {
+              // Field doesn't exist in database
+              const match = error.message.match(/Unknown argument `(\w+)`/);
+              const fieldName = match ? match[1] : 'field';
+              userFriendlyMessage = `Invalid field "${fieldName}" - this field is not supported in the database`;
+            } else if (error.message.includes('Invalid enum value')) {
+              // Invalid enum value
+              userFriendlyMessage = error.message.replace(/Invalid.*?enum/, 'Invalid value for');
+            } else if (error.message.includes('Foreign key constraint')) {
+              // Missing related record
+              userFriendlyMessage = 'Related record not found - please check asset, location, or user references';
+            } else if (error.message.includes('required field')) {
+              userFriendlyMessage = 'Required field is missing or empty';
             } else {
-              errors.push(`Row ${i + 1}: ${error.message}`);
+              // Generic error
+              userFriendlyMessage = `Database error: ${error.message}`;
             }
+            
+            errors.push(`Row ${i + 1}: ${userFriendlyMessage}`);
             skippedCount++;
           }
         }
@@ -660,13 +1105,19 @@ export class ImportService {
 
       console.log(`Import ${importId} completed: ${importedCount} imported, ${skippedCount} skipped`);
 
+      // Add PM conversion summary to import result
+      const pmConversionSummary = entityType === 'workorders' && (pmConversion.pmTasks.length > 0 || pmConversion.pmSchedules.length > 0) 
+        ? `Smart PM Detection: ${pmConversion.pmTasks.length} PM tasks and ${pmConversion.pmSchedules.length} PM schedules created from preventative/routine work orders. `
+        : '';
+
       return {
         success: errors.length === 0,
         importedCount,
         skippedCount,
         errors,
         duplicates,
-        importId
+        importId,
+        pmConversionSummary
       };
 
     } catch (error: any) {
@@ -788,6 +1239,57 @@ export class ImportService {
     } catch (error: any) {
       console.error('Rollback error:', error);
       throw new Error(`Failed to rollback import: ${error.message}`);
+    }
+  }
+
+  // Check for duplicate records based on key identifying fields
+  private static async checkForDuplicate(
+    tx: any,
+    entityType: string,
+    row: Record<string, any>,
+    organizationId: number
+  ): Promise<boolean> {
+    const config = entityConfigs[entityType];
+    if (!config) return false;
+
+    try {
+      // Define key fields to check for duplicates per entity type
+      const duplicateCheckFields: Record<string, string[]> = {
+        workorders: ['title', 'organizationId'],
+        assets: ['name', 'organizationId'],
+        locations: ['name', 'organizationId'],
+        users: ['email'],
+        parts: ['name', 'organizationId'],
+        suppliers: ['name', 'organizationId'],
+        pmtasks: ['title', 'organizationId'],
+        pmschedules: ['title', 'assetId']
+      };
+
+      const checkFields = duplicateCheckFields[entityType];
+      if (!checkFields) return false;
+
+      // Build where clause for duplicate check
+      const whereClause: Record<string, any> = {};
+      
+      for (const field of checkFields) {
+        if (row[field] !== undefined && row[field] !== null && row[field] !== '') {
+          whereClause[field] = row[field];
+        }
+      }
+
+      // If we don't have enough data to check for duplicates, allow creation
+      if (Object.keys(whereClause).length === 0) return false;
+
+      // Check if record already exists
+      const existingRecord = await tx[config.tableName].findFirst({
+        where: whereClause
+      });
+
+      return !!existingRecord;
+      
+    } catch (error) {
+      console.error(`Error checking for duplicates in ${entityType}:`, error);
+      return false; // If we can't check, allow creation
     }
   }
 

@@ -1,0 +1,11 @@
+title,description,status,priority,assetName,assignedTo,type,frequency
+"Filter Change - Preventive","Replace air filter as part of routine maintenance",OPEN,MEDIUM,"HVAC Unit 1","John Smith",preventative,monthly
+"Oil Change Service","Routine oil change and inspection",OPEN,MEDIUM,"Generator 1","Jane Doe",routine,quarterly
+"Fix Broken Door","Emergency repair for broken door",OPEN,HIGH,"Office Building","Mike Jones",corrective,
+"Weekly Inspection","Weekly safety inspection checklist",OPEN,LOW,"Warehouse A","Sarah Wilson",inspection,weekly
+"Emergency Lighting Test","Test emergency lighting system",OPEN,MEDIUM,"Building 1","Tom Brown",testing,annually
+"Valve Replacement","Replace worn valve in main line",OPEN,HIGH,"Pump Station 1","Alice Cooper",replacement,
+"Cleaning HVAC Coils","Routine cleaning of HVAC coils",OPEN,LOW,"HVAC Unit 2","Bob Davis",cleaning,monthly
+"General Maintenance","General maintenance work order",OPEN,MEDIUM,"Equipment 1","Steve Johnson",maintenance,
+"Calibration Check","Calibrate temperature sensors",OPEN,MEDIUM,"Sensor Array","Lisa Brown",calibration,quarterly
+"Lubrication Service","Lubricate all moving parts",OPEN,LOW,"Conveyor 1","Mark Wilson",lubrication,weekly

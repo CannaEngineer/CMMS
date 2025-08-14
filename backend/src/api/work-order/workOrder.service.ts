@@ -56,7 +56,7 @@ export const updateWorkOrder = async (id: number, data: any, organizationId: num
 
   // Trigger notifications for status changes
   if (currentWorkOrder && data.status && currentWorkOrder.status !== data.status) {
-    await notificationTriggersService.onWorkOrderStatusChange(
+    await notificationTriggersService.onWorkOrderStatusChanged(
       id,
       currentWorkOrder.status as WorkOrderStatus,
       data.status as WorkOrderStatus,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import NotificationCenter from '../Notifications/NotificationCenter';
 import { notificationService } from '../../services/notificationService';
+import { workOrdersService } from '../../services/api';
 import {
   Box,
   Drawer,
@@ -50,9 +51,9 @@ interface NavItem {
   badge?: number;
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Work Orders', icon: <AssignmentIcon />, path: '/work-orders', badge: 3 },
+  { text: 'Work Orders', icon: <AssignmentIcon />, path: '/work-orders' },
   { text: 'Assets', icon: <BuildIcon />, path: '/assets' },
   { text: 'Maintenance', icon: <SettingsIcon />, path: '/maintenance' },
   { text: 'Inventory', icon: <InventoryIcon />, path: '/inventory' },
@@ -75,6 +76,7 @@ export default function DashboardLayout() {
   const [notificationPreferencesOpen, setNotificationPreferencesOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [workOrderCount, setWorkOrderCount] = useState<number | undefined>(undefined);
 
   // Initialize notification service and WebSocket
   useEffect(() => {
@@ -116,6 +118,22 @@ export default function DashboardLayout() {
       notificationService.cleanup();
     };
   }, []);
+
+  // Load work order count
+  useEffect(() => {
+    const loadWorkOrderCount = async () => {
+      try {
+        const workOrders = await workOrdersService.getAll();
+        setWorkOrderCount(workOrders.length);
+      } catch (error) {
+        console.error('Failed to load work order count:', error);
+        // Set to undefined to hide badge on error
+        setWorkOrderCount(undefined);
+      }
+    };
+
+    loadWorkOrderCount();
+  }, []);
   
   // Get user data from localStorage
   const userStr = localStorage.getItem('user');
@@ -152,6 +170,17 @@ export default function DashboardLayout() {
       navigate(notification.actionUrl);
     }
   };
+
+  // Create navigation items with dynamic badges
+  const navItems = baseNavItems.map(item => {
+    if (item.path === '/work-orders') {
+      return {
+        ...item,
+        badge: workOrderCount
+      };
+    }
+    return item;
+  });
 
   const drawer = (
     <div>

@@ -3,13 +3,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class PMScheduleService {
-  async getAllPMSchedules() {
+  async getAllPMSchedules(organizationId?: number) {
+    const where = organizationId 
+      ? {
+          asset: {
+            organizationId: organizationId
+          }
+        }
+      : {};
+      
     return prisma.pMSchedule.findMany({
+      where,
       include: {
         asset: {
           select: {
             name: true,
             id: true,
+            organizationId: true,
           },
         },
       },

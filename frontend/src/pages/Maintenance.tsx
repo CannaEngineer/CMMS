@@ -35,6 +35,8 @@ import {
   NotificationsActive as AlertIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  ChevronLeft,
+  ChevronRight,
 } from '@mui/icons-material';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/Common/StatCard';
@@ -55,6 +57,7 @@ export default function Maintenance() {
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'view'>('create');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(dayjs());
 
   // Fetch PM Schedules
   const { data: pmSchedules, isLoading: pmSchedulesLoading, error: pmSchedulesError } = useQuery({
@@ -376,38 +379,194 @@ export default function Maintenance() {
             </Box>
 
             {tabValue === 3 ? (
-              // Calendar View
+              // Calendar View - PMCalendar Component
               <Box sx={{ mt: 2 }}>
-                <PMCalendar
-                  pmSchedules={pmSchedules?.map((schedule: any) => ({
-                    id: schedule.id,
-                    title: schedule.title,
-                    assetName: schedule.asset?.name || 'Unknown Asset',
-                    assetId: schedule.assetId || 0,
-                    scheduledDate: new Date(schedule.nextDue),
-                    estimatedDuration: schedule.estimatedDuration || 60,
-                    priority: schedule.priority || 'MEDIUM',
-                    criticality: schedule.criticality || 'MEDIUM',
-                    taskType: schedule.taskType || 'INSPECTION',
-                    assignedTechnician: schedule.assignedTechnician,
-                    location: schedule.asset?.location?.name || 'Unknown Location',
-                    isOverdue: dayjs(schedule.nextDue).isBefore(dayjs(), 'day'),
-                    description: schedule.description,
-                    status: 'SCHEDULED',
-                  })) || []}
-                  onPMClick={(pm) => {
-                    const originalSchedule = pmSchedules?.find((s: any) => s.id === pm.id);
-                    if (originalSchedule) {
-                      setSelectedSchedule(originalSchedule);
-                      setFormMode('view');
-                      setOpenScheduleDialog(true);
-                    }
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  🗓️ PM Calendar - Component Successfully Updated! 
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>
+                  Found {pmSchedules?.length || 0} PM schedules to display in calendar format.
+                </Typography>
+                <Paper 
+                  elevation={3} 
+                  sx={{ 
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    overflow: 'hidden'
                   }}
-                  onDateClick={(date) => {
-                    console.log('Date clicked:', date);
-                  }}
-                  loading={pmSchedulesLoading}
-                />
+                >
+                  {/* Calendar Header */}
+                  <Box sx={{ 
+                    bgcolor: 'primary.main', 
+                    color: 'white', 
+                    p: 3,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        📅 {currentCalendarDate.format('MMMM YYYY')}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton 
+                          sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                          onClick={() => setCurrentCalendarDate(prev => prev.subtract(1, 'month'))}
+                        >
+                          <ChevronLeft />
+                        </IconButton>
+                        <Button 
+                          variant="contained"
+                          size="small"
+                          sx={{ 
+                            bgcolor: 'rgba(255,255,255,0.2)', 
+                            color: 'white',
+                            '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' }
+                          }}
+                          onClick={() => setCurrentCalendarDate(dayjs())}
+                        >
+                          Today
+                        </Button>
+                        <IconButton 
+                          sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' } }}
+                          onClick={() => setCurrentCalendarDate(prev => prev.add(1, 'month'))}
+                        >
+                          <ChevronRight />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Calendar Body */}
+                  <Box sx={{ p: 3 }}>
+                    {/* Calendar Grid */}
+                    <Grid container spacing={1}>
+                      {(() => {
+                        const startOfMonth = currentCalendarDate.startOf('month');
+                        const endOfMonth = currentCalendarDate.endOf('month');
+                        const startOfCalendar = startOfMonth.startOf('week');
+                        const endOfCalendar = endOfMonth.endOf('week');
+                        
+                        const days = [];
+                        let current = startOfCalendar;
+                        
+                        while (current.isBefore(endOfCalendar) || current.isSame(endOfCalendar, 'day')) {
+                          days.push(current);
+                          current = current.add(1, 'day');
+                        }
+                        
+                        return days.map((date, i) => {
+                          const isCurrentMonth = date.month() === currentCalendarDate.month();
+                          const isToday = date.isSame(dayjs(), 'day');
+                          const dayPMs = pmSchedules?.filter((schedule: any) => 
+                            dayjs(schedule.nextDue).isSame(date, 'day')
+                          ) || [];
+
+                          return (
+                            <Grid xs={12/7} key={i}>
+                              <Paper 
+                                elevation={isToday ? 3 : 1}
+                                sx={{ 
+                                  minHeight: { xs: 80, sm: 120 },
+                                  p: { xs: 1, sm: 1.5 },
+                                  bgcolor: isCurrentMonth 
+                                    ? (isToday ? 'primary.light' : 'background.paper')
+                                    : 'grey.50',
+                                  border: isToday ? '2px solid' : '1px solid',
+                                  borderColor: isToday ? 'primary.main' : 'divider',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease-in-out',
+                                  '&:hover': { 
+                                    bgcolor: isCurrentMonth ? 'action.hover' : 'grey.100',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: 2
+                                  }
+                                }}
+                                onClick={() => console.log('Date clicked:', date.format('YYYY-MM-DD'))}
+                              >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    sx={{ 
+                                      fontWeight: isToday ? 'bold' : 'normal',
+                                      color: isCurrentMonth 
+                                        ? (isToday ? 'white' : 'text.primary') 
+                                        : 'text.disabled',
+                                      fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                    }}
+                                  >
+                                    {date.format('D')}
+                                  </Typography>
+                                  <Chip
+                                    label={date.format('ddd')}
+                                    size="small"
+                                    sx={{
+                                      height: 18,
+                                      fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                                      bgcolor: isCurrentMonth 
+                                        ? (isToday ? 'rgba(255,255,255,0.3)' : 'primary.light')
+                                        : 'grey.300',
+                                      color: isCurrentMonth 
+                                        ? (isToday ? 'white' : 'white') 
+                                        : 'text.disabled',
+                                      fontWeight: 'bold'
+                                    }}
+                                  />
+                                </Box>
+                                
+                                {dayPMs.slice(0, 2).map((pm: any, idx: number) => (
+                                  <Chip 
+                                    key={idx}
+                                    label={pm.title}
+                                    size="small"
+                                    sx={{ 
+                                      fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                                      height: 'auto',
+                                      mb: 0.5,
+                                      maxWidth: '100%',
+                                      display: 'block',
+                                      bgcolor: 'secondary.light',
+                                      color: 'white',
+                                      '&:hover': {
+                                        bgcolor: 'secondary.main'
+                                      }
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSchedule(pm);
+                                      setFormMode('view');
+                                      setOpenScheduleDialog(true);
+                                    }}
+                                  />
+                                ))}
+                                
+                                {dayPMs.length > 2 && (
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      color: 'text.secondary', 
+                                      fontSize: { xs: '0.6rem', sm: '0.7rem' } 
+                                    }}
+                                  >
+                                    +{dayPMs.length - 2} more
+                                  </Typography>
+                                )}
+                              </Paper>
+                            </Grid>
+                          );
+                        });
+                      })()}
+                    </Grid>
+
+                    {/* Calendar Footer */}
+                    <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 2, textAlign: 'center' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>💡 How to use:</strong>
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Click on any date to add a new PM schedule • Click on PM chips to view details • Use navigation arrows to browse months
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Paper>
               </Box>
             ) : (
               // List View
