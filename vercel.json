@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "cmms-app",
-  "buildCommand": "cd backend && npm run vercel-build && cd ../frontend && npm run build && cd .. && cp backend/dist/src/index.js api/main.js && cp -r backend/dist/* api/ && cp backend/package.json api/",
+  "buildCommand": "cd backend && npm run vercel-build && cd ../frontend && npm run build && cd .. && cp backend/dist/src/index.js api/main.js && cp -r backend/dist/* api/",
   "outputDirectory": "frontend/dist",
   "installCommand": "cd backend && npm install && cd ../frontend && npm install && cd ../api && npm install",
   "functions": {
