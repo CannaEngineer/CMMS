@@ -7,8 +7,7 @@ import type {
   QRLabelTemplate, 
   PrintableSheet,
   QRScanResult,
-  QRBatchOperation,
-  QRGenerationRequest
+  QRBatchOperation
 } from '../types/qr';
 
 export interface CreateQRCodeRequest {
@@ -36,10 +35,9 @@ export interface BatchQRRequest {
 
 export class SecureQRService {
   private static instance: SecureQRService;
-  private baseUrl: string;
 
   private constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    // Initialize service
   }
 
   public static getInstance(): SecureQRService {
@@ -299,8 +297,7 @@ export class SecureQRService {
       additionalInfo?: string[];
       metadata?: Record<string, any>;
     },
-    template: QRLabelTemplate,
-    options: QRCodeGenerationOptions = {}
+    template: QRLabelTemplate
   ): Promise<QRLabel> {
     // Generate QR code using secure backend
     const qrCode = await this.generateQRCode({

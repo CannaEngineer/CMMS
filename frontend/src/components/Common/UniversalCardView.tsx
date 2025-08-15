@@ -166,13 +166,24 @@ const UniversalCardView = <T extends { id: string | number }>({
   }, [touchTimer]);
 
   // Get field value with error handling
-  const getFieldValue = (item: T, field: CardField) => {
+  const getFieldValue = (item: T, field: CardField): React.ReactNode => {
     try {
       const value = item[field.key as keyof T];
-      return field.render ? field.render(value, item) : value;
+      if (field.render) {
+        return field.render(value, item);
+      }
+      // Convert primitive values to strings, handle null/undefined
+      if (value === null || value === undefined) {
+        return '-';
+      }
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+      // For complex objects, try to stringify or return a placeholder
+      return JSON.stringify(value) || '-';
     } catch (error) {
       console.warn(`Error rendering field ${field.key}:`, error);
-      return null;
+      return '-';
     }
   };
 

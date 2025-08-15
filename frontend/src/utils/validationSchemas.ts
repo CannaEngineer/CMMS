@@ -52,10 +52,10 @@ export const assetSchema = z.object({
     .optional()
     .nullable(),
   status: z.enum(['ONLINE', 'OFFLINE'], {
-    errorMap: () => ({ message: 'Status must be either Online or Offline' })
+    message: 'Status must be either Online or Offline'
   }),
   criticality: z.enum(['LOW', 'MEDIUM', 'HIGH', 'IMPORTANT'], {
-    errorMap: () => ({ message: 'Please select a valid criticality level' })
+    message: 'Please select a valid criticality level'
   }),
   barcode: z
     .string()
@@ -79,6 +79,15 @@ export const assetSchema = z.object({
   parentId: z
     .number()
     .int()
+    .optional(),
+  purchaseDate: z
+    .string()
+    .optional(),
+  purchaseCost: z
+    .number()
+    .optional(),
+  warrantyExpiry: z
+    .string()
     .optional(),
 });
 
@@ -134,10 +143,10 @@ export const workOrderSchema = z.object({
     .max(2000, 'Description must be less than 2000 characters')
     .trim(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'], {
-    errorMap: () => ({ message: 'Please select a valid priority level' })
+    message: 'Please select a valid priority level'
   }),
   status: z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'], {
-    errorMap: () => ({ message: 'Please select a valid status' })
+    message: 'Please select a valid status'
   }),
   assetId: z
     .number()
@@ -186,7 +195,7 @@ export const userSchema = z.object({
     .max(50, 'Last name must be less than 50 characters')
     .trim(),
   role: z.enum(['ADMIN', 'MANAGER', 'TECHNICIAN'], {
-    errorMap: () => ({ message: 'Please select a valid role' })
+    message: 'Please select a valid role'
   }),
   phone: z
     .string()

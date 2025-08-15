@@ -394,4 +394,20 @@ export const QR_ACTIONS_BY_TYPE: Record<QRCodeType, QRAction[]> = {
       category: 'view',
     },
   ],
+  portal: [
+    {
+      id: 'view-portal',
+      label: 'View Portal',
+      icon: 'web',
+      description: 'Access portal form',
+      category: 'view',
+    },
+    {
+      id: 'submit-portal',
+      label: 'Submit Form',
+      icon: 'send',
+      description: 'Submit a new portal form',
+      category: 'action',
+    },
+  ],
 };

@@ -277,18 +277,18 @@ export default function AssetForm({
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Financial Information</Typography>
               <Grid container spacing={2}>
-                <Grid xs={6}>
+                <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">Purchase Date</Typography>
                   <Typography variant="body1">{watchedData.purchaseDate}</Typography>
                 </Grid>
-                <Grid xs={6}>
+                <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">Purchase Cost</Typography>
                   <Typography variant="body1">
                     {watchedData.purchaseCost ? `$${watchedData.purchaseCost.toLocaleString()}` : 'Not specified'}
                   </Typography>
                 </Grid>
                 {watchedData.warrantyExpiry && (
-                  <Grid xs={6}>
+                  <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">Warranty Expiry</Typography>
                     <Typography variant="body1">{watchedData.warrantyExpiry}</Typography>
                   </Grid>
@@ -303,7 +303,7 @@ export default function AssetForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="name"
           control={control}
@@ -313,7 +313,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="serialNumber"
           control={control}
@@ -322,7 +322,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12}>
+      <Grid item xs={12}>
         <HookFormField
           name="description"
           control={control}
@@ -332,7 +332,7 @@ export default function AssetForm({
           rows={3}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="modelNumber"
           control={control}
@@ -341,7 +341,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="manufacturer"
           control={control}
@@ -350,7 +350,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="year"
           control={control}
@@ -359,7 +359,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="locationId"
           control={control}
@@ -370,7 +370,7 @@ export default function AssetForm({
           disabled={mode === 'view' || locationsLoading}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="criticality"
           control={control}
@@ -380,7 +380,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="status"
           control={control}
@@ -390,7 +390,7 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12}>
+      <Grid item xs={12}>
         <HookFormField
           name="imageUrl"
           control={control}

@@ -17,14 +17,9 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-  Chip,
-  Avatar,
   useTheme,
-  useMediaQuery,
   Skeleton,
-  Divider,
   Stack,
-  Button,
   Collapse,
   alpha,
 } from '@mui/material';
@@ -32,11 +27,7 @@ import {
   MoreVert as MoreIcon,
   KeyboardArrowDown as ExpandIcon,
   KeyboardArrowUp as CollapseIcon,
-  Visibility as ViewIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useView } from '../../contexts/ViewContext';
 
 export type SortDirection = 'asc' | 'desc';
@@ -248,13 +239,22 @@ const UniversalTableView = <T extends { id: string | number }>({
   }, [selectable, selectedItems.size, handleSelectItem, onRowClick]);
 
   // Get field value with error handling
-  const getCellValue = (item: T, column: TableColumn<T>) => {
+  const getCellValue = (item: T, column: TableColumn<T>): React.ReactNode => {
     try {
       const value = item[column.key as keyof T];
-      return column.render ? column.render(value, item) : value;
+      if (column.render) {
+        return column.render(value, item);
+      }
+      if (value === null || value === undefined) {
+        return '-';
+      }
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+      return JSON.stringify(value) || '-';
     } catch (error) {
       console.warn(`Error rendering column ${column.key}:`, error);
-      return null;
+      return '-';
     }
   };
 
@@ -413,23 +413,13 @@ const UniversalTableView = <T extends { id: string | number }>({
           </TableHead>
           
           <TableBody>
-            <AnimatePresence>
               {paginatedItems.map((item, index) => {
                 const isSelected = selectedItems.has(item.id);
                 const isExpanded = expandedRows.has(item.id);
                 
                 return (
                   <React.Fragment key={item.id}>
-                    <motion.tr
-                      initial={!prefersReducedMotion ? { opacity: 0, y: 20 } : {}}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={!prefersReducedMotion ? { opacity: 0, y: -20 } : {}}
-                      transition={{
-                        duration: prefersReducedMotion ? 0 : 0.3,
-                        delay: prefersReducedMotion ? 0 : index * 0.02,
-                        ease: [0.4, 0, 0.2, 1],
-                      }}
-                      component={TableRow}
+                    <TableRow
                       onClick={(e: any) => handleRowClick(item, e)}
                       sx={{
                         cursor: onRowClick || selectable ? 'pointer' : 'default',
@@ -492,7 +482,7 @@ const UniversalTableView = <T extends { id: string | number }>({
                           </IconButton>
                         </TableCell>
                       )}
-                    </motion.tr>
+                    </TableRow>
                     
                     {/* Mobile expanded details */}
                     {isMobile && expandable && (
@@ -522,7 +512,6 @@ const UniversalTableView = <T extends { id: string | number }>({
                   </React.Fragment>
                 );
               })}
-            </AnimatePresence>
           </TableBody>
         </Table>
       </TableContainer>

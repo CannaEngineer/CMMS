@@ -814,7 +814,7 @@ const SubmissionDetailsDialog: React.FC<{
       <DialogContent dividers>
         <Grid container spacing={3}>
           {/* Quick Actions */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'primary.main' }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom color="primary">
@@ -915,7 +915,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submitter Information */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -967,7 +967,7 @@ const SubmissionDetailsDialog: React.FC<{
           </Grid>
 
           {/* Submission Information */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -1054,7 +1054,7 @@ const SubmissionDetailsDialog: React.FC<{
                   Form Data
                 </Typography>
                 <Grid container spacing={2}>
-                  {Object.entries(submission.submissionData || submission.formData || {}).map(([key, value]) => (
+                  {Object.entries(submission.formData || {}).map(([key, value]) => (
                     <Grid xs={12} sm={6} key={key}>
                       <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>

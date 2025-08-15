@@ -150,7 +150,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
 
       <Grid container spacing={3}>
         {/* Notification Bell Demo */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <DemoCard>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -180,7 +180,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
         </Grid>
 
         {/* Toast Notification Demo */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <DemoCard>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -237,7 +237,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
         </Grid>
 
         {/* Preferences Demo */}
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <DemoCard>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -284,7 +284,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
         </Grid>
 
         {/* Sample Notifications */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <DemoCard>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>
@@ -293,7 +293,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
               
               <Grid container spacing={2}>
                 {sampleNotifications.map((notification, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
+                  <Grid xs={12} sm={6} md={3} key={index}>
                     <Paper
                       sx={{
                         p: 2,
@@ -346,7 +346,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
             </Typography>
             
             <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ 
                     display: 'inline-flex', 
@@ -366,7 +366,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
                 </Box>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ 
                     display: 'inline-flex', 
@@ -386,7 +386,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
                 </Box>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ 
                     display: 'inline-flex', 
@@ -406,7 +406,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
                 </Box>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Box sx={{ textAlign: 'center' }}>
                   <Box sx={{ 
                     display: 'inline-flex', 

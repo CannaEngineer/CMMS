@@ -1,6 +1,6 @@
 
 import '@testing-library/jest-dom';
-import { beforeAll, afterEach, afterAll, vi } from 'vitest';
+import { beforeAll, afterEach, vi, expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Extend Vitest matchers with jest-dom
@@ -41,8 +41,10 @@ const localStorageMock = {
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
+  length: 0,
+  key: vi.fn(),
 };
-global.localStorage = localStorageMock;
+global.localStorage = localStorageMock as Storage;
 
 // Mock sessionStorage
 const sessionStorageMock = {
@@ -50,8 +52,10 @@ const sessionStorageMock = {
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
+  length: 0,
+  key: vi.fn(),
 };
-global.sessionStorage = sessionStorageMock;
+global.sessionStorage = sessionStorageMock as Storage;
 
 // Mock window.open
 global.open = vi.fn();

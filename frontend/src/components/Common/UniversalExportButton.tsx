@@ -53,7 +53,6 @@ export default function UniversalExportButton({
   const [quickExportOpen, setQuickExportOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

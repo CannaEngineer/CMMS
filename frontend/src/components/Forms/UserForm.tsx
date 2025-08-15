@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Grid,
@@ -12,10 +12,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
   Badge,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -24,8 +21,6 @@ import {
   Work as WorkIcon,
   AdminPanelSettings as AdminIcon,
   Engineering as TechnicianIcon,
-  Visibility as ViewIcon,
-  Lock as LockIcon,
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
@@ -39,6 +34,11 @@ interface UserFormData {
   password?: string; // Only for create mode
   role: 'ADMIN' | 'MANAGER' | 'TECHNICIAN';
   organizationId: number;
+  isActive?: boolean;
+  avatar?: string;
+  jobTitle?: string;
+  department?: string;
+  employeeId?: string;
 }
 
 interface UserFormProps {
@@ -142,7 +142,6 @@ export default function UserForm({
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPasswordFields, setShowPasswordFields] = useState(mode === 'create');
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
@@ -283,7 +282,7 @@ export default function UserForm({
         </Card>
       </Grid>
 
-      <Grid xs={12} md={8}>
+      <Grid item xs={12} md={8}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Contact Information</Typography>
@@ -375,7 +374,7 @@ export default function UserForm({
 
   const renderFormMode = () => (
     <Grid container spacing={3}>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <FormField
           type="text"
           name="name"
@@ -387,7 +386,7 @@ export default function UserForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <FormField
           type="email"
           name="email"
@@ -400,7 +399,7 @@ export default function UserForm({
         />
       </Grid>
       {mode === 'create' && (
-        <Grid xs={12} md={6}>
+        <Grid item xs={12} md={6}>
           <FormField
             type="password"
             name="password"
@@ -413,7 +412,7 @@ export default function UserForm({
           />
         </Grid>
       )}
-      <Grid xs={12} md={6}>
+      <Grid item xs={12} md={6}>
         <FormField
           type="select"
           name="role"
