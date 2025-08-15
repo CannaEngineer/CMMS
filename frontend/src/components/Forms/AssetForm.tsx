@@ -176,8 +176,8 @@ export default function AssetForm({
   };
 
   const renderViewMode = () => (
-    <Grid container spacing={3}>
-      <Grid xs={12} md={4}>
+    <Grid2 container spacing={3}>
+      <Grid2 xs={12} md={4}>
         <Card>
           <CardMedia
             component="div"
