@@ -6,7 +6,8 @@
   "installCommand": "cd backend && npm install && cd ../frontend && npm install",
   "functions": {
     "api/index.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "backend/dist/**"
     }
   },
   "routes": [
@@ -18,8 +19,5 @@
       "src": "/(.*)",
       "dest": "/frontend/dist/$1"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
+  ]
 }
