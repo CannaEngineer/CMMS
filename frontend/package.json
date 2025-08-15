@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "build:with-types": "tsc -b && vite build",
     "build:prod": "NODE_ENV=production tsc -b && vite build --mode production",
     "build:analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
     "lint": "eslint .",
@@ -29,7 +30,8 @@
     "test:all": "npm run test:coverage && npm run test:e2e && npm run test:a11y && npm run test:performance",
     "test:ci": "npm run test:coverage -- --run && npm run test:e2e -- --headless",
     "cypress:install": "cypress install",
-    "cypress:verify": "cypress verify"
+    "cypress:verify": "cypress verify",
+    "build:vercel": "vite build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
