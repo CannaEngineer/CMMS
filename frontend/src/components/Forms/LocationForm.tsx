@@ -4,7 +4,7 @@ import { locationsService } from '../../services/api';
 import { geocodingService } from '../../services/geocoding.service';
 import {
   Box,
-  Grid2,
+  Grid,
   Alert,
   Card,
   CardContent,
@@ -228,8 +228,8 @@ export default function LocationForm({
   );
 
   const renderViewMode = () => (
-    <Grid2 container spacing={3}>
-      <Grid2 xs={12} md={8}>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={8}>
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -245,28 +245,28 @@ export default function LocationForm({
 
             <Divider sx={{ my: 2 }} />
 
-            <Grid2 container spacing={2}>
+            <Grid container spacing={2}>
               {formData.address && (
-                <Grid2 xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle2" color="text.secondary">Address</Typography>
                   <Typography variant="body1">{formData.address}</Typography>
-                </Grid2>
+                </Grid>
               )}
               {(formData.latitude && formData.longitude) && (
-                <Grid2 xs={12}>
+                <Grid item xs={12}>
                   <Typography variant="subtitle2" color="text.secondary">GPS Coordinates</Typography>
                   <Typography variant="body1">
                     {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
                   </Typography>
-                </Grid2>
+                </Grid>
               )}
-            </Grid2>
+            </Grid>
 
           </CardContent>
         </Card>
-      </Grid2>
+      </Grid>
 
-      <Grid2 xs={12} md={4}>
+      <Grid item xs={12} md={4}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Statistics</Typography>
@@ -311,15 +311,15 @@ export default function LocationForm({
             )}
           </CardContent>
         </Card>
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   );
 
   const renderFormMode = () => (
-    <Grid2 container spacing={3}>
-      <Grid2 xs={12} md={8}>
-        <Grid2 container spacing={2}>
-          <Grid2 xs={12} md={6}>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={8}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
             <FormField
               type="text"
               name="name"
@@ -330,8 +330,8 @@ export default function LocationForm({
               error={errors.name}
               disabled={mode === 'view'}
             />
-          </Grid2>
-          <Grid2 xs={12}>
+          </Grid>
+          <Grid item xs={12}>
             <FormField
               type="textarea"
               name="description"
@@ -341,8 +341,8 @@ export default function LocationForm({
               disabled={mode === 'view'}
               rows={3}
             />
-          </Grid2>
-          <Grid2 xs={12}>
+          </Grid>
+          <Grid item xs={12}>
             <FormField
               type="select"
               name="parentId"
@@ -355,8 +355,8 @@ export default function LocationForm({
               ]}
               disabled={mode === 'view'}
             />
-          </Grid2>
-          <Grid2 xs={12}>
+          </Grid>
+          <Grid item xs={12}>
             <FormField
               type="textarea"
               name="address"
@@ -367,9 +367,9 @@ export default function LocationForm({
               rows={2}
               error={errors.address}
             />
-          </Grid2>
+          </Grid>
           {formData.address && mode !== 'view' && (
-            <Grid2 xs={12}>
+            <Grid item xs={12}>
               <Button
                 variant="outlined"
                 startIcon={isGeocoding ? <CircularProgress size={20} /> : <MyLocationIcon />}
@@ -379,9 +379,9 @@ export default function LocationForm({
               >
                 {isGeocoding ? 'Getting Coordinates...' : 'Get GPS Coordinates from Address'}
               </Button>
-            </Grid2>
+            </Grid>
           )}
-          <Grid2 xs={12} md={6}>
+          <Grid item xs={12} md={6}>
             <FormField
               type="number"
               name="latitude"
@@ -392,8 +392,8 @@ export default function LocationForm({
               inputProps={{ step: "any", min: -90, max: 90 }}
               helperText="GPS latitude coordinate (-90 to 90)"
             />
-          </Grid2>
-          <Grid2 xs={12} md={6}>
+          </Grid>
+          <Grid item xs={12} md={6}>
             <FormField
               type="number"
               name="longitude"
@@ -404,11 +404,11 @@ export default function LocationForm({
               inputProps={{ step: "any", min: -180, max: 180 }}
               helperText="GPS longitude coordinate (-180 to 180)"
             />
-          </Grid2>
-        </Grid2>
-      </Grid2>
+          </Grid>
+        </Grid>
+      </Grid>
 
-      <Grid2 xs={12} md={4}>
+      <Grid item xs={12} md={4}>
         <Card>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Location Hierarchy</Typography>
@@ -431,8 +431,8 @@ export default function LocationForm({
             )}
           </CardContent>
         </Card>
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   );
 
   return (

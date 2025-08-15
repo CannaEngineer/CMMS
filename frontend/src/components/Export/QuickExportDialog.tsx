@@ -17,7 +17,7 @@ import {
   TextField,
   Box,
   Typography,
-  Grid2,
+  Grid,
   Chip,
   Paper,
   List,
@@ -332,8 +332,8 @@ export default function QuickExportDialog({
           </Box>
 
           {/* Format and File Settings */}
-          <Grid2 container spacing={2}>
-            <Grid2 xs={12} md={6}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Output Format
               </Typography>
@@ -359,9 +359,9 @@ export default function QuickExportDialog({
                   ))}
                 </Select>
               </FormControl>
-            </Grid2>
+            </Grid>
 
-            <Grid2 xs={12} md={6}>
+            <Grid item xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 File Name
               </Typography>
@@ -372,8 +372,8 @@ export default function QuickExportDialog({
                 placeholder="Leave empty for auto-generated name"
                 helperText={`File extension (.${format}) will be added automatically`}
               />
-            </Grid2>
-          </Grid2>
+            </Grid>
+          </Grid>
 
           {/* Filters */}
           <Box>
@@ -382,26 +382,26 @@ export default function QuickExportDialog({
               Filters
             </Typography>
             
-            <Grid2 container spacing={2}>
-              <Grid2 xs={12} md={6}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
                 <DatePicker
                   label="Start Date"
                   value={dateRange.start}
                   onChange={(value) => setDateRange(prev => ({ ...prev, start: value as Dayjs | null }))}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
-              </Grid2>
+              </Grid>
               
-              <Grid2 xs={12} md={6}>
+              <Grid item xs={12} md={6}>
                 <DatePicker
                   label="End Date"
                   value={dateRange.end}
                   onChange={(value) => setDateRange(prev => ({ ...prev, end: value as Dayjs | null }))}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
-              </Grid2>
+              </Grid>
               
-              <Grid2 xs={12} md={8}>
+              <Grid item xs={12} md={8}>
                 <TextField
                   fullWidth
                   label="Search Filter"
@@ -412,9 +412,9 @@ export default function QuickExportDialog({
                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'action.active' }} />,
                   }}
                 />
-              </Grid2>
+              </Grid>
               
-              <Grid2 xs={12} md={4}>
+              <Grid item xs={12} md={4}>
                 <TextField
                   fullWidth
                   label="Max Records"
@@ -423,8 +423,8 @@ export default function QuickExportDialog({
                   onChange={(e) => setMaxRecords(Number(e.target.value))}
                   inputProps={{ min: 1, max: 100000 }}
                 />
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           </Box>
 
           {/* Column Selection */}

@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
-  Grid2,
+  Grid,
   Alert,
   Card,
   CardContent,
@@ -176,8 +176,8 @@ export default function AssetForm({
   };
 
   const renderViewMode = () => (
-    <Grid2 container spacing={3}>
-      <Grid2 xs={12} md={4}>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={4}>
         <Card>
           <CardMedia
             component="div"
@@ -233,42 +233,42 @@ export default function AssetForm({
             />
           </CardContent>
         </Card>
-      </Grid2>
+      </Grid>
       
-      <Grid2 xs={12}>
+      <Grid item xs={12}>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Asset Information</Typography>
-            <Grid2 container spacing={2}>
-              <Grid2 xs={12} md={6}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Serial Number</Typography>
                 <Typography variant="body1">{watchedData.serialNumber}</Typography>
-              </Grid2>
-              <Grid2 xs={12} md={6}>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Model Number</Typography>
                 <Typography variant="body1">{watchedData.modelNumber}</Typography>
-              </Grid2>
-              <Grid2 xs={12} md={6}>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Manufacturer</Typography>
                 <Typography variant="body1">{watchedData.manufacturer}</Typography>
-              </Grid2>
-              <Grid2 xs={12} md={6}>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Year</Typography>
                 <Typography variant="body1">{watchedData.year}</Typography>
-              </Grid2>
-              <Grid2 xs={12} md={6}>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Category</Typography>
                 <Typography variant="body1">
                   {categoryOptions.find(c => c.value === watchedData.category)?.label}
                 </Typography>
-              </Grid2>
-              <Grid2 xs={12} md={6}>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <Typography variant="subtitle2" color="text.secondary">Location</Typography>
                 <Typography variant="body1">
                   {locationOptions.find(l => l.value === watchedData.locationId?.toString())?.label}
                 </Typography>
-              </Grid2>
-            </Grid2>
+              </Grid>
+            </Grid>
           </CardContent>
         </Card>
 
@@ -276,34 +276,34 @@ export default function AssetForm({
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Typography variant="h6" sx={{ mb: 2 }}>Financial Information</Typography>
-              <Grid2 container spacing={2}>
-                <Grid2 xs={6}>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">Purchase Date</Typography>
                   <Typography variant="body1">{watchedData.purchaseDate}</Typography>
-                </Grid2>
-                <Grid2 xs={6}>
+                </Grid>
+                <Grid item xs={6}>
                   <Typography variant="subtitle2" color="text.secondary">Purchase Cost</Typography>
                   <Typography variant="body1">
                     {watchedData.purchaseCost ? `$${watchedData.purchaseCost.toLocaleString()}` : 'Not specified'}
                   </Typography>
-                </Grid2>
+                </Grid>
                 {watchedData.warrantyExpiry && (
-                  <Grid2 xs={6}>
+                  <Grid item xs={6}>
                     <Typography variant="subtitle2" color="text.secondary">Warranty Expiry</Typography>
                     <Typography variant="body1">{watchedData.warrantyExpiry}</Typography>
-                  </Grid2>
+                  </Grid>
                 )}
-              </Grid2>
+              </Grid>
             </CardContent>
           </Card>
         )}
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   );
 
   const renderFormMode = () => (
-    <Grid2 container spacing={3}>
-      <Grid2 xs={12} md={6}>
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="name"
           control={control}
@@ -312,8 +312,8 @@ export default function AssetForm({
           required
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="serialNumber"
           control={control}
@@ -321,8 +321,8 @@ export default function AssetForm({
           type="text"
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12}>
+      </Grid>
+      <Grid item xs={12}>
         <HookFormField
           name="description"
           control={control}
@@ -331,8 +331,8 @@ export default function AssetForm({
           disabled={mode === 'view'}
           rows={3}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="modelNumber"
           control={control}
@@ -340,8 +340,8 @@ export default function AssetForm({
           type="text"
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="manufacturer"
           control={control}
@@ -349,8 +349,8 @@ export default function AssetForm({
           type="text"
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="year"
           control={control}
@@ -358,8 +358,8 @@ export default function AssetForm({
           type="number"
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="locationId"
           control={control}
@@ -369,8 +369,8 @@ export default function AssetForm({
           required
           disabled={mode === 'view' || locationsLoading}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="criticality"
           control={control}
@@ -379,8 +379,8 @@ export default function AssetForm({
           options={criticalityOptions}
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12} md={6}>
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="status"
           control={control}
@@ -389,8 +389,8 @@ export default function AssetForm({
           options={statusOptions}
           disabled={mode === 'view'}
         />
-      </Grid2>
-      <Grid2 xs={12}>
+      </Grid>
+      <Grid item xs={12}>
         <HookFormField
           name="imageUrl"
           control={control}
@@ -398,8 +398,8 @@ export default function AssetForm({
           type="url"
           disabled={mode === 'view'}
         />
-      </Grid2>
-    </Grid2>
+      </Grid>
+    </Grid>
   );
 
   return (

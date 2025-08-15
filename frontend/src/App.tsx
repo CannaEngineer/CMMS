@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -29,7 +28,6 @@ import Inventory from './pages/Inventory';
 import Locations from './pages/Locations';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
-import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import PartDetail from './pages/PartDetail';
 import ExportCenter from './components/Export/ExportCenter';

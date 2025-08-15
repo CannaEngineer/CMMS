@@ -6,12 +6,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { axe, toHaveNoViolations } from 'vitest-axe';
+import { axe } from 'vitest-axe';
 import { ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import TechnicianDashboard from '../../pages/TechnicianDashboard';
-import { theme } from '../../theme/theme';
+import theme from '../../theme/theme';
 import {
   createMockUser,
   createMockTechnician,

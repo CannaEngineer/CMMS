@@ -2,9 +2,7 @@
 import '@testing-library/jest-dom';
 import { beforeAll, afterEach, vi, expect } from 'vitest';
 import { cleanup } from '@testing-library/react';
-
-// Extend Vitest matchers with jest-dom
-expect.extend({});
+import 'vitest-axe/extend-expect';
 
 // Mock IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
