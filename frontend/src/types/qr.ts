@@ -407,7 +407,7 @@ export const QR_ACTIONS_BY_TYPE: Record<QRCodeType, QRAction[]> = {
       label: 'Submit Form',
       icon: 'send',
       description: 'Submit a new portal form',
-      category: 'action',
+      category: 'create',
     },
   ],
 };

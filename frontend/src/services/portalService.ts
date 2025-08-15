@@ -4,7 +4,6 @@ import {
   transformPortalForBackend,
   transformPortalFromBackend,
   transformPortalTypeToBackend,
-  transformPortalTypeToFrontend,
   transformPortalFieldForBackend,
   transformPortalFieldFromBackend
 } from '../utils/portalTransforms';
@@ -465,10 +464,7 @@ export class PortalService {
       });
       
       // Generate QR code
-      const qrCodeUrl = qrService.generateQRCodeUrl(qrData, {
-        size: options?.size || 256,
-        errorCorrectionLevel: 'M'
-      });
+      const qrCodeUrl = qrService.generateQRCodeUrl(qrData);
       
       return {
         qrCodeUrl,
@@ -765,7 +761,7 @@ export class PublicPortalService {
     console.log('Recording portal view:', portalId, analytics);
   }
 
-  async submitPortalRequest(portalSlug: string, data: {
+  async submitPortalRequest(_portalSlug: string, _data: {
     submissionData: Record<string, any>;
     contactInfo: {
       name: string;
@@ -966,7 +962,7 @@ export const portalSubmissionService = new PortalSubmissionService();
 
 // Work Orders Service for portal integration
 export class WorkOrdersService {
-  async createFromSubmission(submissionData: any): Promise<{ workOrderId: string }> {
+  async createFromSubmission(_submissionData: any): Promise<{ workOrderId: string }> {
     // Mock implementation - replace with real API call
     return {
       workOrderId: `wo-${Date.now()}`
@@ -990,14 +986,21 @@ export const workOrdersService = new WorkOrdersService();
 
 // Portal-specific error handling
 export class PortalError extends Error {
+  public code: string;
+  public statusCode: number;
+  public details?: Record<string, any>;
+
   constructor(
     message: string,
-    public code: string,
-    public statusCode: number = 400,
-    public details?: Record<string, any>
+    code: string,
+    statusCode: number = 400,
+    details?: Record<string, any>
   ) {
     super(message);
     this.name = 'PortalError';
+    this.code = code;
+    this.statusCode = statusCode;
+    this.details = details;
   }
 }
 

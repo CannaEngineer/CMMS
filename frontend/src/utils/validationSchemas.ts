@@ -89,6 +89,9 @@ export const assetSchema = z.object({
   warrantyExpiry: z
     .string()
     .optional(),
+  category: z
+    .string()
+    .optional(),
 });
 
 // Part form validation schema

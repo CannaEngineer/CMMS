@@ -421,6 +421,10 @@ export interface CreatePortalRequest {
   defaultWorkOrderPriority?: string;
   defaultAssignedUserId?: string;
   
+  // QR Code
+  qrCodeUrl?: string;
+  qrEnabled?: boolean;
+  
   // Initial Configuration
   fields?: Partial<PortalField>[];
   branding?: Partial<PortalBranding>;

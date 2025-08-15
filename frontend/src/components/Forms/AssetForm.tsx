@@ -235,34 +235,34 @@ export default function AssetForm({
         </Card>
       </Grid>
       
-      <Grid xs={12} md={8}>
+      <Grid>
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Typography variant="h6" sx={{ mb: 2 }}>Asset Information</Typography>
             <Grid container spacing={2}>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Serial Number</Typography>
                 <Typography variant="body1">{watchedData.serialNumber}</Typography>
               </Grid>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Model Number</Typography>
                 <Typography variant="body1">{watchedData.modelNumber}</Typography>
               </Grid>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Manufacturer</Typography>
                 <Typography variant="body1">{watchedData.manufacturer}</Typography>
               </Grid>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Year</Typography>
                 <Typography variant="body1">{watchedData.year}</Typography>
               </Grid>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Category</Typography>
                 <Typography variant="body1">
                   {categoryOptions.find(c => c.value === watchedData.category)?.label}
                 </Typography>
               </Grid>
-              <Grid xs={6}>
+              <Grid>
                 <Typography variant="subtitle2" color="text.secondary">Location</Typography>
                 <Typography variant="body1">
                   {locationOptions.find(l => l.value === watchedData.locationId?.toString())?.label}

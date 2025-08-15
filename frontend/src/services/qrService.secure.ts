@@ -1,6 +1,5 @@
-import { api } from './api';
+import { apiClient } from './api';
 import type { 
-  QRCodeData, 
   QRCodeType, 
   QRCodeGenerationOptions, 
   QRLabel, 
@@ -50,7 +49,7 @@ export class SecureQRService {
   // Generate single QR code using backend API
   async generateQRCode(request: CreateQRCodeRequest): Promise<any> {
     try {
-      const response = await api.post('/qr/generate', request);
+      const response = await apiClient.post('/qr/generate', request);
       return response.data;
     } catch (error) {
       console.error('Failed to generate QR code:', error);
@@ -66,7 +65,7 @@ export class SecureQRService {
     limit?: number;
   } = {}): Promise<any> {
     try {
-      const response = await api.get('/qr/codes', { params: filters });
+      const response = await apiClient.get('/qr/codes', { params: filters });
       return response.data;
     } catch (error) {
       console.error('Failed to fetch QR codes:', error);
@@ -77,7 +76,7 @@ export class SecureQRService {
   // Get QR code by ID
   async getQRCodeById(id: string): Promise<any> {
     try {
-      const response = await api.get(`/qr/codes/${id}`);
+      const response = await apiClient.get(`/qr/codes/${id}`);
       return response.data;
     } catch (error) {
       console.error('Failed to fetch QR code:', error);
@@ -92,7 +91,7 @@ export class SecureQRService {
     expiresAt?: string;
   }): Promise<void> {
     try {
-      await api.put(`/qr/codes/${id}`, updates);
+      await apiClient.put(`/qr/codes/${id}`, updates);
     } catch (error) {
       console.error('Failed to update QR code:', error);
       throw new Error('Failed to update QR code');
@@ -102,7 +101,7 @@ export class SecureQRService {
   // Revoke QR code
   async revokeQRCode(id: string): Promise<void> {
     try {
-      await api.delete(`/qr/codes/${id}`);
+      await apiClient.delete(`/qr/codes/${id}`);
     } catch (error) {
       console.error('Failed to revoke QR code:', error);
       throw new Error('Failed to revoke QR code');
@@ -112,7 +111,7 @@ export class SecureQRService {
   // Scan QR code
   async scanQRCode(token: string, request: QRScanRequest = {}): Promise<QRScanResult> {
     try {
-      const response = await api.post(`/qr/scan/${token}`, request);
+      const response = await apiClient.post(`/qr/scan/${token}`, request);
       
       return {
         data: response.data.data.qrCode,
@@ -141,7 +140,7 @@ export class SecureQRService {
   // Get QR code info without logging scan
   async getQRCodeInfo(token: string): Promise<any> {
     try {
-      const response = await api.get(`/qr/scan/${token}/info`);
+      const response = await apiClient.get(`/qr/scan/${token}/info`);
       return response.data;
     } catch (error) {
       console.error('Failed to get QR code info:', error);
@@ -152,7 +151,7 @@ export class SecureQRService {
   // Batch generate QR codes
   async batchGenerateQRCodes(request: BatchQRRequest): Promise<QRBatchOperation> {
     try {
-      const response = await api.post('/qr/batch/generate', request);
+      const response = await apiClient.post('/qr/batch/generate', request);
       return response.data.data;
     } catch (error) {
       console.error('Failed to generate batch QR codes:', error);
@@ -163,7 +162,7 @@ export class SecureQRService {
   // Get batch operation status
   async getBatchOperation(id: string): Promise<any> {
     try {
-      const response = await api.get(`/qr/batch/${id}`);
+      const response = await apiClient.get(`/qr/batch/${id}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get batch operation:', error);
@@ -174,7 +173,7 @@ export class SecureQRService {
   // Get batch operations
   async getBatchOperations(page = 1, limit = 20): Promise<any> {
     try {
-      const response = await api.get('/qr/batch', {
+      const response = await apiClient.get('/qr/batch', {
         params: { page, limit }
       });
       return response.data;
@@ -187,7 +186,7 @@ export class SecureQRService {
   // Get QR codes for specific entity
   async getQRCodesForEntity(entityType: QRCodeType, entityId: string): Promise<any[]> {
     try {
-      const response = await api.get(`/qr/entity/${entityType}/${entityId}`);
+      const response = await apiClient.get(`/qr/entity/${entityType}/${entityId}`);
       return response.data.data;
     } catch (error) {
       console.error('Failed to get QR codes for entity:', error);
@@ -203,7 +202,7 @@ export class SecureQRService {
     metadata?: Record<string, any>
   ): Promise<any> {
     try {
-      const response = await api.post(`/qr/entity/${entityType}/${entityId}/generate`, {
+      const response = await apiClient.post(`/qr/entity/${entityType}/${entityId}/generate`, {
         entityName,
         metadata
       });
@@ -217,7 +216,7 @@ export class SecureQRService {
   // Get analytics
   async getAnalytics(days = 30): Promise<any> {
     try {
-      const response = await api.get('/qr/analytics', {
+      const response = await apiClient.get('/qr/analytics', {
         params: { days }
       });
       return response.data.data;
@@ -234,7 +233,7 @@ export class SecureQRService {
     days?: number;
   } = {}): Promise<any> {
     try {
-      const response = await api.get('/qr/analytics/scans', {
+      const response = await apiClient.get('/qr/analytics/scans', {
         params: filters
       });
       return response.data.data;
@@ -247,7 +246,7 @@ export class SecureQRService {
   // Get QR templates
   async getQRTemplates(): Promise<any[]> {
     try {
-      const response = await api.get('/qr/templates');
+      const response = await apiClient.get('/qr/templates');
       return response.data.data;
     } catch (error) {
       console.error('Failed to get QR templates:', error);
@@ -268,7 +267,7 @@ export class SecureQRService {
     customCSS?: string;
   }): Promise<any> {
     try {
-      const response = await api.post('/qr/templates', template);
+      const response = await apiClient.post('/qr/templates', template);
       return response.data.data;
     } catch (error) {
       console.error('Failed to create QR template:', error);
@@ -279,7 +278,7 @@ export class SecureQRService {
   // Cleanup expired QR codes (admin only)
   async cleanupExpiredQRCodes(): Promise<any> {
     try {
-      const response = await api.post('/qr/maintenance/cleanup-expired');
+      const response = await apiClient.post('/qr/maintenance/cleanup-expired');
       return response.data.data;
     } catch (error) {
       console.error('Failed to cleanup expired QR codes:', error);

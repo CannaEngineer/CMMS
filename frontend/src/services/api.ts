@@ -23,7 +23,7 @@ class ApiClient {
     };
   }
 
-  private getAuthHeaders(): HeadersInit {
+  private getAuthHeaders(): Record<string, string> {
     const token = localStorage.getItem('token');
     if (token) {
       return {

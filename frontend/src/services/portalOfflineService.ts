@@ -246,13 +246,17 @@ export class PortalOfflineService {
     submissionId: string, 
     status: OfflinePortalSubmission['status']
   ): Promise<void> {
-    await offlineStorage.performOperation('offlineSubmissions', 'readwrite', async (store) => {
-      const submission = await store.get(submissionId);
-      if (submission) {
-        submission.status = status;
-        submission.lastSyncAttempt = Date.now();
-        return store.put(submission);
-      }
+    await offlineStorage.performOperation('offlineSubmissions', 'readwrite', (store) => {
+      const getRequest = store.get(submissionId);
+      getRequest.onsuccess = () => {
+        const submission = getRequest.result;
+        if (submission) {
+          submission.status = status;
+          submission.lastSyncAttempt = Date.now();
+          store.put(submission);
+        }
+      };
+      return getRequest;
     });
   }
 
@@ -285,7 +289,8 @@ export class PortalOfflineService {
       // Remove associated files
       const files = await this.getSubmissionFiles(submissionId);
       await offlineStorage.performOperation('offlineFiles', 'readwrite', (store) => {
-        files.forEach(file => store.delete(`${submissionId}_${file.filename}`));
+        const deletePromises = files.map(file => store.delete(`${submissionId}_${file.filename}`));
+        return deletePromises[0] || store.count(); // Return first delete request or a count request
       });
 
       console.log(`Cleaned up offline data for submission ${submissionId}`);

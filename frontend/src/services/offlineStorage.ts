@@ -70,7 +70,7 @@ class OfflineStorageService {
   }
 
   // Generic store operations
-  private async performOperation<T>(
+  async performOperation<T>(
     storeName: string,
     mode: IDBTransactionMode,
     operation: (store: IDBObjectStore) => IDBRequest<T>
