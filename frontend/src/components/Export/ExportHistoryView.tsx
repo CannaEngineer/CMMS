@@ -27,9 +27,7 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Grid,
   Tooltip,
-  LinearProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -49,10 +47,9 @@ import {
   Schedule as PendingIcon,
   Autorenew as ProcessingIcon,
   AccessTime as ExpiredIcon,
-  FilterList as FilterIcon,
 } from '@mui/icons-material';
 
-import { ExportHistory, getStatusColor } from '../../services/exportService';
+import { type ExportHistory } from '../../services/exportService';
 
 interface ExportHistoryProps {
   history: ExportHistory[];
@@ -66,7 +63,7 @@ interface HistoryRowProps {
 }
 
 function HistoryRow({ item, onAction }: HistoryRowProps) {
-  const theme = useTheme();
+  const _theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -269,8 +266,8 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
           Export Details
         </DialogTitle>
         <DialogContent>
-          <Grid container spacing={2}>
-            <Grid xs={12} md={6}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+            <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Basic Information
               </Typography>
@@ -279,9 +276,9 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               <Typography variant="body2"><strong>Format:</strong> {item.outputFormat.toUpperCase()}</Typography>
               <Typography variant="body2"><strong>Status:</strong> {item.status}</Typography>
               <Typography variant="body2"><strong>File Name:</strong> {item.fileName || 'N/A'}</Typography>
-            </Grid>
+            </Box>
 
-            <Grid xs={12} md={6}>
+            <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Performance Metrics
               </Typography>
@@ -290,9 +287,9 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               <Typography variant="body2"><strong>Duration:</strong> {formatDuration(item.executionTimeMs)}</Typography>
               <Typography variant="body2"><strong>Retries:</strong> {item.retryCount}</Typography>
               <Typography variant="body2"><strong>Downloads:</strong> {item.downloadCount}</Typography>
-            </Grid>
+            </Box>
 
-            <Grid xs={12} md={6}>
+            <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Timestamps
               </Typography>
@@ -303,9 +300,9 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
               {item.expiresAt && (
                 <Typography variant="body2"><strong>Expires:</strong> {new Date(item.expiresAt).toLocaleString()}</Typography>
               )}
-            </Grid>
+            </Box>
 
-            <Grid xs={12} md={6}>
+            <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Quality & Compliance
               </Typography>
@@ -317,10 +314,10 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
                   <strong>Data Hash:</strong> {item.dataIntegrityHash.slice(0, 16)}...
                 </Typography>
               )}
-            </Grid>
+            </Box>
 
             {item.errorMessage && (
-              <Grid xs={12}>
+              <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
                 <Typography variant="subtitle2" gutterBottom color="error">
                   Error Details
                 </Typography>
@@ -332,20 +329,20 @@ function HistoryRow({ item, onAction }: HistoryRowProps) {
                     Error Code: {item.errorCode}
                   </Typography>
                 )}
-              </Grid>
+              </Box>
             )}
 
             {Object.keys(item.filtersApplied).length > 0 && (
-              <Grid xs={12}>
+              <Box sx={{ gridColumn: { xs: '1', md: '1 / -1' } }}>
                 <Typography variant="subtitle2" gutterBottom>
                   Applied Filters
                 </Typography>
                 <Box component="pre" sx={{ fontSize: '0.75rem', backgroundColor: 'grey.100', p: 1, borderRadius: 1 }}>
                   {JSON.stringify(item.filtersApplied, null, 2)}
                 </Box>
-              </Grid>
+              </Box>
             )}
-          </Grid>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailsOpen(false)}>Close</Button>
@@ -393,7 +390,7 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
     page * rowsPerPage + rowsPerPage
   );
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -432,8 +429,8 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Filters */}
       <Box sx={{ mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={6}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr 1fr' }, gap: 2, alignItems: 'center' }}>
+          <Box>
             <TextField
               fullWidth
               placeholder="Search exports..."
@@ -448,9 +445,9 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
               }}
               size="small"
             />
-          </Grid>
+          </Box>
           
-          <Grid xs={6} md={3}>
+          <Box>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
@@ -465,9 +462,9 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
                 ))}
               </Select>
             </FormControl>
-          </Grid>
+          </Box>
           
-          <Grid xs={6} md={3}>
+          <Box>
             <FormControl fullWidth size="small">
               <InputLabel>Format</InputLabel>
               <Select
@@ -482,8 +479,8 @@ export default function ExportHistoryView({ history, onAction, loading }: Export
                 ))}
               </Select>
             </FormControl>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
 
       {/* Results Summary */}

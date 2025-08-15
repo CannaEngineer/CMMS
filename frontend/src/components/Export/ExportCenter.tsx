@@ -12,7 +12,6 @@ import {
   Tabs,
   Tab,
   Button,
-  Grid,
   Chip,
   Alert,
   Snackbar,
@@ -29,15 +28,13 @@ import {
   Refresh as RefreshIcon,
   Dashboard as DashboardIcon,
   History as HistoryIcon,
-  Schedule as ScheduleIcon,
-  Settings as SettingsIcon,
   Queue as QueueIcon,
   Analytics as AnalyticsIcon,
   FileDownload as ExportIcon,
   Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 
-import { exportService, ExportTemplate, ExportHistory as ExportHistoryType, ExportQueue as ExportQueueType, ExportStats } from '../../services/exportService';
+import { exportService, type ExportTemplate, type ExportHistory as ExportHistoryType, type ExportQueue as ExportQueueType, type ExportStats } from '../../services/exportService';
 import ExportTemplateManager from './ExportTemplateManager';
 import ExportHistoryView from './ExportHistoryView';
 import ExportQueueView from './ExportQueueView';
@@ -183,7 +180,7 @@ export default function ExportCenter() {
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
   };
 
