@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { notificationService, Notification, NotificationResponse, NotificationPreference } from '../services/notification.service';
+import { notificationService, type Notification, type NotificationResponse, type NotificationPreference } from '../services/notification.service';
 import { useNavigate } from 'react-router-dom';
 
 export const useNotifications = () => {

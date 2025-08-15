@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +11,6 @@ import {
   Alert,
   IconButton,
   InputAdornment,
-  Divider,
   Link,
   useTheme,
   useMediaQuery,
@@ -24,13 +23,11 @@ import {
   Email as EmailIcon,
   Lock as LockIcon,
 } from '@mui/icons-material';
-import { authService } from '../services/api';
-import { loginSchema, LoginFormData } from '../utils/validationSchemas';
+import { loginSchema, type LoginFormData } from '../utils/validationSchemas';
 import FormErrorDisplay from '../components/Common/FormErrorDisplay';
 
 export default function Login() {
   const theme = useTheme();
-  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [showPassword, setShowPassword] = useState(false);

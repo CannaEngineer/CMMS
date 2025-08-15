@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import {
   Snackbar,
   Alert,
-  AlertColor,
+  type AlertColor,
   Slide,
-  SlideProps,
+  type SlideProps,
   IconButton,
   Box,
   Typography

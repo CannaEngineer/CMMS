@@ -233,7 +233,7 @@ export default function AssetDetail() {
 
       <Grid container spacing={3}>
         {/* Main Content */}
-        <Grid xs={12} lg={8}>
+<Grid item xs={12} lg={8}>
           <Paper sx={{ mb: 3 }}>
             <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
               <Tab label="Overview" />
@@ -245,7 +245,7 @@ export default function AssetDetail() {
             <TabPanel value={tabValue} index={0}>
               {/* Asset Details */}
               <Grid container spacing={3}>
-                <Grid xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Asset Information
                   </Typography>
@@ -302,7 +302,7 @@ export default function AssetDetail() {
                   </List>
                 </Grid>
 
-                <Grid xs={12} md={6}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>
                     Status & Location
                   </Typography>
@@ -432,7 +432,7 @@ export default function AssetDetail() {
         </Grid>
 
         {/* Sidebar */}
-        <Grid xs={12} lg={4}>
+        <Grid item xs={12} lg={4}>
           {/* QR Code */}
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom>

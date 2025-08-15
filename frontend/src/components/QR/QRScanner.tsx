@@ -26,9 +26,9 @@ import {
   FlashlightOff as FlashlightOffIcon,
   CameraAlt as CameraIcon,
 } from '@mui/icons-material';
-import { TransitionProps } from '@mui/material/transitions';
+import { type TransitionProps } from '@mui/material/transitions';
 import { qrService } from '../../services/qrService';
-import { QRScanResult } from '../../types/qr';
+import { type QRScanResult } from '../../types/qr';
 
 interface QRScannerProps {
   open: boolean;
