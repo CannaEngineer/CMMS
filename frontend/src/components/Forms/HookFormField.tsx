@@ -1,5 +1,5 @@
 import React from 'react';
-import { Controller, Control, FieldPath, FieldValues } from 'react-hook-form';
+import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 import {
   TextField,
   FormControl,
@@ -7,8 +7,7 @@ import {
   Select,
   MenuItem,
   FormHelperText,
-  Box,
-  SelectChangeEvent,
+  type SelectChangeEvent,
 } from '@mui/material';
 
 interface Option {

@@ -346,13 +346,11 @@ export const visualMatchers = {
 };
 
 // Extend expect with visual matchers
-declare global {
-  namespace Vi {
-    interface AsymmetricMatchersContaining {
-      toMatchVisualBaseline(testName: string, options?: VisualTestOptions): any;
-      toBeResponsivelyConsistent(testName: string, options?: VisualTestOptions): any;
-      toBeThemeConsistent(testName: string, themes?: string[], options?: VisualTestOptions): any;
-    }
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    toMatchVisualBaseline(testName: string, options?: VisualTestOptions): any;
+    toBeResponsivelyConsistent(testName: string, options?: VisualTestOptions): any;
+    toBeThemeConsistent(testName: string, themes?: string[], options?: VisualTestOptions): any;
   }
 }
 
@@ -360,20 +358,4 @@ declare global {
 export const setupVisualTesting = () => {
   // Extend expect with custom matchers
   expect.extend(visualMatchers);
-  
-  // Setup test environment for visual testing
-  beforeEach(async () => {
-    // Reset any visual modifications
-    document.body.style.transform = '';
-    document.body.style.filter = '';
-    
-    // Clear any injected styles
-    const visualTestStyles = document.querySelectorAll('[data-visual-test]');
-    visualTestStyles.forEach(style => style.remove());
-  });
-  
-  afterEach(async () => {
-    // Clean up after visual tests
-    visualTestUtils.waitForAnimations(100);
-  });
 };

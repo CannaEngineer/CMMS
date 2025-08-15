@@ -17,7 +17,7 @@ import {
   TextField,
   Box,
   Typography,
-  Grid,
+  Grid2,
   Chip,
   Paper,
   List,
@@ -45,7 +45,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs, { Dayjs } from 'dayjs';
 
-import { exportService, ExportRequest } from '../../services/exportService';
+import { exportService, type ExportRequest } from '../../services/exportService';
 
 interface QuickExportDialogProps {
   open: boolean;
@@ -84,8 +84,7 @@ export default function QuickExportDialog({
   onExport, 
   preselectedData = [], 
   defaultDataSource = '', 
-  entityType = '', 
-  entityId = '' 
+ 
 }: QuickExportDialogProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -103,7 +102,7 @@ export default function QuickExportDialog({
   });
   const [searchFilter, setSearchFilter] = useState('');
   const [emailRecipients, setEmailRecipients] = useState('');
-  const [includeHeaders, setIncludeHeaders] = useState(true);
+  const [includeHeaders] = useState(true);
   const [maxRecords, setMaxRecords] = useState(10000);
 
   // Data
@@ -221,7 +220,7 @@ export default function QuickExportDialog({
         columns: selectedColumns,
         filters,
         maxRecords,
-        includeHeaders,
+        // includeHeaders is part of format settings, not export config
         dateFormat: 'YYYY-MM-DD HH:mm:ss',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       },
@@ -333,8 +332,8 @@ export default function QuickExportDialog({
           </Box>
 
           {/* Format and File Settings */}
-          <Grid container spacing={2}>
-            <Grid xs={12} md={6}>
+          <Grid2 container spacing={2}>
+            <Grid2 xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 Output Format
               </Typography>
@@ -360,9 +359,9 @@ export default function QuickExportDialog({
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
+            </Grid2>
 
-            <Grid xs={12} md={6}>
+            <Grid2 xs={12} md={6}>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
                 File Name
               </Typography>
@@ -373,8 +372,8 @@ export default function QuickExportDialog({
                 placeholder="Leave empty for auto-generated name"
                 helperText={`File extension (.${format}) will be added automatically`}
               />
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
 
           {/* Filters */}
           <Box>
@@ -383,26 +382,26 @@ export default function QuickExportDialog({
               Filters
             </Typography>
             
-            <Grid container spacing={2}>
-              <Grid xs={12} md={6}>
+            <Grid2 container spacing={2}>
+              <Grid2 xs={12} md={6}>
                 <DatePicker
                   label="Start Date"
                   value={dateRange.start}
-                  onChange={(value) => setDateRange(prev => ({ ...prev, start: value }))}
+                  onChange={(value) => setDateRange(prev => ({ ...prev, start: value as Dayjs | null }))}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
-              </Grid>
+              </Grid2>
               
-              <Grid xs={12} md={6}>
+              <Grid2 xs={12} md={6}>
                 <DatePicker
                   label="End Date"
                   value={dateRange.end}
-                  onChange={(value) => setDateRange(prev => ({ ...prev, end: value }))}
+                  onChange={(value) => setDateRange(prev => ({ ...prev, end: value as Dayjs | null }))}
                   slotProps={{ textField: { fullWidth: true } }}
                 />
-              </Grid>
+              </Grid2>
               
-              <Grid xs={12} md={8}>
+              <Grid2 xs={12} md={8}>
                 <TextField
                   fullWidth
                   label="Search Filter"
@@ -413,9 +412,9 @@ export default function QuickExportDialog({
                     startAdornment: <SearchIcon sx={{ mr: 1, color: 'action.active' }} />,
                   }}
                 />
-              </Grid>
+              </Grid2>
               
-              <Grid xs={12} md={4}>
+              <Grid2 xs={12} md={4}>
                 <TextField
                   fullWidth
                   label="Max Records"
@@ -424,8 +423,8 @@ export default function QuickExportDialog({
                   onChange={(e) => setMaxRecords(Number(e.target.value))}
                   inputProps={{ min: 1, max: 100000 }}
                 />
-              </Grid>
-            </Grid>
+              </Grid2>
+            </Grid2>
           </Box>
 
           {/* Column Selection */}

@@ -16,7 +16,6 @@ import {
   Typography,
   Button,
   Avatar,
-  useTheme,
 } from '@mui/material';
 import { DatePicker, DateTimePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
@@ -61,14 +60,12 @@ export default function FormField({
   error,
   helperText,
   fullWidth = true,
-  multiline = false,
   rows = 4,
   placeholder,
   accept,
   multiple = false,
   size = 'medium',
 }: FormFieldProps) {
-  const theme = useTheme();
 
   const handleChange = (newValue: any) => {
     onChange(name, newValue);

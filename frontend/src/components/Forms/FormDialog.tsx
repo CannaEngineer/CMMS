@@ -13,7 +13,7 @@ import {
   useMediaQuery,
   Slide,
 } from '@mui/material';
-import { TransitionProps } from '@mui/material/transitions';
+import type { TransitionProps } from '@mui/material/transitions';
 import { Close as CloseIcon } from '@mui/icons-material';
 
 const Transition = React.forwardRef(function Transition(

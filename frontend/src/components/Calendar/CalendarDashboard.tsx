@@ -14,17 +14,12 @@ import {
   Fade,
   Grow,
   Slide,
-  Zoom,
-  Collapse,
   Backdrop,
   Alert,
   CircularProgress,
-  Fab,
   Tooltip,
   Badge,
-  Chip,
   Avatar,
-  Divider,
   Stack,
 } from '@mui/material';
 import {
@@ -34,20 +29,14 @@ import {
   ViewModule as MonthViewIcon,
   FilterList as FilterIcon,
   Today as TodayIcon,
-  Add as AddIcon,
   Schedule as ScheduleIcon,
   Assignment as WorkOrderIcon,
   Warning as WarningIcon,
-  CheckCircle as CompletedIcon,
-  PlayArrow as InProgressIcon,
-  Notifications as NotificationIcon,
-  SwipeLeft as SwipeIcon,
   TouchApp as TouchIcon,
-  DragIndicator as DragIcon,
 } from '@mui/icons-material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { calendarService, dashboardService } from '../../services/api';
-import { CalendarItem, CalendarFilters } from '../../types/calendar';
+import type { CalendarItem, CalendarFilters } from '../../types/calendar';
 import CalendarViewManager from './CalendarViewManager';
 import ContextualPanel from './ContextualPanel';
 import UrgentTasksHero from './UrgentTasksHero';
@@ -72,7 +61,6 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
   const theme = useTheme();
   const queryClient = useQueryClient();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   
   // Calendar state
   const [currentDate, setCurrentDate] = useState(dayjs());
@@ -100,8 +88,8 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
       const endDate = currentDate.endOf(viewType === 'day' ? 'day' : viewType === 'week' ? 'week' : 'month');
       
       return calendarService.getCalendarItems({
-        startDate: startDate.format('YYYY-MM-DD'),
-        endDate: endDate.format('YYYY-MM-DD'),
+        startDate: startDate.toDate(),
+        endDate: endDate.toDate(),
         ...filters,
       });
     },
@@ -111,8 +99,7 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
 
   // Fetch dashboard stats for urgent tasks hero
   const { 
-    data: dashboardStats,
-    isLoading: statsLoading 
+    data: dashboardStats
   } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: dashboardService.getStats,
@@ -217,7 +204,8 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
       );
       
       // API call would go here
-      await calendarService.rescheduleItem(itemId, newDate);
+      const itemType = calendarItems.find(item => item.id === itemId)?.type || 'WORK_ORDER';
+      await calendarService.rescheduleItem(itemId, itemType, newDate);
       
       // Haptic feedback
       if (isMobile && 'vibrate' in navigator) {
@@ -239,9 +227,6 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
     setTimeout(() => setCalendarLoaded(true), 200);
   }, []);
 
-  const handleFiltersChange = useCallback((newFilters: CalendarFilters) => {
-    setFilters(newFilters);
-  }, []);
 
   // Quick action handlers
   const quickActions = useMemo(() => [
@@ -319,7 +304,7 @@ const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
               // Filter calendar to show relevant items
               const newFilters: CalendarFilters = {};
               if (type === 'overdue') {
-                newFilters.includeOverdue = true;
+                // Add overdue filter logic here when available
               }
               setFilters(newFilters);
             }}
