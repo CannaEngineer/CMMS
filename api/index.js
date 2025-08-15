@@ -4,12 +4,18 @@ const path = require('path');
 // Import the compiled Express app
 let app;
 try {
-  // In production, the backend will be compiled to dist/
-  const appModule = require(path.join(__dirname, '../backend/dist/index.js'));
+  // Load the main app file (will be copied during build)
+  const appModule = require('./main.js');
   app = appModule.default || appModule;
 } catch (error) {
-  console.error('Failed to load backend app:', error);
-  throw error;
+  try {
+    // Fallback to original path
+    const appModule = require(path.join(__dirname, '../backend/dist/index.js'));
+    app = appModule.default || appModule;
+  } catch (fallbackError) {
+    console.error('Failed to load backend app from both locations:', error, fallbackError);
+    throw error;
+  }
 }
 
 // Export the Express app as a Vercel serverless function
