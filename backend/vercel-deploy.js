@@ -4,9 +4,15 @@ const { execSync } = require('child_process');
 
 console.log('Starting Vercel deployment build...');
 
-// Set DATABASE_URL environment variable for all child processes
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./dev.db';
-console.log('DATABASE_URL set to:', process.env.DATABASE_URL);
+// For Vercel deployment, DATABASE_URL will be automatically set
+console.log('Starting Vercel deployment build...');
+
+// Check if we're in production and have a DATABASE_URL
+const isProduction = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+
+if (isProduction && (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('file:'))) {
+  console.warn('⚠️ DATABASE_URL not configured. It will be set by Vercel Postgres integration.');
+}
 
 try {
   // Step 1: Build TypeScript
@@ -17,9 +23,18 @@ try {
   console.log('Step 2: Generating Prisma Client...');
   execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
   
-  // Step 3: Push database schema (for production this would be different)
-  console.log('Step 3: Pushing database schema...');
-  execSync('npx prisma db push', { stdio: 'inherit', env: process.env });
+  // Step 3: Only run migrations if DATABASE_URL is available
+  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('file:')) {
+    console.log('Step 3: Deploying database migrations...');
+    try {
+      execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
+    } catch (migrationError) {
+      console.log('Migration deployment failed, trying db push instead...');
+      execSync('npx prisma db push', { stdio: 'inherit', env: process.env });
+    }
+  } else {
+    console.log('Step 3: Skipping database setup (will be configured in Vercel)');
+  }
   
   console.log('✅ Vercel deployment build completed successfully!');
 } catch (error) {

@@ -52,3 +52,4 @@ frontend/cypress/screenshots/
 
 # Build artifacts
 *.tsbuildinfo
+.env*.local
