@@ -377,13 +377,12 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                   key={weekIndex} 
                   sx={{ 
                     mb: { xs: 1, sm: 1.5 }, 
-                    height: 'auto',
-                    minHeight: { 
-                      xs: isSmallMobile ? 90 : 110, 
-                      sm: 120, 
-                      md: 140 
+                    height: { 
+                      xs: isSmallMobile ? 100 : 120, 
+                      sm: 140, 
+                      md: 160 
                     },
-                    // Better mobile layout
+                    // Ensure all days are same height
                     display: 'flex',
                     alignItems: 'stretch',
                   }}
@@ -396,17 +395,14 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                     const isHovered = hoveredDate === dateKey;
 
                     return (
-                      <Grid xs key={day.format('YYYY-MM-DD')}>
+                      <Grid item xs key={day.format('YYYY-MM-DD')} sx={{ display: 'flex' }}>
                         <Paper
                           elevation={isHovered ? 3 : 1}
                           sx={{
+                            width: '100%',
                             height: '100%',
-                            minHeight: { 
-                              xs: isSmallMobile ? 90 : 110, 
-                              sm: 120, 
-                              md: 140 
-                            },
-                            p: { xs: 1.5, sm: 2 },
+                            aspectRatio: '1', // Make it a perfect square
+                            p: { xs: 1, sm: 1.5 },
                             bgcolor: isCurrentMonth 
                               ? (isToday ? 'primary.light' : 'background.paper')
                               : 'grey.50',
@@ -421,8 +417,6 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             // Better mobile interactions
                             userSelect: 'none',
                             WebkitUserSelect: 'none',
-                            // Mobile-first responsive spacing
-                            mx: { xs: 0, sm: 'auto' },
                             '&:hover': {
                               bgcolor: isCurrentMonth ? 'action.hover' : 'grey.100',
                               transform: isMobile ? 'scale(1.02)' : 'translateY(-1px)',
@@ -434,165 +428,87 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             display: 'flex',
                             flexDirection: 'column',
                             opacity: isCurrentMonth ? 1 : 0.6,
-                            // Better mobile visual hierarchy
-                            ...(isMobile && {
-                              minWidth: 0, // Allow flex shrinking
-                              flex: 1,
-                            }),
+                            // Ensure consistent sizing
+                            position: 'relative',
+                            overflow: 'hidden',
                           }}
-                          onClick={() => handleDateClick(day)}
+                          onClick={() => {
+                            if (dayItems.length > 0) {
+                              // If there are tasks, show the modal
+                              handleShowMoreClick(day, dayItems, { stopPropagation: () => {} } as React.MouseEvent);
+                            } else {
+                              // If no tasks, trigger date click for potential new task creation
+                              handleDateClick(day);
+                            }
+                          }}
                           onMouseEnter={() => setHoveredDate(dateKey)}
                           onMouseLeave={() => setHoveredDate(null)}
                         >
+                          {/* Day content - simplified to just show day number and task count */}
                           <Box sx={{ 
                             display: 'flex', 
-                            justifyContent: 'space-between', 
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            mb: { xs: 1, sm: 0.5 },
+                            justifyContent: 'center',
+                            height: '100%',
+                            gap: 1,
                           }}>
+                            {/* Day number */}
                             <Typography 
-                              variant="body2" 
+                              variant="h6"
                               sx={{ 
-                                fontWeight: isToday ? 'bold' : 'medium',
+                                fontWeight: isToday ? 'bold' : '600',
                                 color: isCurrentMonth 
                                   ? (isToday ? 'white' : 'text.primary') 
                                   : 'text.disabled',
                                 fontSize: { 
-                                  xs: isSmallMobile ? '0.8rem' : '0.9rem', 
-                                  sm: '1rem' 
+                                  xs: isSmallMobile ? '1rem' : '1.1rem', 
+                                  sm: '1.25rem',
+                                  md: '1.5rem'
                                 },
-                                lineHeight: 1.2,
-                                // Better mobile visibility
-                                ...(isMobile && {
-                                  fontWeight: isToday ? 'bold' : '600',
-                                }),
+                                lineHeight: 1,
+                                textAlign: 'center',
                               }}
                             >
                               {day.format('D')}
                             </Typography>
-                            {dayItems.length > 0 && (
-                              <Chip
-                                label={dayItems.length}
-                                size="small"
-                                sx={{
-                                  height: { xs: 20, sm: 18 },
-                                  fontSize: { xs: '0.7rem', sm: '0.65rem' },
-                                  bgcolor: dayItems.some(item => item.isOverdue) 
-                                    ? 'error.main' 
-                                    : 'primary.main',
-                                  color: 'white',
-                                  minWidth: { xs: 20, sm: 18 },
-                                  fontWeight: '600',
-                                  // Better mobile visibility
-                                  borderRadius: { xs: 1.5, sm: 1 },
-                                }}
-                              />
-                            )}
-                          </Box>
-                          
-                          {/* Calendar Items */}
-                          <Box sx={{ 
-                            flex: 1, 
-                            overflow: 'hidden',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: { xs: 0.5, sm: 0.25 },
-                          }}>
-                            {dayItems.slice(0, isSmallMobile ? 1 : isMobile ? 2 : 3).map((item, idx) => (
-                              <Fade key={`${item.id}-${item.type}`} in timeout={300 + idx * 100}>
-                                <Tooltip 
-                                  title={`${item.title} (${item.type === 'PM_SCHEDULE' ? 'PM' : 'WO'})${item.isOverdue ? ' - OVERDUE' : ''}`}
-                                  placement="top"
-                                >
-                                  <Chip
-                                    icon={getItemIcon(item)}
-                                    label={item.title}
-                                    size="small"
-                                    onClick={(e) => handleItemClick(item, e)}
-                                    sx={{
-                                      width: '100%',
-                                      height: 'auto',
-                                      minHeight: { xs: 24, sm: 26 },
-                                      fontSize: { 
-                                        xs: isSmallMobile ? '0.6rem' : '0.65rem', 
-                                        sm: '0.7rem' 
-                                      },
-                                      bgcolor: getItemColor(item),
-                                      color: 'white',
-                                      borderRadius: { xs: 2, sm: 2.5 },
-                                      fontWeight: '500',
-                                      '& .MuiChip-label': {
-                                        display: 'block',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        maxWidth: '100%',
-                                        px: { xs: 0.5, sm: 0.75 },
-                                        py: { xs: 0.25, sm: 0.4 },
-                                      },
-                                      '& .MuiChip-icon': {
-                                        color: 'white',
-                                        fontSize: { xs: '0.75rem', sm: '0.8rem' },
-                                        ml: { xs: 0.5, sm: 0.75 },
-                                      },
-                                      '&:hover': {
-                                        transform: 'scale(1.02)',
-                                        boxShadow: 2,
-                                        filter: 'brightness(1.1)',
-                                      },
-                                      transition: 'all 0.2s ease-in-out',
-                                      // Better mobile touch targets
-                                      WebkitTapHighlightColor: 'transparent',
-                                      // Enhanced mobile interactions
-                                      ...(isMobile && {
-                                        minHeight: 28,
-                                        '&:active': {
-                                          transform: 'scale(0.98)',
-                                        },
-                                      }),
-                                    }}
-                                  />
-                                </Tooltip>
-                              </Fade>
-                            ))}
                             
-                            {dayItems.length > (isSmallMobile ? 1 : isMobile ? 2 : 3) && (
-                              <Button
-                                size="small"
-                                variant="text"
-                                sx={{ 
-                                  color: 'primary.main', 
-                                  fontSize: { 
-                                    xs: isSmallMobile ? '0.6rem' : '0.65rem', 
-                                    sm: '0.7rem' 
-                                  },
-                                  fontWeight: 600,
-                                  minHeight: { xs: 24, sm: 26 },
-                                  padding: { xs: '2px 4px', sm: '3px 6px' },
-                                  textTransform: 'none',
-                                  width: '100%',
-                                  borderRadius: { xs: 2, sm: 2.5 },
-                                  backgroundColor: 'action.hover',
-                                  '&:hover': {
-                                    backgroundColor: 'primary.light',
-                                    transform: 'scale(1.05)',
+                            {/* Task count badge */}
+                            {dayItems.length > 0 && (
+                              <Box sx={{ 
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}>
+                                <Chip
+                                  label={dayItems.length}
+                                  size="small"
+                                  sx={{
+                                    height: { xs: 24, sm: 28 },
+                                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                    bgcolor: dayItems.some(item => item.isOverdue) 
+                                      ? 'error.main' 
+                                      : 'primary.main',
                                     color: 'white',
-                                  },
-                                  transition: 'all 0.2s ease',
-                                  // Better mobile touch targets
-                                  WebkitTapHighlightColor: 'transparent',
-                                  // Enhanced mobile interactions
-                                  ...(isMobile && {
-                                    minHeight: 28,
-                                    '&:active': {
-                                      transform: 'scale(0.98)',
-                                    },
-                                  }),
-                                }}
-                                onClick={(e) => handleShowMoreClick(day, dayItems, e)}
-                              >
-                                +{dayItems.length - (isSmallMobile ? 1 : isMobile ? 2 : 3)} more
-                              </Button>
+                                    minWidth: { xs: 32, sm: 36 },
+                                    fontWeight: '600',
+                                    borderRadius: 2,
+                                    px: 1,
+                                  }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                                    color: 'text.secondary',
+                                    textAlign: 'center',
+                                    lineHeight: 1,
+                                  }}
+                                >
+                                  {dayItems.length === 1 ? 'task' : 'tasks'}
+                                </Typography>
+                              </Box>
                             )}
                           </Box>
                         </Paper>

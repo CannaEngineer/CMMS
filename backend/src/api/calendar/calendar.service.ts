@@ -73,6 +73,17 @@ export const calendarService = {
                 location: true,
               },
             },
+            workOrders: {
+              where: {
+                status: {
+                  not: 'COMPLETED'
+                }
+              },
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 1, // Get the most recent active work order
+            },
           },
           orderBy: {
             nextDue: 'asc',
@@ -81,6 +92,7 @@ export const calendarService = {
 
         for (const pm of pmSchedules) {
           const isOverdue = dayjs(pm.nextDue).isBefore(dayjs(), 'day');
+          const activeWorkOrder = pm.workOrders?.[0]; // Get the most recent active work order
           
           items.push({
             id: pm.id,
@@ -95,7 +107,12 @@ export const calendarService = {
             description: pm.description || undefined,
             isOverdue,
             estimatedDuration: 60, // Default 1 hour for PM tasks
-            originalData: pm,
+            originalData: {
+              ...pm,
+              // Include work order information for navigation
+              workOrderId: activeWorkOrder?.id,
+              workOrder: activeWorkOrder,
+            },
           });
         }
       } catch (error) {

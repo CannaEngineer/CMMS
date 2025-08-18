@@ -1078,16 +1078,15 @@ export default function Dashboard() {
                 } else if (item.type === 'PM_SCHEDULE') {
                   // For PM schedules, always look for the associated work order first
                   const workOrderId = item.originalData?.workOrderId || 
-                                     item.originalData?.workOrder?.id ||
-                                     item.originalData?.id; // Sometimes the PM itself has the work order ID
+                                     item.originalData?.workOrder?.id;
                   
                   if (workOrderId) {
                     // Navigate to the associated work order
                     navigate(`/work-orders/${workOrderId}`);
                   } else {
-                    // Fallback: try to find work order by PM schedule ID
-                    // This might be needed if the data structure is different
-                    console.warn('No work order found for PM schedule:', item);
+                    // Fallback: If no work order exists yet, create one from PM
+                    console.warn('No work order found for PM schedule, creating one:', item);
+                    // TODO: Implement create work order from PM schedule
                     navigate(`/maintenance/schedules/${item.id}`);
                   }
                 }
@@ -1354,13 +1353,13 @@ export default function Dashboard() {
                 } else if (item.itemType === 'PM_SCHEDULE') {
                   // For PM schedules, always look for the associated work order first
                   const workOrderId = item.originalData?.workOrderId || 
-                                     item.originalData?.workOrder?.id ||
-                                     item.originalData?.id; // Sometimes the PM itself has the work order ID
+                                     item.originalData?.workOrder?.id;
                   
                   if (workOrderId) {
                     navigate(`/work-orders/${workOrderId}`);
                   } else {
-                    console.warn('No work order found for PM schedule:', item);
+                    console.warn('No work order found for PM schedule, creating one:', item);
+                    // TODO: Implement create work order from PM schedule
                     navigate(`/maintenance/schedules/${item.id}`);
                   }
                 }
