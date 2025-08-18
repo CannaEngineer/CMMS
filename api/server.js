@@ -2,74 +2,80 @@
 const path = require('path');
 
 console.log('[Vercel API] Starting serverless function (server.js)...');
-console.log('[Vercel API] Environment:', {
-  NODE_ENV: process.env.NODE_ENV,
-  VERCEL: process.env.VERCEL,
-  VERCEL_ENV: process.env.VERCEL_ENV,
-  VERCEL_URL: process.env.VERCEL_URL,
-  __dirname: __dirname
-});
 
-// Set the working directory to backend for proper module resolution
+// CORS middleware function
+const setCorsHeaders = (res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
+};
+
+// Try to load the Express app
+let app = null;
+let loadError = null;
+
 try {
-  process.chdir(path.join(__dirname, '../backend'));
-  console.log('[Vercel API] Changed working directory to:', process.cwd());
-} catch (error) {
-  console.error('[Vercel API] Failed to change working directory:', error);
-}
-
-// Import the compiled Express app from the backend dist directory
-let app;
-try {
-  console.log('[Vercel API] Loading backend app from:', path.join(__dirname, '../backend/dist/src/index.js'));
-  const appModule = require('../backend/dist/src/index.js');
-  app = appModule.default || appModule;
-  console.log('[Vercel API] Backend app loaded successfully');
-} catch (error) {
-  console.error('[Vercel API] Failed to load backend app:', error);
-  console.error('[Vercel API] Error stack:', error.stack);
-}
-
-// CORS wrapper to ensure headers are always set
-const corsWrapper = (req, res) => {
-  // Add CORS headers for all requests
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173', 
-    'https://cmms-orpin.vercel.app',
-    'https://your-cmms-app.vercel.app'
-  ];
-  
-  // Always set CORS headers, even for errors
-  if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Access-Control-Max-Age', '86400');
+  // Set the working directory to backend for proper module resolution
+  const backendPath = path.join(__dirname, '../backend');
+  if (require('fs').existsSync(backendPath)) {
+    process.chdir(backendPath);
+    console.log('[Vercel API] Changed working directory to:', process.cwd());
   }
+  
+  // Try to load the compiled Express app
+  const indexPath = path.join(__dirname, '../backend/dist/src/index.js');
+  console.log('[Vercel API] Attempting to load:', indexPath);
+  
+  if (require('fs').existsSync(indexPath)) {
+    const appModule = require(indexPath);
+    app = appModule.default || appModule;
+    console.log('[Vercel API] Backend app loaded successfully');
+  } else {
+    loadError = new Error(`Backend file not found at: ${indexPath}`);
+    console.error('[Vercel API] Backend file not found');
+  }
+} catch (error) {
+  loadError = error;
+  console.error('[Vercel API] Failed to load backend app:', error.message);
+  console.error('[Vercel API] Stack:', error.stack);
+}
+
+// Main handler
+module.exports = (req, res) => {
+  // Always set CORS headers
+  setCorsHeaders(res);
+  
+  // Log the request
+  console.log(`[Vercel API] ${req.method} ${req.url}`);
   
   // Handle OPTIONS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log('[Vercel API] Handling OPTIONS preflight request for:', req.url);
+    console.log('[Vercel API] Handling OPTIONS preflight request');
     res.status(200).end();
     return;
   }
   
-  // If app loaded successfully, pass the request to it
+  // If app loaded successfully, use it
   if (app && typeof app === 'function') {
-    console.log('[Vercel API] Processing request:', req.method, req.url);
-    app(req, res);
+    try {
+      app(req, res);
+    } catch (error) {
+      console.error('[Vercel API] Error handling request:', error);
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: 'An error occurred while processing your request'
+      });
+    }
   } else {
-    console.error('[Vercel API] App is not available or not a function');
+    // App failed to load, return error with details
+    console.error('[Vercel API] App not available');
     res.status(503).json({
       error: 'Service Unavailable',
-      message: 'Backend service is not available. Please try again later.',
-      details: process.env.NODE_ENV === 'development' ? 'Express app failed to load' : undefined
+      message: 'Backend service is not available',
+      details: loadError ? loadError.message : 'Unknown error',
+      timestamp: new Date().toISOString()
     });
   }
 };
-
-// Export the wrapped function
-module.exports = corsWrapper;
