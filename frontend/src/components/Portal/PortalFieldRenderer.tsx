@@ -628,9 +628,16 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return null;
 
       default:
+        // Enhanced debugging for unsupported field types
+        console.error('PortalFieldRenderer - Unsupported field type:', {
+          originalFieldType: field.fieldType,
+          normalizedFieldType: normalizedFieldType,
+          fieldName: field.fieldName,
+          field: field
+        });
         return (
           <Alert severity="warning">
-            Unsupported field type: {field.fieldType}
+            Unsupported field type: {field.fieldType} (normalized: {normalizedFieldType})
           </Alert>
         );
     }

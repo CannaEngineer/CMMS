@@ -415,16 +415,17 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
   const isLastStep = currentStep === fieldSteps.length - 1;
   const currentFields = fieldSteps[currentStep] || [];
 
-  // Field details for debugging (remove in production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Portal Form Debug - Field Details:', {
-      currentFieldsLength: currentFields.length,
-      currentFields: currentFields.map(f => ({
-        fieldType: f.fieldType,
-        fieldName: f.fieldName
-      }))
-    });
-  }
+  // Field details for debugging
+  console.log('Portal Form Debug - Field Details:', {
+    currentFieldsLength: currentFields.length,
+    currentFields: currentFields.map(f => ({
+      fieldType: f.fieldType,
+      fieldName: f.fieldName,
+      fieldLabel: f.fieldLabel,
+      label: f.label,
+      allProps: Object.keys(f)
+    }))
+  });
 
   return (
     <>
