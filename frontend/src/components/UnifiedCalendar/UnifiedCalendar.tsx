@@ -54,6 +54,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   const [currentDate, setCurrentDate] = useState<Dayjs>(dayjs());
   const [hoveredDate, setHoveredDate] = useState<string | null>(null);
@@ -229,18 +230,27 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
       <Paper 
         elevation={3} 
         sx={{ 
-          height,
+          height: isMobile ? 'fit-content' : height,
+          minHeight: isMobile ? 500 : height,
+          maxHeight: isMobile ? '80vh' : height,
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: 3,
+          borderRadius: isMobile ? 2 : 3,
           background: theme.palette.background.paper,
           border: `1px solid ${theme.palette.divider}`,
           overflow: 'hidden',
+          // Mobile-first improvements
+          ...(isMobile && {
+            mx: -1, // Extend to screen edges on mobile
+            borderRadius: 0,
+            border: 'none',
+            boxShadow: 'none',
+          }),
         }}
       >
         {/* Calendar Header - Matching PM Calendar Style */}
         <Box sx={{ 
-          p: 3, 
+          p: { xs: 2, sm: 3 }, 
           background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.secondary.main}10 100%)`,
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}>
@@ -252,7 +262,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           gap: isMobile ? 1 : 0,
         }}>
           <Typography 
-            variant={isMobile ? "h5" : "h4"} 
+            variant={isSmallMobile ? "h6" : isMobile ? "h5" : "h4"} 
             sx={{ 
               fontWeight: 700,
               background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
@@ -260,9 +270,10 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               textAlign: isMobile ? 'center' : 'left',
+              fontSize: { xs: '1.25rem', sm: '1.5rem', md: '2rem' },
             }}
           >
-            {currentDate.format(isMobile ? 'MMM YYYY' : 'MMMM YYYY')}
+            {currentDate.format(isSmallMobile ? 'MMM YY' : isMobile ? 'MMM YYYY' : 'MMMM YYYY')}
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -272,6 +283,8 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               sx={{
                 borderRadius: 2,
                 background: theme.palette.background.paper,
+                minWidth: { xs: 44, sm: 48 },
+                minHeight: { xs: 44, sm: 48 },
                 '&:hover': {
                   background: theme.palette.action.hover,
                   transform: 'scale(1.05)',
@@ -287,6 +300,8 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               sx={{
                 borderRadius: 2,
                 background: theme.palette.background.paper,
+                minWidth: { xs: 44, sm: 48 },
+                minHeight: { xs: 44, sm: 48 },
                 '&:hover': {
                   background: theme.palette.action.hover,
                   transform: 'scale(1.05)',
@@ -302,6 +317,8 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               sx={{
                 borderRadius: 2,
                 background: theme.palette.background.paper,
+                minWidth: { xs: 44, sm: 48 },
+                minHeight: { xs: 44, sm: 48 },
                 '&:hover': {
                   background: theme.palette.action.hover,
                   transform: 'scale(1.05)',
@@ -316,7 +333,16 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
       </Box>
 
       {/* Calendar Body */}
-      <Box sx={{ flex: 1, p: 2, overflow: 'hidden' }}>
+      <Box sx={{ 
+        flex: 1, 
+        p: { xs: 1, sm: 2 }, 
+        overflow: 'hidden',
+        // Better mobile scrolling
+        ...(isMobile && {
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
+        }),
+      }}>
         {isLoading_combined ? (
           <Box sx={{ p: 3 }}>
             <LoadingBar progress={undefined} sx={{ mb: 2 }} />
@@ -363,12 +389,29 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
             </Grid>
 
             {/* Calendar Grid */}
-            <Box sx={{ flex: 1, overflow: 'auto' }}>
+            <Box sx={{ 
+              flex: 1, 
+              overflow: 'auto',
+              // Ensure proper height calculation on mobile
+              ...(isMobile && {
+                minHeight: 400,
+                height: 'auto',
+              }),
+            }}>
               {calendarGrid.map((week, weekIndex) => (
                 <Grid 
                   container 
+                  spacing={isMobile ? 0.5 : 1}
                   key={weekIndex} 
-                  sx={{ mb: 1, height: `${100 / calendarGrid.length}%` }}
+                  sx={{ 
+                    mb: { xs: 0.5, sm: 1 }, 
+                    height: isMobile ? 'auto' : `${100 / calendarGrid.length}%`,
+                    minHeight: { xs: isSmallMobile ? 80 : 100, sm: 100, md: 120 },
+                    // Ensure consistent row heights on mobile
+                    ...(isMobile && {
+                      flex: '1 0 auto',
+                    }),
+                  }}
                 >
                   {week.map((day) => {
                     const isCurrentMonth = day.month() === currentDate.month();
@@ -383,7 +426,11 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                           elevation={isHovered ? 3 : 1}
                           sx={{
                             height: '100%',
-                            minHeight: { xs: isMobile ? 100 : 80, sm: 100, md: 120 },
+                            minHeight: { 
+                              xs: isSmallMobile ? 80 : 100, 
+                              sm: 100, 
+                              md: 120 
+                            },
                             p: { xs: 0.5, sm: 1 },
                             bgcolor: isCurrentMonth 
                               ? (isToday ? 'primary.light' : 'background.paper')
@@ -395,6 +442,9 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             // Enhanced touch targets for mobile
                             WebkitTapHighlightColor: 'transparent',
                             touchAction: 'manipulation',
+                            // Better mobile interactions
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
                             '&:hover': {
                               bgcolor: isCurrentMonth ? 'action.hover' : 'grey.100',
                               transform: isMobile ? 'scale(1.02)' : 'translateY(-1px)',
@@ -406,6 +456,12 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             display: 'flex',
                             flexDirection: 'column',
                             opacity: isCurrentMonth ? 1 : 0.6,
+                            // Improved mobile borders
+                            ...(isMobile && {
+                              borderRadius: 1,
+                              border: isToday ? `2px solid ${theme.palette.primary.main}` : '1px solid',
+                              borderColor: isToday ? 'primary.main' : 'divider',
+                            }),
                           }}
                           onClick={() => handleDateClick(day)}
                           onMouseEnter={() => setHoveredDate(dateKey)}
@@ -424,7 +480,11 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                                 color: isCurrentMonth 
                                   ? (isToday ? 'white' : 'text.primary') 
                                   : 'text.disabled',
-                                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                                fontSize: { 
+                                  xs: isSmallMobile ? '0.7rem' : '0.75rem', 
+                                  sm: '0.875rem' 
+                                },
+                                lineHeight: 1.2,
                               }}
                             >
                               {day.format('D')}
@@ -448,7 +508,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                           
                           {/* Calendar Items */}
                           <Box sx={{ flex: 1, overflow: 'hidden' }}>
-                            {dayItems.slice(0, isMobile ? 2 : 3).map((item, idx) => (
+                            {dayItems.slice(0, isSmallMobile ? 1 : isMobile ? 2 : 3).map((item, idx) => (
                               <Fade key={`${item.id}-${item.type}`} in timeout={300 + idx * 100}>
                                 <Tooltip 
                                   title={`${item.title} (${item.type === 'PM_SCHEDULE' ? 'PM' : 'WO'})${item.isOverdue ? ' - OVERDUE' : ''}`}
@@ -462,55 +522,70 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                                     sx={{
                                       width: '100%',
                                       height: 'auto',
+                                      minHeight: { xs: 20, sm: 24 },
                                       mb: 0.25,
-                                      fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                                      fontSize: { 
+                                        xs: isSmallMobile ? '0.5rem' : '0.55rem', 
+                                        sm: '0.65rem' 
+                                      },
                                       bgcolor: getItemColor(item),
                                       color: 'white',
+                                      borderRadius: isMobile ? 1 : 2,
                                       '& .MuiChip-label': {
                                         display: 'block',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         maxWidth: '100%',
-                                        px: 0.5,
+                                        px: { xs: 0.25, sm: 0.5 },
+                                        py: { xs: 0.1, sm: 0.25 },
                                       },
                                       '& .MuiChip-icon': {
                                         color: 'white',
-                                        fontSize: '0.75rem',
+                                        fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                                        ml: { xs: 0.25, sm: 0.5 },
                                       },
                                       '&:hover': {
                                         transform: 'scale(1.02)',
                                         boxShadow: 2,
                                       },
                                       transition: 'all 0.2s ease-in-out',
+                                      // Better mobile touch targets
+                                      WebkitTapHighlightColor: 'transparent',
                                     }}
                                   />
                                 </Tooltip>
                               </Fade>
                             ))}
                             
-                            {dayItems.length > (isMobile ? 2 : 3) && (
+                            {dayItems.length > (isSmallMobile ? 1 : isMobile ? 2 : 3) && (
                               <Button
                                 size="small"
                                 variant="text"
                                 sx={{ 
                                   color: 'primary.main', 
-                                  fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                                  fontSize: { 
+                                    xs: isSmallMobile ? '0.5rem' : '0.55rem', 
+                                    sm: '0.65rem' 
+                                  },
                                   fontWeight: 600,
-                                  minHeight: 'auto',
-                                  padding: '2px 4px',
+                                  minHeight: { xs: 20, sm: 24 },
+                                  padding: { xs: '1px 2px', sm: '2px 4px' },
                                   textTransform: 'none',
                                   width: '100%',
                                   mt: 0.25,
+                                  borderRadius: isMobile ? 1 : 2,
                                   '&:hover': {
                                     backgroundColor: 'primary.light',
                                     transform: 'scale(1.05)',
                                   },
                                   transition: 'all 0.2s ease',
+                                  // Better mobile touch targets
+                                  WebkitTapHighlightColor: 'transparent',
                                 }}
                                 onClick={(e) => handleShowMoreClick(day, dayItems, e)}
                               >
-                                +{dayItems.length - (isMobile ? 2 : 3)} more
+                                +{dayItems.length - (isSmallMobile ? 1 : isMobile ? 2 : 3)} more
                               </Button>
                             )}
                           </Box>

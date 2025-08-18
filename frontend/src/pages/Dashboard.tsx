@@ -72,12 +72,6 @@ import WorkOrderPreviewModal from '../components/WorkOrder/WorkOrderPreviewModal
 import { CalendarItem, CalendarStats, calendarItemsToPMScheduleItems } from '../types/calendar';
 import dayjs from 'dayjs';
 
-interface QuickAction {
-  label: string;
-  icon: React.ReactNode;
-  color: 'primary' | 'secondary' | 'success' | 'error' | 'warning';
-  onClick: () => void;
-}
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -263,18 +257,6 @@ export default function Dashboard() {
   // Memoized empty initial data to prevent re-renders
   const emptyInitialData = useMemo(() => ({}), []);
 
-  // Quick action handlers - memoized to prevent re-renders
-  const handleNewWorkOrder = useCallback(() => {
-    setWorkOrderFormOpen(true);
-  }, []);
-
-  const handleNewAsset = useCallback(() => {
-    setAssetFormOpen(true);
-  }, []);
-
-  const handleScheduleMaintenance = useCallback(() => {
-    setMaintenanceFormOpen(true);
-  }, []);
 
   // Handle view toggle
   const handleViewToggle = useCallback((useCalendar: boolean) => {
@@ -299,27 +281,6 @@ export default function Dashboard() {
     setMaintenanceCalendarOpen(true);
   }, []);
 
-  // Quick actions for immediate task execution - no memoization needed for simple arrays
-  const quickActions = [
-    {
-      label: 'New Work Order',
-      icon: <AddIcon />,
-      color: 'primary' as const,
-      onClick: handleNewWorkOrder,
-    },
-    {
-      label: 'Add Asset',
-      icon: <AssetIcon />,
-      color: 'secondary' as const,
-      onClick: handleNewAsset,
-    },
-    {
-      label: 'Schedule Maintenance',
-      icon: <ScheduleIcon />,
-      color: 'success' as const,
-      onClick: handleScheduleMaintenance,
-    },
-  ];
 
   // Navigate to specific filtered views - memoized to prevent re-renders
   const handleOverdueTasksClick = useCallback(() => {
@@ -673,76 +634,6 @@ export default function Dashboard() {
     </Fade>
   );
 
-  const QuickActionsSection = () => (
-    <Fade in timeout={800}>
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
-            Quick Actions
-          </Typography>
-          <Grid container spacing={2}>
-            {quickActions.map((action, index) => (
-              <Grid size={{ xs: 12, sm: 4 }} key={index}>
-                <Grow in timeout={1000 + (index * 200)}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={action.icon}
-                    onClick={action.onClick}
-                    color={action.color}
-                    size="large"
-                    sx={{ 
-                      py: { xs: 2.5, sm: 2 },
-                      px: { xs: 3, sm: 3 },
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      // Enhanced touch targets for field use (minimum 48px height)
-                      minHeight: { xs: 64, sm: 56 },
-                      boxShadow: theme.shadows[4],
-                      borderRadius: 3,
-                      textTransform: 'none',
-                      fontSize: { xs: '1.1rem', sm: '1rem' },
-                      fontWeight: 700,
-                      // Enhanced contrast gradient
-                      background: `linear-gradient(135deg, ${theme.palette[action.color].main}, ${theme.palette[action.color].dark})`,
-                      // Stronger border for outdoor visibility
-                      border: `2px solid ${theme.palette[action.color].main}80`,
-                      color: 'white',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-                      '&:hover': {
-                        transform: 'translateY(-3px) scale(1.02)',
-                        boxShadow: `${theme.shadows[12]}, 0 0 20px ${theme.palette[action.color].main}30`,
-                        background: `linear-gradient(135deg, ${theme.palette[action.color].dark}, ${theme.palette[action.color].main})`,
-                        border: `2px solid ${theme.palette[action.color].light}`,
-                      },
-                      '&:active': {
-                        transform: 'scale(0.96)',
-                      },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      // Enhanced touch optimizations for gloved hands
-                      WebkitTapHighlightColor: 'transparent',
-                      touchAction: 'manipulation',
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', fontSize: { xs: 24, sm: 20 } }}>
-                        {action.icon}
-                      </Box>
-                      <Box sx={{ flexGrow: 1, textAlign: 'left' }}>
-                        <Typography variant="body1" fontWeight={600} color="inherit">
-                          {action.label}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Button>
-                </Grow>
-              </Grid>
-            ))}
-          </Grid>
-        </CardContent>
-      </Card>
-    </Fade>
-  );
 
   const KeyMetricsSection = () => (
     <Grid container spacing={2} sx={{ mb: 3 }}>
@@ -818,7 +709,7 @@ export default function Dashboard() {
                 size="small" 
                 variant="outlined"
                 startIcon={<AddIcon />}
-                onClick={handleNewWorkOrder}
+                onClick={() => setWorkOrderFormOpen(true)}
                 sx={{
                   minHeight: 36,
                   '&:hover': {
@@ -1168,13 +1059,18 @@ export default function Dashboard() {
           {/* Status Hero Section */}
           <StatusHeroSection />
           
-          {/* Quick Actions */}
-          {!isMobile && <QuickActionsSection />}
           
           {/* Unified Calendar */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ 
+            mb: 3,
+            // Prevent calendar from being squished on mobile
+            ...(isMobile && {
+              px: 0,
+              mx: -2, // Extend to screen edges for better mobile experience
+            }),
+          }}>
             <UnifiedCalendar
-              height={isMobile ? 500 : 700}
+              height={isMobile ? 600 : 700}
               onItemClick={(item: CalendarItem) => {
                 if (item.type === 'WORK_ORDER') {
                   setSelectedWorkOrder(item);
@@ -1191,8 +1087,6 @@ export default function Dashboard() {
             />
           </Box>
           
-          {/* Mobile Quick Actions */}
-          {isMobile && <QuickActionsSection />}
         </Box>
       </PageLayout>
     );
@@ -1244,13 +1138,22 @@ export default function Dashboard() {
         {/* Classic Dashboard Layout */}
         {/* Mobile: Single column layout - Field Technician Focused */}
         {isMobile ? (
-          <Container maxWidth="sm" disableGutters>
+          <Container 
+            maxWidth="sm" 
+            disableGutters
+            sx={{
+              px: { xs: 1, sm: 2 },
+              // Better mobile spacing
+              '& > *': {
+                mb: { xs: 2, sm: 3 },
+              },
+            }}
+          >
             <StatusHeroSection />
             {totalUrgent > 0 ? (
               // Priority-first view when there are urgent items
               <>
                 <PriorityTasksSection />
-                <QuickActionsSection />
                 {selectedTab === 0 && <KeyMetricsSection />}
                 {selectedTab === 1 && <RecentActivitySection />}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
@@ -1275,7 +1178,6 @@ export default function Dashboard() {
             ) : (
               // Normal view when all systems operational
               <>
-                <QuickActionsSection />
                 <KeyMetricsSection />
                 <RecentActivitySection />
               </>
@@ -1289,7 +1191,6 @@ export default function Dashboard() {
             <Grid container spacing={3}>
               {/* Left Column */}
               <Grid size={{ xs: 12, md: 8 }}>
-                <QuickActionsSection />
                 <KeyMetricsSection />
                 <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
                   <Tabs 
@@ -1367,7 +1268,7 @@ export default function Dashboard() {
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 zIndex: theme.zIndex.fab,
               }}
-              onClick={handleNewWorkOrder}
+              onClick={() => setWorkOrderFormOpen(true)}
             >
               <AddIcon />
             </Fab>
@@ -1421,7 +1322,7 @@ export default function Dashboard() {
           <Button
             variant="outlined"
             size="small"
-            onClick={handleScheduleMaintenance}
+            onClick={() => setMaintenanceFormOpen(true)}
             startIcon={<AddIcon />}
           >
             Schedule New
