@@ -47,5 +47,41 @@ try {
   }
 }
 
-// Export the Express app as a Vercel serverless function
-module.exports = app;
+// Ensure CORS headers are added even if the app fails to load
+const corsWrapper = (req, res) => {
+  // Add CORS headers for all requests
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://cmms-orpin.vercel.app',
+    'https://your-cmms-app.vercel.app'
+  ];
+  
+  // Check if origin is allowed or is a Vercel preview
+  if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  
+  // Handle OPTIONS preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log('[Vercel API] Handling OPTIONS preflight request');
+    res.status(200).end();
+    return;
+  }
+  
+  // Pass to the Express app
+  if (typeof app === 'function') {
+    app(req, res);
+  } else {
+    console.error('[Vercel API] App is not a function');
+    res.status(500).json({ error: 'Server initialization failed' });
+  }
+};
+
+// Export the wrapped function
+module.exports = corsWrapper;

@@ -50,8 +50,45 @@ const port = process.env.PORT || 5000;
 // Initialize WebSocket service
 WebSocketService.getInstance().initialize(server);
 
+// CORS configuration
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // In production, allow specific domains
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://cmms-orpin.vercel.app',
+      'https://your-cmms-app.vercel.app',
+      /\.vercel\.app$/  // Allow all Vercel preview deployments
+    ];
+    
+    const allowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (allowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(null, true); // For now, allow all origins to fix the immediate issue
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400 // 24 hours
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit for CSV imports
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL encoded payload limit
 
