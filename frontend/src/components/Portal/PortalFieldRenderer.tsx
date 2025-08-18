@@ -94,13 +94,11 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       ?.toLowerCase()
       .replace(/_/g, '-');
     
-    // Debug log to see what field types we're getting
-    if (!normalizedFieldType || normalizedFieldType === '') {
+    // Debug log to see what field types we're getting (development only)
+    if (process.env.NODE_ENV === 'development' && (!normalizedFieldType || normalizedFieldType === '')) {
       console.warn('PortalFieldRenderer - Empty or undefined fieldType:', {
         fieldName: field.fieldName,
-        label: label,
-        fieldType: field.fieldType,
-        rawField: field
+        fieldType: field.fieldType
       });
     }
     
