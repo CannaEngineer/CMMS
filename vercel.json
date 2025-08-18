@@ -61,6 +61,42 @@
       "destination": "/api/import.js"
     },
     {
+      "source": "/api/assets/(.*)",
+      "destination": "/api/assets.js"
+    },
+    {
+      "source": "/api/assets",
+      "destination": "/api/assets.js"
+    },
+    {
+      "source": "/api/locations/(.*)",
+      "destination": "/api/locations.js"
+    },
+    {
+      "source": "/api/locations",
+      "destination": "/api/locations.js"
+    },
+    {
+      "source": "/api/users/(.*)",
+      "destination": "/api/users.js"
+    },
+    {
+      "source": "/api/users",
+      "destination": "/api/users.js"
+    },
+    {
+      "source": "/api/parts/(.*)",
+      "destination": "/api/parts.js"
+    },
+    {
+      "source": "/api/parts",
+      "destination": "/api/parts.js"
+    },
+    {
+      "source": "/api/auth/(.*)",
+      "destination": "/api/auth.js"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/server-minimal.js"
     },
