@@ -422,7 +422,12 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
     fieldStepsLength: fieldSteps.length,
     isLastStep,
     currentFieldsLength: currentFields.length,
-    currentFields: currentFields,
+    currentFields: currentFields.map(f => ({
+      label: f.label,
+      fieldType: f.fieldType,
+      fieldName: f.fieldName,
+      isRequired: f.isRequired
+    })),
     portalConfigFields: portalInfo?.configuration?.fields
   });
 

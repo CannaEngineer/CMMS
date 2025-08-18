@@ -60,12 +60,20 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 }) => {
   const [, setSignatureData] = useState<string>('');
 
+  // Normalize field properties (handle both old and new field formats)
+  const label = label || field.fieldLabel || 'Field';
+  const placeholder = placeholder || field.fieldPlaceholder || '';
+  const description = field.fieldDescription || '';
+  const helpText = field.helpText || '';
+  const options = options || field.fieldOptions || [];
+  const validation = validation || validationRules || {};
+
   // Common props for all fields
   const commonProps = {
     fullWidth: true,
     disabled,
     error: Boolean(error),
-    helperText: error || field.fieldDescription,
+    helperText: error || description,
     required: field.isRequired,
     sx: {
       '& .MuiOutlinedInput-root': {
@@ -86,19 +94,29 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       ?.toLowerCase()
       .replace(/_/g, '-');
     
+    // Debug log to see what field types we're getting
+    if (!normalizedFieldType || normalizedFieldType === '') {
+      console.warn('PortalFieldRenderer - Empty or undefined fieldType:', {
+        fieldName: field.fieldName,
+        label: label,
+        fieldType: field.fieldType,
+        rawField: field
+      });
+    }
+    
     switch (normalizedFieldType) {
       case 'text':
         return (
           <TextField
             {...commonProps}
-            label={field.label}
+            label={label}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={placeholder}
             inputProps={{
-              pattern: field.validation?.pattern,
-              minLength: field.validation?.minLength,
-              maxLength: field.validation?.maxLength
+              pattern: validation?.pattern,
+              minLength: validation?.minLength,
+              maxLength: validation?.maxLength
             }}
           />
         );
@@ -107,15 +125,15 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <TextField
             {...commonProps}
-            label={field.label}
+            label={label}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={placeholder}
             multiline
             rows={4}
             inputProps={{
-              minLength: field.validation?.minLength,
-              maxLength: field.validation?.maxLength
+              minLength: validation?.minLength,
+              maxLength: validation?.maxLength
             }}
           />
         );
@@ -124,11 +142,11 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <TextField
             {...commonProps}
-            label={field.label}
+            label={label}
             type="email"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={placeholder}
           />
         );
 
@@ -136,11 +154,11 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <TextField
             {...commonProps}
-            label={field.label}
+            label={label}
             type="tel"
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={placeholder}
           />
         );
 
@@ -148,14 +166,14 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <TextField
             {...commonProps}
-            label={field.label}
+            label={label}
             type="number"
             value={value || ''}
             onChange={(e) => onChange(Number(e.target.value))}
-            placeholder={field.placeholder}
+            placeholder={placeholder}
             inputProps={{
-              min: field.validation?.min,
-              max: field.validation?.max
+              min: validation?.min,
+              max: validation?.max
             }}
           />
         );
@@ -163,13 +181,13 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       case 'select':
         return (
           <FormControl {...commonProps}>
-            <InputLabel>{field.label}</InputLabel>
+            <InputLabel>{label}</InputLabel>
             <Select
               value={value || ''}
               onChange={(e) => onChange(e.target.value)}
-              label={field.label}
+              label={label}
             >
-              {field.options?.map((option) => (
+              {options?.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {option.icon && <span>{option.icon}</span>}
@@ -191,9 +209,9 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       case 'multi-select':
         return (
           <FormControl component="fieldset" {...commonProps}>
-            <FormLabel component="legend">{field.label}</FormLabel>
+            <FormLabel component="legend">{label}</FormLabel>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
-              {field.options?.map((option) => (
+              {options?.map((option) => (
                 <Chip
                   key={option.value}
                   label={option.label}
@@ -222,13 +240,13 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       case 'radio':
         return (
           <FormControl component="fieldset" {...commonProps}>
-            <FormLabel component="legend">{field.label}</FormLabel>
+            <FormLabel component="legend">{label}</FormLabel>
             <RadioGroup
               value={value || ''}
               onChange={(e) => onChange(e.target.value)}
               sx={{ mt: 1 }}
             >
-              {field.options?.map((option) => (
+              {options?.map((option) => (
                 <FormControlLabel
                   key={option.value}
                   value={option.value}
@@ -262,9 +280,9 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         
         return (
           <FormControl component="fieldset" {...commonProps}>
-            <FormLabel component="legend">{field.label}</FormLabel>
+            <FormLabel component="legend">{label}</FormLabel>
             <FormGroup sx={{ mt: 1 }}>
-              {field.options?.map((option) => (
+              {options?.map((option) => (
                 <FormControlLabel
                   key={option.value}
                   control={
@@ -303,7 +321,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label={field.label}
+              label={label}
               value={value ? dayjs(value) : null}
               onChange={(newValue) => onChange(newValue?.format('YYYY-MM-DD'))}
               slotProps={{
@@ -320,7 +338,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <TimePicker
-              label={field.label}
+              label={label}
               value={value ? dayjs(value, 'HH:mm') : null}
               onChange={(newValue) => onChange(newValue?.format('HH:mm'))}
               slotProps={{
@@ -337,7 +355,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
         return (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DateTimePicker
-              label={field.label}
+              label={label}
               value={value ? dayjs(value) : null}
               onChange={(newValue) => onChange(newValue?.toISOString())}
               slotProps={{
@@ -360,7 +378,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 
         return (
           <FormControl component="fieldset" {...commonProps}>
-            <FormLabel component="legend">{field.label}</FormLabel>
+            <FormLabel component="legend">{label}</FormLabel>
             <RadioGroup
               value={value || 'MEDIUM'}
               onChange={(e) => onChange(e.target.value)}
@@ -407,7 +425,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       case 'rating':
         return (
           <FormControl component="fieldset" {...commonProps}>
-            <FormLabel component="legend">{field.label}</FormLabel>
+            <FormLabel component="legend">{label}</FormLabel>
             <Box sx={{ mt: 1 }}>
               <Rating
                 value={value || 0}
@@ -434,7 +452,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <LocationIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <TextField
@@ -476,7 +494,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <AssetIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <TextField
@@ -500,7 +518,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <CameraIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -524,7 +542,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <SignatureIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <TextField
@@ -549,11 +567,11 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <CameraIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {field.fieldDescription || `Upload ${normalizedFieldType === 'image' ? 'images' : 'files'} using the buttons below the form`}
+                    {description || `Upload ${normalizedFieldType === 'image' ? 'images' : 'files'} using the buttons below the form`}
                   </Typography>
                   
                   <Alert severity="info" sx={{ fontSize: '0.875rem' }}>
@@ -574,7 +592,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                 <LocationIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" gutterBottom>
-                    {field.label}
+                    {label}
                   </Typography>
                   
                   <TextField
@@ -630,13 +648,13 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
       {renderField()}
       
       {/* Help text */}
-      {field.helpText && !error && (
+      {helpText && !error && (
         <Typography
           variant="body2"
           color="text.secondary"
           sx={{ mt: 0.5, fontSize: '0.75rem' }}
         >
-          {field.helpText}
+          {helpText}
         </Typography>
       )}
     </Box>
