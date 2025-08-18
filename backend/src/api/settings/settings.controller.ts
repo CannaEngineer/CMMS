@@ -54,30 +54,64 @@ export const settingsController = {
           importHistory: 0
         };
 
+        // First, collect all entity IDs for this organization
+        console.log('Collecting entity IDs for organization:', organizationId);
+        
+        const workOrderIds = await tx.workOrder.findMany({
+          where: { organizationId },
+          select: { id: true }
+        }).then(results => results.map(wo => wo.id));
+
+        const assetIds = await tx.asset.findMany({
+          where: { organizationId },
+          select: { id: true }
+        }).then(results => results.map(a => a.id));
+
+        const locationIds = await tx.location.findMany({
+          where: { organizationId },
+          select: { id: true }
+        }).then(results => results.map(l => l.id));
+
+        const partIds = await tx.part.findMany({
+          where: { organizationId },
+          select: { id: true }
+        }).then(results => results.map(p => p.id));
+
+        const pmScheduleIds = await tx.pMSchedule.findMany({
+          where: { 
+            asset: { organizationId }
+          },
+          select: { id: true }
+        }).then(results => results.map(pm => pm.id));
+
+        console.log(`Found entities: WO=${workOrderIds.length}, Assets=${assetIds.length}, Locations=${locationIds.length}, Parts=${partIds.length}, PM=${pmScheduleIds.length}`);
+
         // Delete in order of dependencies
         
-        // 1. Delete work order related data
-        deletedCounts.comments = await tx.comment.deleteMany({
-          where: { 
-            workOrder: {
-              organizationId
+        // 1. Delete all comments related to this organization's entities (using polymorphic relation)
+        if (workOrderIds.length > 0 || assetIds.length > 0 || locationIds.length > 0 || partIds.length > 0 || pmScheduleIds.length > 0) {
+          deletedCounts.comments = await tx.comment.deleteMany({
+            where: { 
+              OR: [
+                ...(workOrderIds.length > 0 ? [{ entityType: 'workOrder', entityId: { in: workOrderIds } }] : []),
+                ...(assetIds.length > 0 ? [{ entityType: 'asset', entityId: { in: assetIds } }] : []),
+                ...(locationIds.length > 0 ? [{ entityType: 'location', entityId: { in: locationIds } }] : []),
+                ...(partIds.length > 0 ? [{ entityType: 'part', entityId: { in: partIds } }] : []),
+                ...(pmScheduleIds.length > 0 ? [{ entityType: 'pmSchedule', entityId: { in: pmScheduleIds } }] : [])
+              ]
             }
-          }
-        }).then(r => r.count);
+          }).then(r => r.count);
+        }
 
-        deletedCounts.attachments = await tx.attachment.deleteMany({
-          where: { 
-            workOrder: {
-              organizationId
-            }
-          }
-        }).then(r => r.count);
+        // 2. Attachment model doesn't exist in current schema
+        deletedCounts.attachments = 0;
 
+        // 3. Delete work orders
         deletedCounts.workOrders = await tx.workOrder.deleteMany({
           where: { organizationId }
         }).then(r => r.count);
 
-        // 2. Delete PM related data
+        // 4. Delete PM related data
         deletedCounts.maintenanceHistory = await tx.maintenanceHistory.deleteMany({
           where: { 
             pmSchedule: {
