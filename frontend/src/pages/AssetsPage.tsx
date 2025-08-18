@@ -24,8 +24,8 @@ const AssetsPage = () => {
 
     try {
       const [assetsResponse, locationsResponse] = await Promise.all([
-        fetch('/api/v1/assets', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/v1/locations', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/assets', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/locations', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (assetsResponse.ok) {
@@ -74,7 +74,7 @@ const AssetsPage = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const url = editingAsset ? `/api/v1/assets/${editingAsset.id}` : '/api/v1/assets';
+    const url = editingAsset ? `/api/assets/${editingAsset.id}` : '/api/assets';
     const method = editingAsset ? 'PUT' : 'POST';
 
     try {
@@ -104,7 +104,7 @@ const AssetsPage = () => {
 
     if (window.confirm('Are you sure you want to delete this asset?')) {
       try {
-        const response = await fetch(`/api/v1/assets/${assetId}`, {
+        const response = await fetch(`/api/assets/${assetId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -134,7 +134,7 @@ const AssetsPage = () => {
     if (!token) return;
 
     try {
-      const response = await fetch('/api/v1/locations', {
+      const response = await fetch('/api/locations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

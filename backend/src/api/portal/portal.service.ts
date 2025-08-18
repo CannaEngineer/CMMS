@@ -90,7 +90,7 @@ export class PortalService {
         ...portalData,
         slug,
         organizationId,
-        publicUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/portal/${slug}`,
+        publicUrl: this.getPublicPortalUrl(slug),
         fields: fields ? {
           create: fields.map((field, index) => {
             // Remove frontend-only fields that database auto-generates
@@ -148,7 +148,11 @@ export class PortalService {
 
     const updated = await prisma.portal.update({
       where: { id },
-      data: portalData,
+      data: {
+        ...portalData,
+        // Update the public URL with current environment
+        publicUrl: this.getPublicPortalUrl(portal.slug)
+      },
       include: {
         fields: {
           orderBy: { orderIndex: 'asc' }
@@ -443,6 +447,21 @@ export class PortalService {
   }
 
   // Utility methods
+  private getPublicPortalUrl(slug: string): string {
+    // In production on Vercel, use the deployment URL
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}/portal/${slug}`;
+    }
+    
+    // If FRONTEND_URL is explicitly set, use it
+    if (process.env.FRONTEND_URL) {
+      return `${process.env.FRONTEND_URL}/portal/${slug}`;
+    }
+    
+    // In development, use localhost
+    return `http://localhost:5173/portal/${slug}`;
+  }
+
   private generateSlug(name: string): string {
     return name
       .toLowerCase()

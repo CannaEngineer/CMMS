@@ -22,9 +22,9 @@ const WorkOrdersPage = () => {
 
     try {
       const [workOrdersResponse, assetsResponse, usersResponse] = await Promise.all([
-        fetch('/api/v1/work-orders', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/v1/assets', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/v1/users', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/work-orders', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/assets', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (workOrdersResponse.ok) {
@@ -75,7 +75,7 @@ const WorkOrdersPage = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const url = editingWorkOrder ? `/api/v1/work-orders/${editingWorkOrder.id}` : '/api/v1/work-orders';
+    const url = editingWorkOrder ? `/api/work-orders/${editingWorkOrder.id}` : '/api/work-orders';
     const method = editingWorkOrder ? 'PUT' : 'POST';
 
     try {
@@ -105,7 +105,7 @@ const WorkOrdersPage = () => {
 
     if (window.confirm('Are you sure you want to delete this work order?')) {
       try {
-        const response = await fetch(`/api/v1/work-orders/${workOrderId}`, {
+        const response = await fetch(`/api/work-orders/${workOrderId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
