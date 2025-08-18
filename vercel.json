@@ -6,7 +6,10 @@
   "installCommand": "cd backend && npm install && cd ../frontend && npm install",
   "functions": {
     "api/server.js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "environment": {
+        "VERCEL": "1"
+      }
     }
   },
   "routes": [

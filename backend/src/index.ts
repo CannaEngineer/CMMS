@@ -1,4 +1,12 @@
 
+console.log('[Backend] Starting CMMS backend application...');
+console.log('[Backend] Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  VERCEL: process.env.VERCEL,
+  PORT: process.env.PORT || 5000,
+  PWD: process.cwd()
+});
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';

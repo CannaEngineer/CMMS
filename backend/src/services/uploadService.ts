@@ -31,8 +31,9 @@ export interface StorageConfig {
 const defaultConfig: StorageConfig = {
   provider: 'local',
   local: {
-    uploadPath: path.join(__dirname, '../../uploads'),
-    publicUrl: 'http://localhost:5000/uploads'
+    // Use /tmp for serverless environments (Vercel), fallback to local uploads dir
+    uploadPath: process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../../uploads'),
+    publicUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/uploads` : 'http://localhost:5000/uploads'
   }
 };
 
@@ -47,8 +48,28 @@ export class UploadService {
   private ensureUploadDirectory() {
     if (this.config.provider === 'local' && this.config.local) {
       const uploadPath = this.config.local.uploadPath;
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
+      
+      // Add logging for debugging
+      console.log('[UploadService] Checking upload directory:', uploadPath);
+      console.log('[UploadService] Running on Vercel:', !!process.env.VERCEL);
+      
+      try {
+        if (!fs.existsSync(uploadPath)) {
+          console.log('[UploadService] Creating upload directory:', uploadPath);
+          fs.mkdirSync(uploadPath, { recursive: true });
+          console.log('[UploadService] Upload directory created successfully');
+        } else {
+          console.log('[UploadService] Upload directory already exists');
+        }
+      } catch (error) {
+        console.error('[UploadService] Error creating upload directory:', error);
+        // In serverless, we might not be able to create directories outside /tmp
+        // Log the error but don't crash the app
+        if (process.env.VERCEL) {
+          console.warn('[UploadService] Running in serverless environment, file uploads may be limited to /tmp');
+        } else {
+          throw error; // Re-throw in development
+        }
       }
     }
   }
@@ -181,5 +202,23 @@ export class UploadService {
   }
 }
 
-// Export singleton instance
-export const uploadService = new UploadService();
+// Export singleton instance with error handling
+let uploadServiceInstance: UploadService;
+
+try {
+  console.log('[UploadService] Initializing upload service...');
+  uploadServiceInstance = new UploadService();
+  console.log('[UploadService] Upload service initialized successfully');
+} catch (error) {
+  console.error('[UploadService] Failed to initialize upload service:', error);
+  // Create a minimal instance without directory creation for serverless
+  uploadServiceInstance = new UploadService({
+    provider: 'local',
+    local: {
+      uploadPath: '/tmp/uploads',
+      publicUrl: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/uploads` : 'http://localhost:5000/uploads'
+    }
+  });
+}
+
+export const uploadService = uploadServiceInstance;
