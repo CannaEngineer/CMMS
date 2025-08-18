@@ -81,7 +81,12 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 
   // Handle different field types
   const renderField = () => {
-    switch (field.fieldType) {
+    // Normalize field type from backend SCREAMING_SNAKE_CASE to lowercase with hyphens
+    const normalizedFieldType = field.fieldType
+      ?.toLowerCase()
+      .replace(/_/g, '-');
+    
+    switch (normalizedFieldType) {
       case 'text':
         return (
           <TextField
@@ -529,6 +534,74 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
                     onChange={(e) => onChange(e.target.value)}
                     helperText="By typing your name, you agree this serves as your electronic signature"
                   />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        );
+
+      case 'file':
+      case 'image':
+        return (
+          <Card variant="outlined" sx={{ ...commonProps }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <CameraIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {field.label}
+                  </Typography>
+                  
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {field.fieldDescription || `Upload ${normalizedFieldType === 'image' ? 'images' : 'files'} using the buttons below the form`}
+                  </Typography>
+                  
+                  <Alert severity="info" sx={{ fontSize: '0.875rem' }}>
+                    Use the file upload section below to add {normalizedFieldType === 'image' ? 'images' : 'files'}
+                  </Alert>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        );
+
+      case 'location':
+        // Use the existing location-picker case
+        return (
+          <Card variant="outlined" sx={{ ...commonProps }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                <LocationIcon sx={{ color: branding.primaryColor, mt: 0.5 }} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" gutterBottom>
+                    {field.label}
+                  </Typography>
+                  
+                  <TextField
+                    fullWidth
+                    placeholder="Enter location or address"
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  
+                  <Button
+                    variant="outlined"
+                    startIcon={<LocationIcon />}
+                    onClick={() => {
+                      navigator.geolocation?.getCurrentPosition(
+                        (position) => {
+                          onChange(`${position.coords.latitude}, ${position.coords.longitude}`);
+                        },
+                        (error) => {
+                          console.error('Location error:', error);
+                        }
+                      );
+                    }}
+                    size="small"
+                  >
+                    Use My Location
+                  </Button>
                 </Box>
               </Box>
             </CardContent>
