@@ -68,6 +68,7 @@ import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm
 import { PMCalendar } from '../components/PMCalendar';
 import { CalendarDashboard } from '../components/Calendar';
 import UnifiedCalendar from '../components/UnifiedCalendar/UnifiedCalendar';
+import WorkOrderPreviewModal from '../components/WorkOrder/WorkOrderPreviewModal';
 import { CalendarItem, CalendarStats, calendarItemsToPMScheduleItems } from '../types/calendar';
 import dayjs from 'dayjs';
 
@@ -98,6 +99,8 @@ export default function Dashboard() {
   const [maintenanceFormOpen, setMaintenanceFormOpen] = useState(false);
   
   // Detail modals state
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState<CalendarItem | null>(null);
+  const [workOrderPreviewOpen, setWorkOrderPreviewOpen] = useState(false);
   const [workOrdersModalOpen, setWorkOrdersModalOpen] = useState(false);
   const [assetsModalOpen, setAssetsModalOpen] = useState(false);
   const [maintenanceCalendarOpen, setMaintenanceCalendarOpen] = useState(false);
@@ -1174,7 +1177,8 @@ export default function Dashboard() {
               height={isMobile ? 500 : 700}
               onItemClick={(item: CalendarItem) => {
                 if (item.type === 'WORK_ORDER') {
-                  navigate(`/work-orders/${item.id}`);
+                  setSelectedWorkOrder(item);
+                  setWorkOrderPreviewOpen(true);
                 } else if (item.type === 'PM_SCHEDULE') {
                   // Navigate to maintenance schedule detail page
                   navigate(`/maintenance/schedules/${item.originalId}`);
@@ -1462,6 +1466,31 @@ export default function Dashboard() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Work Order Preview Modal */}
+      <WorkOrderPreviewModal
+        open={workOrderPreviewOpen}
+        onClose={() => {
+          setWorkOrderPreviewOpen(false);
+          setSelectedWorkOrder(null);
+        }}
+        workOrder={selectedWorkOrder}
+        onStartWork={(workOrderId) => {
+          console.log('Start work on:', workOrderId);
+          // TODO: Implement start work functionality
+          setWorkOrderPreviewOpen(false);
+        }}
+        onComplete={(workOrderId) => {
+          console.log('Complete work order:', workOrderId);
+          // TODO: Implement complete functionality
+          setWorkOrderPreviewOpen(false);
+        }}
+        onUpdate={(workOrderId) => {
+          console.log('Update work order:', workOrderId);
+          navigate(`/work-orders/${workOrderId}/edit`);
+          setWorkOrderPreviewOpen(false);
+        }}
+      />
     </PageLayout>
   );
 }

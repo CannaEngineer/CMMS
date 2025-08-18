@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -21,7 +22,7 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import CalendarDay from './CalendarDay';
 import CalendarFilters from './CalendarFilters';
-import PMDetailModal from './PMDetailModal';
+import PMDetailsModal from './PMDetailsModal';
 import { PMScheduleItem, CalendarFilters as FilterType, PMCalendarProps } from '../../types/pmCalendar';
 
 const PMCalendar: React.FC<PMCalendarProps> = ({
@@ -34,6 +35,7 @@ const PMCalendar: React.FC<PMCalendarProps> = ({
   loading = false,
 }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTablet = useMediaQuery(theme.breakpoints.down('lg'));
   
@@ -322,10 +324,40 @@ const PMCalendar: React.FC<PMCalendarProps> = ({
       </Grow>
 
       {/* PM Detail Modal */}
-      <PMDetailModal
+      <PMDetailsModal
         open={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
-        pmItem={selectedPM}
+        pm={selectedPM}
+        onEdit={(pm) => {
+          setDetailModalOpen(false);
+          navigate(`/maintenance/schedules/${pm.id}/edit`);
+        }}
+        onComplete={(pmId) => {
+          // TODO: Call API to mark PM as complete
+          console.log('Complete PM:', pmId);
+          setDetailModalOpen(false);
+        }}
+        onPostpone={(pmId, newDate) => {
+          handlePMReschedule(pmId, newDate);
+          setDetailModalOpen(false);
+        }}
+        onCancel={(pmId) => {
+          // TODO: Call API to cancel PM
+          console.log('Cancel PM:', pmId);
+          setDetailModalOpen(false);
+        }}
+        onViewWorkOrder={(workOrderId) => {
+          setDetailModalOpen(false);
+          navigate(`/work-orders/${workOrderId}`);
+        }}
+        onCreateWorkOrder={(pmId) => {
+          setDetailModalOpen(false);
+          navigate(`/work-orders/new?pmId=${pmId}`);
+        }}
+        onViewAsset={(assetId) => {
+          setDetailModalOpen(false);
+          navigate(`/assets/${assetId}`);
+        }}
       />
     </Box>
   );

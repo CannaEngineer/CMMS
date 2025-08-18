@@ -10,7 +10,6 @@ import {
   Chip,
   Tooltip,
   Button,
-  CircularProgress,
   Fade,
   Grow,
   Alert,
@@ -25,7 +24,9 @@ import {
   Divider,
   Avatar,
   ListItemButton,
+  Skeleton,
 } from '@mui/material';
+import { LoadingSpinner, LoadingBar } from '../Loading';
 import {
   ChevronLeft,
   ChevronRight,
@@ -224,23 +225,25 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
   }
 
   return (
-    <Paper 
-      elevation={2} 
-      sx={{ 
-        height,
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 3,
-        overflow: 'hidden',
-      }}
-    >
-      {/* Calendar Header */}
-      <Box sx={{ 
-        p: 2, 
-        bgcolor: 'primary.main',
-        color: 'white',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-      }}>
+    <Grow in timeout={800}>
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          height,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 3,
+          background: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Calendar Header - Matching PM Calendar Style */}
+        <Box sx={{ 
+          p: 3, 
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.secondary.main}10 100%)`,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+        }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -249,9 +252,13 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           gap: isMobile ? 1 : 0,
         }}>
           <Typography 
-            variant={isMobile ? "h6" : "h5"} 
+            variant={isMobile ? "h5" : "h4"} 
             sx={{ 
               fontWeight: 700,
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
               textAlign: isMobile ? 'center' : 'left',
             }}
           >
@@ -261,30 +268,45 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton 
               onClick={handleToday}
-              sx={{ 
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.1)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              aria-label="Go to today"
+              sx={{
+                borderRadius: 2,
+                background: theme.palette.background.paper,
+                '&:hover': {
+                  background: theme.palette.action.hover,
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.2s ease-in-out',
               }}
             >
               <TodayIcon />
             </IconButton>
             <IconButton 
               onClick={handlePreviousMonth}
-              sx={{ 
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.1)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              aria-label={`Go to ${currentDate.subtract(1, 'month').format('MMMM YYYY')}`}
+              sx={{
+                borderRadius: 2,
+                background: theme.palette.background.paper,
+                '&:hover': {
+                  background: theme.palette.action.hover,
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.2s ease-in-out',
               }}
             >
               <ChevronLeft />
             </IconButton>
             <IconButton 
               onClick={handleNextMonth}
-              sx={{ 
-                color: 'white',
-                bgcolor: 'rgba(255,255,255,0.1)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' },
+              aria-label={`Go to ${currentDate.add(1, 'month').format('MMMM YYYY')}`}
+              sx={{
+                borderRadius: 2,
+                background: theme.palette.background.paper,
+                '&:hover': {
+                  background: theme.palette.action.hover,
+                  transform: 'scale(1.05)',
+                },
+                transition: 'all 0.2s ease-in-out',
               }}
             >
               <ChevronRight />
@@ -296,31 +318,41 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
       {/* Calendar Body */}
       <Box sx={{ flex: 1, p: 2, overflow: 'hidden' }}>
         {isLoading_combined ? (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '100%' 
-          }}>
-            <CircularProgress />
+          <Box sx={{ p: 3 }}>
+            <LoadingBar progress={undefined} sx={{ mb: 2 }} />
+            <Grid container spacing={1}>
+              {Array.from({ length: 42 }).map((_, index) => (
+                <Grid xs={12/7} key={index}>
+                  <Skeleton 
+                    variant="rectangular" 
+                    height={120} 
+                    sx={{ borderRadius: 1 }} 
+                  />
+                </Grid>
+              ))}
+            </Grid>
           </Box>
         ) : (
           <>
-            {/* Week Day Headers */}
-            <Grid container sx={{ mb: 1 }}>
+            {/* Week Day Headers - Matching PM Calendar Style */}
+            <Grid container spacing={1} sx={{ mb: 1 }} role="row">
               {weekDays.map((day) => (
                 <Grid xs={12/7} key={day}>
-                  <Box sx={{ 
-                    textAlign: 'center', 
-                    p: 1,
-                    bgcolor: 'grey.50',
-                    borderRadius: 1,
-                  }}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      textAlign: 'center',
+                      backgroundColor: theme.palette.background.default,
+                      borderRadius: 2,
+                    }}
+                    role="columnheader"
+                    aria-label={day}
+                  >
                     <Typography 
-                      variant="caption" 
+                      variant="subtitle2" 
                       sx={{ 
                         fontWeight: 600,
-                        color: 'text.secondary',
+                        color: theme.palette.text.secondary,
                       }}
                     >
                       {day}
@@ -654,7 +686,8 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
-    </Paper>
+      </Paper>
+    </Grow>
   );
 };
 

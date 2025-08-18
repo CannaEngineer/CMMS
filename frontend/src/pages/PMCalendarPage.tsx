@@ -41,13 +41,8 @@ const PMCalendarPage: React.FC = () => {
   });
 
   const handlePMClick = (pm: PMScheduleItem) => {
-    // If the PM has an associated work order, navigate to the work order
-    // Otherwise, navigate to the maintenance schedule detail page
-    if (pm.workOrderId) {
-      navigate(`/work-orders/${pm.workOrderId}`);
-    } else {
-      navigate(`/maintenance/schedules/${pm.id}`);
-    }
+    // The modal will handle the display of PM details
+    // Navigation to work orders or maintenance schedules will be handled by the modal's action buttons
   };
 
   const handlePMReschedule = (pmId: number, newDate: Date) => {
