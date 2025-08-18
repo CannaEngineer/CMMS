@@ -475,32 +475,24 @@ export class ImportService {
             if (field.enumValues) {
               // Special handling for WorkOrder status field - include DONE/Complete for compliance
               if (mapping.targetField === 'status' && entityType === 'workorders') {
-                const originalValue = String(value);
-                const statusValue = originalValue.trim().replace(/ /g, '_').toUpperCase();
-                
-                console.log(`[STATUS TRANSFORM] Original: "${originalValue}" → Normalized: "${statusValue}"`);
+                const statusValue = String(value).trim().replace(/ /g, '_').toUpperCase();
                 
                 // Map known status values
                 if (statusValue === 'DONE' || statusValue === 'COMPLETE') {
                   value = 'COMPLETED';
-                  console.log(`[STATUS TRANSFORM] ✅ Mapped DONE/COMPLETE to: ${value}`);
                 } else if (statusValue === 'APPROVED' || statusValue === 'PENDING') {
                   value = 'OPEN';
-                  console.log(`[STATUS TRANSFORM] Mapped APPROVED/PENDING to: ${value}`);
                 } else if (statusValue === 'REJECTED') {
                   value = 'CANCELED';
-                  console.log(`[STATUS TRANSFORM] Mapped REJECTED to: ${value}`);
                 } else if (field.enumValues.includes(statusValue)) {
                   // If it's already a valid enum value, use it
                   value = statusValue;
-                  console.log(`[STATUS TRANSFORM] Already valid enum: ${value}`);
                 } else {
                   // Try case-insensitive match as last resort
                   const matchedEnum = field.enumValues.find(
                     enumVal => enumVal.toLowerCase() === statusValue.toLowerCase()
                   );
                   value = matchedEnum || 'OPEN'; // Default to OPEN for work orders
-                  console.log(`[STATUS TRANSFORM] ⚠️ Defaulted to: ${value} (unrecognized: "${statusValue}")`);
                 }
               } else {
                 // Standard enum handling for other fields
@@ -1016,8 +1008,11 @@ export class ImportService {
                 // Resolve asset relationship
                 const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
                 if (resolvedPMSchedule.length > 0) {
-                  // Remove organizationId and locationId as PMSchedule doesn't have these fields
-                  const { organizationId: _, locationId: __, dueDate: ___, ...scheduleData } = resolvedPMSchedule[0];
+                  // Store originalStatus before removing it
+                  const originalStatus = resolvedPMSchedule[0].originalStatus || pmSchedule.originalStatus;
+                  
+                  // Remove fields that don't exist in PMSchedule model
+                  const { organizationId: _, locationId: __, dueDate: ___, originalStatus: ____, ...scheduleData } = resolvedPMSchedule[0];
                   
                   console.log('Resolved PM Schedule Data:', JSON.stringify(resolvedPMSchedule[0], null, 2));
                   console.log('Cleaned Schedule Data:', JSON.stringify(scheduleData, null, 2));
@@ -1037,8 +1032,8 @@ export class ImportService {
                   
                   // Only create a new OPEN work order if the original PM wasn't completed
                   // Completed PM work orders will be imported separately with COMPLETED status
-                  const originalStatus = pmSchedule.originalStatus ? String(pmSchedule.originalStatus).toUpperCase() : '';
-                  const isCompleted = originalStatus === 'DONE' || originalStatus === 'COMPLETE' || originalStatus === 'COMPLETED';
+                  const statusToCheck = originalStatus ? String(originalStatus).toUpperCase() : '';
+                  const isCompleted = statusToCheck === 'DONE' || statusToCheck === 'COMPLETE' || statusToCheck === 'COMPLETED';
                   
                   if (!isCompleted) {
                     // Create a new OPEN work order for future PM
@@ -1109,12 +1104,9 @@ export class ImportService {
                   }
                   break;
                 case 'workorders':
-                  console.log(`[WO IMPORT] Processing work order: "${row.title}" with status: "${row.status}"`);
-                  
                   // Set completion timestamp for COMPLETED work orders for compliance tracking
                   if (row.status === 'COMPLETED' && !row.completedAt) {
                     row.completedAt = row.updatedAt || row.createdAt || new Date();
-                    console.log(`[WO IMPORT] ✅ Set completedAt timestamp for COMPLETED work order`);
                   }
                   
                   // Link PM work orders to their PM schedules if applicable
@@ -1130,7 +1122,6 @@ export class ImportService {
                     
                     if (pmSchedule) {
                       row.pmScheduleId = pmSchedule.id;
-                      console.log(`[WO IMPORT] Linked work order "${row.title}" to PM schedule ${pmSchedule.id}`);
                     }
                   }
                   
@@ -1165,17 +1156,24 @@ export class ImportService {
                   break;
               }
 
-              // Check for duplicates before creating
-              const isDuplicate = await this.checkForDuplicate(tx, entityType, row, organizationId);
-              if (isDuplicate) {
-                console.log(`Skipping row ${globalIndex}: Duplicate record detected`);
-                duplicates.push(`Row ${globalIndex}: Duplicate record - already exists in database`);
-                skippedCount++;
+              // Check for duplicates and update if found (especially for status updates)
+              const existingRecord = await this.findExistingRecord(tx, entityType, row, organizationId);
+              if (existingRecord) {
+                console.log(`Updating existing ${config.tableName} record ID ${existingRecord.id}`);
+                duplicates.push(`Row ${globalIndex}: Updated existing record`);
+                
+                // Update the existing record (especially important for status updates)
+                const updatedRecord = await (tx as any)[config.tableName].update({
+                  where: { id: existingRecord.id },
+                  data: row
+                });
+                console.log(`Successfully updated record with ID:`, updatedRecord.id);
+                importedCount++;
                 continue;
               }
 
               console.log(`Creating ${config.tableName} record with data:`, row);
-              // Create record
+              // Create new record
               const createdRecord = await (tx as any)[config.tableName].create({
                 data: row
               });
@@ -1380,15 +1378,15 @@ export class ImportService {
     }
   }
 
-  // Check for duplicate records based on key identifying fields
-  private static async checkForDuplicate(
+  // Find existing record based on key identifying fields
+  private static async findExistingRecord(
     tx: any,
     entityType: string,
     row: Record<string, any>,
     organizationId: number
-  ): Promise<boolean> {
+  ): Promise<any | null> {
     const config = entityConfigs[entityType];
-    if (!config) return false;
+    if (!config) return null;
 
     try {
       // Define key fields to check for duplicates per entity type
@@ -1404,7 +1402,7 @@ export class ImportService {
       };
 
       const checkFields = duplicateCheckFields[entityType];
-      if (!checkFields) return false;
+      if (!checkFields) return null;
 
       // Build where clause for duplicate check
       const whereClause: Record<string, any> = {};
@@ -1416,18 +1414,18 @@ export class ImportService {
       }
 
       // If we don't have enough data to check for duplicates, allow creation
-      if (Object.keys(whereClause).length === 0) return false;
+      if (Object.keys(whereClause).length === 0) return null;
 
       // Check if record already exists
       const existingRecord = await tx[config.tableName].findFirst({
         where: whereClause
       });
 
-      return !!existingRecord;
+      return existingRecord;
       
     } catch (error) {
-      console.error(`Error checking for duplicates in ${entityType}:`, error);
-      return false; // If we can't check, allow creation
+      console.error(`Error checking for existing record in ${entityType}:`, error);
+      return null; // If we can't check, allow creation
     }
   }
 
