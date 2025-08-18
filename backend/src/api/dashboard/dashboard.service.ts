@@ -4,10 +4,11 @@ const prisma = new PrismaClient();
 
 export class DashboardService {
   async getStats(organizationId: number) {
-    // Get work order stats
-    const totalWorkOrders = await prisma.workOrder.count({
-      where: { organizationId },
-    });
+    try {
+      // Get work order stats
+      const totalWorkOrders = await prisma.workOrder.count({
+        where: { organizationId },
+      });
 
     const workOrdersByStatus = await prisma.workOrder.groupBy({
       by: ['status'],
@@ -101,6 +102,27 @@ export class DashboardService {
         outOfStock: outOfStockParts,
       },
     };
+    } catch (error) {
+      console.error('[DashboardService] Error getting stats:', error);
+      // Return default empty stats instead of throwing
+      return {
+        workOrders: {
+          total: 0,
+          byStatus: {},
+          overdue: 0,
+          completionRate: 0,
+        },
+        assets: {
+          total: 0,
+          byStatus: {},
+          maintenanceDue: 0,
+        },
+        inventory: {
+          lowStock: 0,
+          outOfStock: 0,
+        },
+      };
+    }
   }
 
   async getWorkOrderTrends(organizationId: number, period: 'week' | 'month' | 'year' = 'month') {

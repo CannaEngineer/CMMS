@@ -47,8 +47,14 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5000;
 
-// Initialize WebSocket service
-WebSocketService.getInstance().initialize(server);
+// Initialize WebSocket service only in non-serverless environments
+// WebSockets don't work in Vercel serverless functions
+if (!process.env.VERCEL) {
+  console.log('[Backend] Initializing WebSocket service...');
+  WebSocketService.getInstance().initialize(server);
+} else {
+  console.log('[Backend] Running in Vercel serverless - WebSocket disabled');
+}
 
 // CORS configuration
 const corsOptions = {
