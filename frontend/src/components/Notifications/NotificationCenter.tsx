@@ -11,11 +11,11 @@ import {
   Badge,
   Chip,
   Button,
-  CircularProgress,
   Divider,
   Tooltip,
   Alert
 } from '@mui/material';
+import { LoadingSpinner } from '../Loading';
 import {
   Notifications as NotificationsIcon,
   Circle as CircleIcon,
@@ -215,7 +215,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-              <CircularProgress size={24} />
+              <LoadingSpinner size="small" />
             </Box>
           ) : error ? (
             <Box sx={{ p: 2 }}>

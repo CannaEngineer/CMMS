@@ -75,6 +75,7 @@ import DataTable from '../components/Common/DataTable';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
+import { LoadingSpinner, TemplatedSkeleton } from '../components/Loading';
 import { ViewProvider } from '../contexts/ViewContext';
 import { workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
@@ -652,7 +653,7 @@ export default function WorkOrders() {
               disabled={isRefreshing}
               sx={{ minWidth: 48, minHeight: 48, ml: 1 }}
             >
-              {isRefreshing ? <CircularProgress size={20} /> : <RefreshIcon />}
+              {isRefreshing ? <LoadingSpinner size="small" /> : <RefreshIcon />}
             </IconButton>
           </Toolbar>
           
@@ -1232,9 +1233,7 @@ export default function WorkOrders() {
           
           {/* Loading State */}
           {isLoading && (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-              <CircularProgress size={40} thickness={4} />
-            </Box>
+            <TemplatedSkeleton template="workOrderCard" count={5} />
           )}
           
           {/* Empty State */}

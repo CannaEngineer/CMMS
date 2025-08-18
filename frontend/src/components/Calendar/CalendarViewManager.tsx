@@ -14,8 +14,8 @@ import {
   Avatar,
   Stack,
   Badge,
-  LinearProgress,
 } from '@mui/material';
+import { LoadingBar } from '../Loading';
 import {
   ChevronLeft,
   ChevronRight,
@@ -553,7 +553,7 @@ const CalendarViewManager: React.FC<CalendarViewManagerProps> = ({
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <LinearProgress sx={{ mb: 2 }} />
+        <LoadingBar progress={undefined} sx={{ mb: 2 }} />
         <Grid container spacing={1}>
           {Array.from({ length: viewType === 'day' ? 1 : viewType === 'week' ? 7 : 42 }).map((_, i) => (
             <Grid key={i} xs={viewType === 'month' ? 12/7 : viewType === 'week' ? true : 12}>

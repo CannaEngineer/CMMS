@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo, memo } from 'react';
+import { LoadingSkeleton, TemplatedSkeleton, LoadingSpinner } from '../Loading';
 import {
   Table,
   TableBody,
@@ -355,30 +356,12 @@ const DataTable = memo(function DataTable({
 
   const { filtered: filteredData, paginated: paginatedData } = processedData;
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <Box sx={{ p: 2 }}>
-      <Stack spacing={2}>
-        {[...Array(rowsPerPage)].map((_, index) => (
-          <Card key={index}>
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-                <Skeleton variant="circular" width={40} height={40} />
-                <Box sx={{ flexGrow: 1 }}>
-                  <Skeleton variant="text" width="60%" height={24} />
-                  <Skeleton variant="text" width="40%" height={20} sx={{ mt: 0.5 }} />
-                </Box>
-                <Skeleton variant="rectangular" width={24} height={24} />
-              </Box>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Skeleton variant="rectangular" width={60} height={24} sx={{ borderRadius: 1 }} />
-                <Skeleton variant="rectangular" width={80} height={24} sx={{ borderRadius: 1 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        ))}
-      </Stack>
-    </Box>
+  // Use standardized loading skeleton
+  const DataTableLoadingSkeleton = () => (
+    <TemplatedSkeleton 
+      template={isMobile ? "workOrderCard" : "dataTable"} 
+      count={rowsPerPage}
+    />
   );
 
   // Error component
@@ -683,7 +666,7 @@ const DataTable = memo(function DataTable({
       {viewMode === 'cards' && (
         <Box sx={{ p: 2, position: 'relative' }}>
           {/* Loading State */}
-          {loading && <LoadingSkeleton />}
+          {loading && <DataTableLoadingSkeleton />}
           
           {/* Error State */}
           {error && <ErrorState />}
@@ -700,13 +683,7 @@ const DataTable = memo(function DataTable({
               transform: 'translateX(-50%)',
               zIndex: 1
             }}>
-              <Chip
-                icon={<RefreshIcon />}
-                label="Refreshing..."
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
+              <LoadingSpinner size="small" message="Refreshing..." />
             </Box>
           )}
           

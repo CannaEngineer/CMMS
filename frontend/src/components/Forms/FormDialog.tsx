@@ -8,11 +8,11 @@ import {
   IconButton,
   Box,
   Typography,
-  CircularProgress,
   useTheme,
   useMediaQuery,
   Slide,
 } from '@mui/material';
+import { LoadingButton } from '../Loading';
 import type { TransitionProps } from '@mui/material/transitions';
 import { Close as CloseIcon } from '@mui/icons-material';
 
@@ -102,14 +102,14 @@ export default function FormDialog({
             >
               {cancelText}
             </Button>
-            <Button
+            <LoadingButton
               type="submit"
               variant="contained"
-              disabled={loading || submitDisabled}
-              startIcon={loading && <CircularProgress size={20} color="inherit" />}
+              loading={loading}
+              disabled={submitDisabled}
             >
               {submitText}
-            </Button>
+            </LoadingButton>
           </DialogActions>
         )}
       </form>

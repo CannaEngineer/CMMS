@@ -54,6 +54,7 @@ import {
   PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { LoadingOverlay, LoadingSkeleton, LoadingSpinner, TemplatedSkeleton } from '../components/Loading';
 import { statusColors } from '../theme/theme';
 import PageLayout from '../components/Layout/PageLayout';
 import StatCard from '../components/Common/StatCard';
@@ -366,19 +367,11 @@ export default function Dashboard() {
   // Loading state
   if (isLoading) {
     return (
-      <Box 
-        display="flex" 
-        justifyContent="center" 
-        alignItems="center" 
-        minHeight="60vh"
-        flexDirection="column"
-        gap={2}
-      >
-        <CircularProgress size={48} />
-        <Typography variant="body1" color="text.secondary">
-          Loading dashboard...
-        </Typography>
-      </Box>
+      <LoadingOverlay
+        open={true}
+        message="Loading dashboard..."
+        context="dashboard"
+      />
     );
   }
 
@@ -851,9 +844,7 @@ export default function Dashboard() {
           </Box>
           
           {recentWOLoading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress size={32} />
-            </Box>
+            <LoadingSpinner size="medium" message="Loading recent work orders..." />
           ) : !recentWorkOrders || recentWorkOrders.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="body2" color="text.secondary">
@@ -1004,9 +995,7 @@ export default function Dashboard() {
           Work Order Trends
         </Typography>
         {trendsLoading ? (
-          <Box display="flex" justifyContent="center" py={4}>
-            <CircularProgress size={32} />
-          </Box>
+          <LoadingSpinner size="medium" message="Loading trend data..." />
         ) : !workOrderTrends || workOrderTrends.length === 0 ? (
           <Box display="flex" justifyContent="center" alignItems="center" py={4}>
             <Typography variant="body2" color="text.secondary">
@@ -1436,9 +1425,7 @@ export default function Dashboard() {
         </DialogTitle>
         <DialogContent sx={{ p: 0 }}>
           {calendarItemsLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
-              <CircularProgress />
-            </Box>
+            <TemplatedSkeleton template="calendar" />
           ) : (
             <PMCalendar
               pmSchedules={transformedCalendarItems}
