@@ -149,12 +149,15 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
       const initialData: Record<string, any> = {};
       
       portalInfo.configuration.fields.forEach(field => {
-        if (field.type === 'checkbox') {
-          initialData[field.name] = [];
+        const fieldName = field.name || field.fieldName || 'unnamed_field';
+        const fieldType = field.type || field.fieldType;
+        
+        if (fieldType === 'checkbox' || fieldType === 'CHECKBOX') {
+          initialData[fieldName] = [];
         } else if (field.options?.find(opt => opt.isDefault)) {
-          initialData[field.name] = field.options.find(opt => opt.isDefault)?.value;
+          initialData[fieldName] = field.options.find(opt => opt.isDefault)?.value;
         } else {
-          initialData[field.name] = '';
+          initialData[fieldName] = '';
         }
       });
       
@@ -192,30 +195,35 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
     const currentFields = fieldSteps[currentStep] || [];
     
     currentFields.forEach(field => {
-      if (field.isRequired) {
-        const value = formData[field.name];
+      const fieldName = field.name || field.fieldName || 'unnamed_field';
+      const fieldLabel = field.label || field.fieldLabel || 'Field';
+      const isRequired = field.isRequired || field.required || false;
+      const validation = field.validation || field.validationRules || {};
+      
+      if (isRequired) {
+        const value = formData[fieldName];
         
         if (!value || (Array.isArray(value) && value.length === 0)) {
-          errors[field.name] = `${field.label} is required`;
+          errors[fieldName] = `${fieldLabel} is required`;
         }
       }
       
       // Validate field formats
-      const value = formData[field.name];
-      if (value && field.validation) {
-        if (field.validation.pattern) {
-          const regex = new RegExp(field.validation.pattern);
+      const value = formData[fieldName];
+      if (value && validation) {
+        if (validation.pattern) {
+          const regex = new RegExp(validation.pattern);
           if (!regex.test(value)) {
-            errors[field.name] = `Invalid format for ${field.label}`;
+            errors[fieldName] = `Invalid format for ${fieldLabel}`;
           }
         }
         
-        if (field.validation.minLength && value.length < field.validation.minLength) {
-          errors[field.name] = `${field.label} must be at least ${field.validation.minLength} characters`;
+        if (validation.minLength && value.length < validation.minLength) {
+          errors[fieldName] = `${fieldLabel} must be at least ${validation.minLength} characters`;
         }
         
-        if (field.validation.maxLength && value.length > field.validation.maxLength) {
-          errors[field.name] = `${field.label} must be no more than ${field.validation.maxLength} characters`;
+        if (validation.maxLength && value.length > validation.maxLength) {
+          errors[fieldName] = `${fieldLabel} must be no more than ${validation.maxLength} characters`;
         }
       }
     });
@@ -416,13 +424,26 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
   const currentFields = fieldSteps[currentStep] || [];
 
   // Field details for debugging
-  console.log('Portal Form Debug - Field Details:', {
+  console.log('Portal Form Debug - Portal Info:', {
+    hasPortalInfo: !!portalInfo,
+    hasConfiguration: !!portalInfo?.configuration,
+    hasFields: !!portalInfo?.configuration?.fields,
+    fieldsLength: portalInfo?.configuration?.fields?.length || 0,
+    allFields: portalInfo?.configuration?.fields || []
+  });
+  
+  console.log('Portal Form Debug - Current Fields:', {
+    currentStep: currentStep,
+    fieldStepsLength: fieldSteps.length,
     currentFieldsLength: currentFields.length,
     currentFields: currentFields.map(f => ({
+      id: f.id,
       fieldType: f.fieldType,
       fieldName: f.fieldName,
       fieldLabel: f.fieldLabel,
       label: f.label,
+      type: f.type,
+      name: f.name,
       allProps: Object.keys(f)
     }))
   });
@@ -546,17 +567,20 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
           >
             {/* Current Step Fields */}
             <Box sx={{ mb: 3 }}>
-              {currentFields.map((field) => (
-                <Box key={field.id} sx={{ mb: 3 }}>
-                  <PortalFieldRenderer
-                    field={field}
-                    value={formData[field.name]}
-                    onChange={(value) => handleFieldChange(field.name, value)}
-                    error={validationErrors[field.name]}
-                    branding={portalInfo.branding}
-                  />
-                </Box>
-              ))}
+              {currentFields.map((field) => {
+                const fieldName = field.name || field.fieldName || 'unnamed_field';
+                return (
+                  <Box key={field.id} sx={{ mb: 3 }}>
+                    <PortalFieldRenderer
+                      field={field}
+                      value={formData[fieldName]}
+                      onChange={(value) => handleFieldChange(fieldName, value)}
+                      error={validationErrors[fieldName]}
+                      branding={portalInfo.branding}
+                    />
+                  </Box>
+                );
+              })}
             </Box>
 
             {/* File Upload Section */}

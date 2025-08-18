@@ -60,13 +60,15 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 }) => {
   const [, setSignatureData] = useState<string>('');
 
-  // Normalize field properties (handle both old and new field formats)
+  // Normalize field properties (handle both frontend and backend field formats)
+  const fieldName = field.name || field.fieldName || 'unnamed_field';
   const label = field.label || field.fieldLabel || 'Field';
   const placeholder = field.placeholder || field.fieldPlaceholder || '';
-  const description = field.fieldDescription || '';
+  const description = field.description || field.fieldDescription || '';
   const helpText = field.helpText || '';
   const options = field.options || field.fieldOptions || [];
   const validation = field.validation || field.validationRules || {};
+  const isRequired = field.isRequired || field.required || false;
 
   // Common props for all fields
   const commonProps = {
@@ -74,7 +76,7 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
     disabled,
     error: Boolean(error),
     helperText: error || description,
-    required: field.isRequired,
+    required: isRequired,
     sx: {
       '& .MuiOutlinedInput-root': {
         '&.Mui-focused fieldset': {
@@ -89,16 +91,28 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
 
   // Handle different field types
   const renderField = () => {
+    // Handle both 'type' (frontend) and 'fieldType' (backend) properties
+    const rawFieldType = field.type || field.fieldType;
+    
     // Normalize field type from backend SCREAMING_SNAKE_CASE to lowercase with hyphens
-    const normalizedFieldType = field.fieldType
+    const normalizedFieldType = rawFieldType
       ?.toLowerCase()
       .replace(/_/g, '-');
     
     // Debug log to see what field types we're getting (development only)
-    if (process.env.NODE_ENV === 'development' && (!normalizedFieldType || normalizedFieldType === '')) {
-      console.warn('PortalFieldRenderer - Empty or undefined fieldType:', {
-        fieldName: field.fieldName,
-        fieldType: field.fieldType
+    if (process.env.NODE_ENV === 'development') {
+      console.log('PortalFieldRenderer - Field type mapping:', {
+        fieldName: field.name || field.fieldName,
+        rawFieldType: rawFieldType,
+        normalizedFieldType: normalizedFieldType,
+        fieldObject: field
+      });
+    }
+    
+    if (!rawFieldType) {
+      console.error('PortalFieldRenderer - No field type found:', {
+        field: field,
+        availableProps: Object.keys(field)
       });
     }
     
