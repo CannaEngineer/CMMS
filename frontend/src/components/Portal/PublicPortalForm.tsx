@@ -11,8 +11,6 @@ import {
   Checkbox,
   Chip,
   Alert,
-  CircularProgress,
-  LinearProgress,
   Stepper,
   Step,
   StepLabel,
@@ -32,6 +30,7 @@ import {
   Help as HelpIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { LoadingSpinner, LoadingBar, LoadingButton, LoadingOverlay } from '../Loading';
 import { publicPortalService, portalSubmissionService } from '../../services/portalService';
 import { 
   SubmitPortalRequest, 
@@ -389,11 +388,11 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
   // Loading state
   if (isLoadingPortal) {
     return (
-      <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-          <CircularProgress />
-        </Box>
-      </Container>
+      <LoadingOverlay
+        open={true}
+        message="Loading portal..."
+        context="form"
+      />
     );
   }
 
@@ -517,14 +516,14 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
           {/* Progress Bar */}
           {isMultiStep && portalInfo.branding.showProgressBar && (
             <Box sx={{ mb: 3 }}>
-              <LinearProgress
+              <LoadingBar
                 variant="determinate"
-                value={(currentStep / (fieldSteps.length - 1)) * 100}
+                progress={(currentStep / (fieldSteps.length - 1)) * 100}
                 sx={{
                   height: 8,
                   borderRadius: 4,
                   backgroundColor: 'rgba(0,0,0,0.1)',
-                  '& .MuiLinearProgress-bar': {
+                  '& .MuiLoadingBar-bar': {
                     backgroundColor: portalInfo.branding.accentColor
                   }
                 }}
@@ -593,7 +592,7 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
                 <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                   <Button
                     variant="outlined"
-                    startIcon={uploading ? <CircularProgress size={16} /> : <AttachIcon />}
+                    startIcon={<AttachIcon />}
                     onClick={() => fileInputRef.current?.click()}
                     size="small"
                     disabled={uploading || uploadedFiles.length >= (portalInfo?.configuration.maxFiles || 5)}
@@ -603,7 +602,7 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
                   
                   <Button
                     variant="outlined"
-                    startIcon={uploading ? <CircularProgress size={16} /> : <CameraIcon />}
+                    startIcon={<CameraIcon />}
                     onClick={() => cameraInputRef.current?.click()}
                     size="small"
                     disabled={uploading || uploadedFiles.length >= (portalInfo?.configuration.maxFiles || 5)}
@@ -667,7 +666,7 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
                     <Typography variant="body2" color="text.secondary">
                       Uploading files...
                     </Typography>
-                    <LinearProgress sx={{ mt: 1 }} />
+                    <LoadingBar progress={undefined} sx={{ mt: 1 }} />
                   </Box>
                 )}
               </Box>
@@ -753,9 +752,9 @@ const PublicPortalForm: React.FC<PublicPortalFormProps> = ({
               ) : (
                 <Button
                   variant="contained"
-                  startIcon={submitFormMutation.isPending ? <CircularProgress size={16} /> : <SendIcon />}
+                  startIcon={<SendIcon />}
                   onClick={handleSubmit}
-                  disabled={submitFormMutation.isPending}
+                  loading={submitFormMutation.isPending}
                   sx={{
                     backgroundColor: portalInfo.branding.accentColor,
                     '&:hover': {

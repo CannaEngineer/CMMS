@@ -21,7 +21,6 @@ import {
   TableRow,
   Chip,
   Alert,
-  LinearProgress,
   Grid,
   Divider,
   IconButton,
@@ -32,6 +31,7 @@ import {
   DialogActions,
   SelectChangeEvent
 } from '@mui/material';
+import { LoadingBar, LoadingSpinner, LoadingButton } from './Loading';
 import {
   Upload as UploadIcon,
   CloudUpload as CloudUploadIcon,
@@ -587,7 +587,7 @@ const ImportManager = () => {
 
                 {isImporting && (
                   <Box sx={{ mb: 2 }}>
-                    <LinearProgress />
+                    <LoadingBar progress={undefined} />
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       Importing data, please wait...
                     </Typography>

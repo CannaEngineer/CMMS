@@ -18,11 +18,11 @@ import {
   Fab,
   useTheme,
   useMediaQuery,
-  LinearProgress,
   Tooltip,
   IconButton,
   Badge,
 } from '@mui/material';
+import { LoadingBar, LoadingSpinner, TemplatedSkeleton } from '../Loading';
 import {
   Add as AddIcon,
   Refresh as RefreshIcon,
@@ -419,7 +419,7 @@ export default function ExportCenter() {
       {/* Loading indicator */}
       {loading && (
         <Box sx={{ mb: 2 }}>
-          <LinearProgress />
+          <LoadingBar progress={undefined} />
         </Box>
       )}
 

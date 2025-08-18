@@ -26,18 +26,15 @@ import {
   Select,
   MenuItem,
   Alert,
-  CircularProgress,
   IconButton,
   Badge,
   Divider,
   Stack,
   useTheme,
   useMediaQuery,
-  LinearProgress,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Skeleton,
 } from '@mui/material';
 import {
   PlayArrow as StartIcon,
@@ -62,6 +59,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService, authService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import { useComments, useCreateComment } from '../hooks/useComments';
+import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingButton } from '../components/Loading';
 
 interface WorkOrder {
   id: number;
@@ -320,19 +318,7 @@ export default function TechnicianDashboard() {
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Skeleton variant="rectangular" width="100%" height={60} />
-          <Grid container spacing={2}>
-            {[1, 2, 3, 4].map((i) => (
-              <Grid xs={6} sm={3} key={i}>
-                <Skeleton variant="rectangular" width="100%" height={100} />
-              </Grid>
-            ))}
-          </Grid>
-          <Skeleton variant="rectangular" width="100%" height={200} />
-        </Box>
-      </Container>
+      <TemplatedSkeleton template="dashboard" />
     );
   }
 
@@ -538,7 +524,7 @@ export default function TechnicianDashboard() {
                           In Progress...
                         </Typography>
                       </Box>
-                      <LinearProgress variant="indeterminate" />
+                      <LoadingBar progress={undefined} />
                     </Box>
                   )}
                 </CardContent>
@@ -640,14 +626,15 @@ export default function TechnicianDashboard() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTimeDialogOpen(false)}>Cancel</Button>
-          <Button
+          <LoadingButton
             variant="contained"
             onClick={submitTimeLog}
-            disabled={!timeEntry.hours || !timeEntry.description.trim() || logTimeMutation.isPending}
-            startIcon={logTimeMutation.isPending ? <CircularProgress size={16} /> : <TimerIcon />}
+            disabled={!timeEntry.hours || !timeEntry.description.trim()}
+            startIcon={<TimerIcon />}
+            loading={logTimeMutation.isPending}
           >
             Log Time
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
 
@@ -673,7 +660,8 @@ export default function TechnicianDashboard() {
             variant="contained"
             onClick={submitComment}
             disabled={!comment.trim() || createCommentMutation.isPending}
-            startIcon={createCommentMutation.isPending ? <CircularProgress size={16} /> : <CommentIcon />}
+            startIcon={<CommentIcon />}
+            loading={createCommentMutation.isPending}
           >
             Add Note
           </Button>

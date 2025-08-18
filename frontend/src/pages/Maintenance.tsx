@@ -10,7 +10,6 @@ import {
   Tabs,
   Tab,
   Chip,
-  LinearProgress,
   Avatar,
   List,
   ListItem,
@@ -21,7 +20,6 @@ import {
   useTheme,
   Menu,
   MenuItem,
-  CircularProgress,
   Alert,
 } from '@mui/material';
 import {
@@ -47,6 +45,7 @@ import { statusColors } from '../theme/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pmService, dashboardService, assetsService, workOrdersService } from '../services/api';
 import { qrService } from '../services/qrService';
+import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingOverlay } from '../components/Loading';
 import dayjs from 'dayjs';
 
 export default function Maintenance() {
@@ -279,10 +278,11 @@ export default function Maintenance() {
 
   if (pmSchedulesLoading || statsLoading || maintenanceScheduleStatsLoading || assetsLoading || workOrdersLoading || trendsLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-        <Typography variant="h6" sx={{ ml: 2 }}>Loading Maintenance Data...</Typography>
-      </Box>
+      <LoadingOverlay
+        open={true}
+        message="Loading Maintenance Data..."
+        context="dashboard"
+      />
     );
   }
 
@@ -691,20 +691,18 @@ export default function Maintenance() {
                               <Typography variant="caption">
 {asset.location && `Location: ${asset.location} • `}Next maintenance: {asset.nextMaintenance}
                               </Typography>
-                              <LinearProgress
+                              <LoadingBar
                                 variant="determinate"
-                                value={asset.health}
+                                progress={asset.health}
+                                color={
+                                  asset.health > 70 ? 'success' :
+                                  asset.health > 50 ? 'warning' :
+                                  'error'
+                                }
                                 sx={{
                                   mt: 1,
                                   height: 6,
                                   borderRadius: 3,
-                                  backgroundColor: theme.palette.grey[200],
-                                  '& .MuiLinearProgress-bar': {
-                                    backgroundColor: 
-                                      asset.health > 70 ? theme.palette.success.main :
-                                      asset.health > 50 ? theme.palette.warning.main :
-                                      theme.palette.error.main,
-                                  },
                                 }}
                               />
                             </Box>

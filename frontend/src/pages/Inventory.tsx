@@ -20,11 +20,9 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  LinearProgress,
   useTheme,
   useMediaQuery,
   Fab,
-  CircularProgress,
   Snackbar,
 } from '@mui/material';
 import {
@@ -46,6 +44,7 @@ import StatCard from '../components/Common/StatCard';
 import DataTable from '../components/Common/DataTable';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import PartForm from '../components/Forms/PartForm';
+import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingOverlay } from '../components/Loading';
 import { statusColors } from '../theme/theme';
 import { partsService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -361,9 +360,11 @@ export default function Inventory() {
   // Loading state
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
+      <LoadingOverlay
+        open={true}
+        message="Loading inventory..."
+        context="data"
+      />
     );
   }
 
@@ -657,9 +658,9 @@ export default function Inventory() {
                           <Typography variant="caption">
                             {part.stockLevel} / {part.reorderPoint} (reorder point)
                           </Typography>
-                          <LinearProgress
+                          <LoadingBar
                             variant="determinate"
-                            value={Math.min((part.stockLevel / Math.max(part.reorderPoint * 2, 1)) * 100, 100)}
+                            progress={Math.min((part.stockLevel / Math.max(part.reorderPoint * 2, 1)) * 100, 100)}
                             color={
                               part.stockLevel === 0 ? 'error' :
                               part.stockLevel <= part.reorderPoint ? 'warning' :
