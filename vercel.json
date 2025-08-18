@@ -57,6 +57,10 @@
       "destination": "/api/work-orders.js"
     },
     {
+      "source": "/api/import/(.*)",
+      "destination": "/api/import.js"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/server-minimal.js"
     },
