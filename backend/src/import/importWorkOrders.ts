@@ -92,12 +92,13 @@ async function importWorkOrders() {
     const assetId = wo['Asset ID'] ? assetMap.get(parseInt(wo['Asset ID'])) : undefined;
     const assignedToId = wo['Assigned to'] ? userMap.get(wo['Assigned to']) : undefined;
 
-    // Map status to enum values
+    // Map status to enum values - including DONE/Complete for compliance history
     let status: WorkOrderStatus = WorkOrderStatus.OPEN; // Default
-    const rawStatus = wo.Status.replace(/ /g, '_').toUpperCase();
+    const rawStatus = wo.Status ? wo.Status.replace(/ /g, '_').toUpperCase() : '';
+    
     if (Object.values(WorkOrderStatus).includes(rawStatus as WorkOrderStatus)) {
       status = rawStatus as WorkOrderStatus;
-    } else if (rawStatus === 'DONE') {
+    } else if (rawStatus === 'DONE' || rawStatus === 'COMPLETE') {
       status = WorkOrderStatus.COMPLETED;
     } else if (rawStatus === 'APPROVED' || rawStatus === 'PENDING') {
       status = WorkOrderStatus.OPEN;
@@ -114,6 +115,11 @@ async function importWorkOrders() {
       priority = WorkOrderPriority.LOW;
     }
 
+    // Set completion timestamp for compliance tracking if work order is completed
+    const completedAt = status === WorkOrderStatus.COMPLETED 
+      ? (wo['Last updated'] ? new Date(wo['Last updated']) : new Date())
+      : null;
+
     await prisma.workOrder.upsert({
       where: { legacyId: parseInt(wo.ID) },
       update: {
@@ -123,6 +129,7 @@ async function importWorkOrders() {
         priority: priority,
         assetId: assetId,
         assignedToId: assignedToId,
+        completedAt: completedAt,
         createdAt: wo['Created on'] ? new Date(wo['Created on']) : new Date(),
         updatedAt: wo['Last updated'] ? new Date(wo['Last updated']) : new Date(),
       },
@@ -134,6 +141,7 @@ async function importWorkOrders() {
         priority: priority,
         assetId: assetId,
         assignedToId: assignedToId,
+        completedAt: completedAt,
         organizationId: organization.id,
         createdAt: wo['Created on'] ? new Date(wo['Created on']) : new Date(),
         updatedAt: wo['Last updated'] ? new Date(wo['Last updated']) : new Date(),

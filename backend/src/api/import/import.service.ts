@@ -263,8 +263,21 @@ export class ImportService {
               }
               break;
             case 'enum':
-              if (field.enumValues && !field.enumValues.includes(value.toUpperCase())) {
-                warnings.push(`Row ${i + 1}: ${field.label} value "${value}" will be normalized. Valid values: ${field.enumValues.join(', ')}`);
+              if (field.enumValues) {
+                // Special validation for work order status field
+                if (mapping.targetField === 'status' && entityType === 'workorders') {
+                  const statusValue = String(value).replace(/ /g, '_').toUpperCase();
+                  const isValidStatus = field.enumValues.includes(statusValue) || 
+                                      ['DONE', 'COMPLETE', 'APPROVED', 'PENDING', 'REJECTED'].includes(statusValue);
+                  if (!isValidStatus) {
+                    warnings.push(`Row ${i + 1}: ${field.label} value "${value}" will be normalized. Valid values: ${field.enumValues.join(', ')}, DONE, COMPLETE`);
+                  }
+                } else {
+                  // Standard enum validation for other fields
+                  if (!field.enumValues.includes(value.toUpperCase())) {
+                    warnings.push(`Row ${i + 1}: ${field.label} value "${value}" will be normalized. Valid values: ${field.enumValues.join(', ')}`);
+                  }
+                }
               }
               break;
             case 'date':
@@ -460,11 +473,30 @@ export class ImportService {
             break;
           case 'enum':
             if (field.enumValues) {
-              // Try to match enum values (case insensitive)
-              const matchedEnum = field.enumValues.find(
-                enumVal => enumVal.toLowerCase() === String(value).toLowerCase()
-              );
-              value = matchedEnum || field.enumValues[0]; // Default to first enum value if no match
+              // Special handling for WorkOrder status field - include DONE/Complete for compliance
+              if (mapping.targetField === 'status' && entityType === 'workorders') {
+                const statusValue = String(value).replace(/ /g, '_').toUpperCase();
+                
+                if (statusValue === 'DONE' || statusValue === 'COMPLETE') {
+                  value = 'COMPLETED';
+                } else if (statusValue === 'APPROVED' || statusValue === 'PENDING') {
+                  value = 'OPEN';
+                } else if (statusValue === 'REJECTED') {
+                  value = 'CANCELED';
+                } else {
+                  // Try to match standard enum values (case insensitive)
+                  const matchedEnum = field.enumValues.find(
+                    enumVal => enumVal.toLowerCase() === statusValue.toLowerCase()
+                  );
+                  value = matchedEnum || field.enumValues[0];
+                }
+              } else {
+                // Standard enum handling for other fields
+                const matchedEnum = field.enumValues.find(
+                  enumVal => enumVal.toLowerCase() === String(value).toLowerCase()
+                );
+                value = matchedEnum || field.enumValues[0]; // Default to first enum value if no match
+              }
             }
             break;
           case 'date':
@@ -1045,6 +1077,12 @@ export class ImportService {
                   // Hash password for users
                   if (!row.password) {
                     row.password = await bcrypt.hash('defaultpassword', 10);
+                  }
+                  break;
+                case 'workorders':
+                  // Set completion timestamp for COMPLETED work orders for compliance tracking
+                  if (row.status === 'COMPLETED' && !row.completedAt) {
+                    row.completedAt = row.updatedAt || row.createdAt || new Date();
                   }
                   break;
                 case 'assets':
