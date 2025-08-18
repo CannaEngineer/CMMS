@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticateToken } from '../../middleware/auth';
 
 const prisma = new PrismaClient();
 
@@ -8,8 +7,8 @@ export const settingsController = {
   // Clean slate - delete all operational data
   async cleanSlate(req: Request, res: Response) {
     try {
-      const userId = (req as any).user.userId;
-      const organizationId = (req as any).user.organizationId;
+      const userId = req.user?.id;
+      const organizationId = req.user?.organizationId;
       const { confirmationCode } = req.body;
 
       // Verify user is an admin
@@ -178,7 +177,7 @@ export const settingsController = {
   // Get organization settings
   async getSettings(req: Request, res: Response) {
     try {
-      const organizationId = (req as any).user.organizationId;
+      const organizationId = req.user?.organizationId;
 
       const organization = await prisma.organization.findUnique({
         where: { id: organizationId },
