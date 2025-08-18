@@ -6,15 +6,22 @@ const dashboardService = new DashboardService();
 export class DashboardController {
   async getStats(req: Request, res: Response) {
     try {
+      console.log('[DashboardController] getStats called');
+      console.log('[DashboardController] User info:', req.user);
+      
       const organizationId = req.user?.organizationId;
+      console.log('[DashboardController] Organization ID:', organizationId);
+      
       if (!organizationId) {
+        console.error('[DashboardController] No organization ID found');
         return res.status(400).json({ error: 'Organization ID required' });
       }
 
       const stats = await dashboardService.getStats(organizationId);
+      console.log('[DashboardController] Stats retrieved:', stats);
       res.json(stats);
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('[DashboardController] Error fetching dashboard stats:', error);
       res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
   }

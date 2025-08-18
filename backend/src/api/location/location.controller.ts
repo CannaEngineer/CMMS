@@ -13,9 +13,21 @@ const locationSchema = z.object({
 });
 
 export const getAllLocations = async (req: any, res: Response) => {
-  const organizationId = req.user?.organizationId || 1;
-  const locations = await locationService.getAllLocations(organizationId);
-  res.status(200).json(locations);
+  try {
+    console.log('[LocationController] getAllLocations called');
+    console.log('[LocationController] User info:', req.user);
+    
+    const organizationId = req.user?.organizationId || 1;
+    console.log('[LocationController] Using organizationId:', organizationId);
+    
+    const locations = await locationService.getAllLocations(organizationId);
+    console.log('[LocationController] Found locations:', locations.length);
+    
+    res.status(200).json(locations);
+  } catch (error) {
+    console.error('[LocationController] Error in getAllLocations:', error);
+    res.status(500).json({ error: 'Failed to fetch locations' });
+  }
 };
 
 export const getLocationById = async (req: Request, res: Response) => {
