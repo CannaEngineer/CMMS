@@ -61,12 +61,12 @@ const PortalFieldRenderer: React.FC<PortalFieldRendererProps> = ({
   const [, setSignatureData] = useState<string>('');
 
   // Normalize field properties (handle both old and new field formats)
-  const label = label || field.fieldLabel || 'Field';
-  const placeholder = placeholder || field.fieldPlaceholder || '';
+  const label = field.label || field.fieldLabel || 'Field';
+  const placeholder = field.placeholder || field.fieldPlaceholder || '';
   const description = field.fieldDescription || '';
   const helpText = field.helpText || '';
-  const options = options || field.fieldOptions || [];
-  const validation = validation || validationRules || {};
+  const options = field.options || field.fieldOptions || [];
+  const validation = field.validation || field.validationRules || {};
 
   // Common props for all fields
   const commonProps = {
