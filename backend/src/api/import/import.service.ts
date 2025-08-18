@@ -1028,6 +1028,32 @@ export class ImportService {
                   row.password = await bcrypt.hash('defaultpassword', 10);
                 }
                 break;
+              case 'assets':
+                // For assets, ensure location relationship is handled properly
+                if (!row.locationId) {
+                  // Create or find a default location if no location is specified
+                  let defaultLocation = await tx.location.findFirst({
+                    where: {
+                      organizationId: organizationId,
+                      name: 'Default Location'
+                    }
+                  });
+                  
+                  if (!defaultLocation) {
+                    defaultLocation = await tx.location.create({
+                      data: {
+                        name: 'Default Location',
+                        description: 'Auto-created default location for assets without specified location',
+                        organizationId: organizationId
+                      }
+                    });
+                    console.log(`Created default location with ID: ${defaultLocation.id}`);
+                  }
+                  
+                  row.locationId = defaultLocation.id;
+                  console.log(`Assigned default location ${defaultLocation.id} to asset`);
+                }
+                break;
             }
 
             // Check for duplicates before creating
