@@ -282,7 +282,7 @@ const PortalTemplateSelector: React.FC<PortalTemplateSelectorProps> = ({
               • Configure submission workflow and notifications
             </Typography>
             <Typography variant="body2" sx={{ mb: 0.5 }}>
-              • Set up integrations with your CMMS
+              • Set up integrations with your compliance system
             </Typography>
           </Box>
         </Box>

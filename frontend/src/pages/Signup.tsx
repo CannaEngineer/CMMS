@@ -337,7 +337,7 @@ export default function Signup() {
             Create Account
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Join Compass CMMS
+            Join Elevated Compliance
           </Typography>
         </Box>
 
@@ -583,7 +583,7 @@ export default function Signup() {
         }}
       >
         <Typography variant="caption" color="text.secondary">
-          © 2024 Compass CMMS. All rights reserved.
+          © 2024 Elevated Compliance. All rights reserved.
         </Typography>
       </Box>
     </Box>

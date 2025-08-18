@@ -189,10 +189,10 @@ export default function DashboardLayout() {
           <BuildIcon sx={{ fontSize: 32, color: theme.palette.primary.main, mr: 2 }} />
           <Box>
             <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700 }}>
-              Compass CMMS
+              Elevated Compliance
             </Typography>
             <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              Maintenance Management
+              Compliance Management
             </Typography>
           </Box>
         </Box>

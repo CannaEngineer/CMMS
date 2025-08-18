@@ -78,7 +78,7 @@ const LoadingTest: React.FC = () => {
         Loading Components Test Suite
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Test all standardized loading components to ensure consistency across the CMMS application.
+        Test all standardized loading components to ensure consistency across the Elevated Compliance application.
       </Typography>
 
       <Grid container spacing={3}>

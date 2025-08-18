@@ -22,7 +22,7 @@ export const geocodingService = {
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
         {
           headers: {
-            'User-Agent': 'CMMS-Application/1.0', // Required by Nominatim
+            'User-Agent': 'ElevatedCompliance-Application/1.0', // Required by Nominatim
           },
         }
       );
@@ -58,7 +58,7 @@ export const geocodingService = {
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
         {
           headers: {
-            'User-Agent': 'CMMS-Application/1.0',
+            'User-Agent': 'ElevatedCompliance-Application/1.0',
           },
         }
       );

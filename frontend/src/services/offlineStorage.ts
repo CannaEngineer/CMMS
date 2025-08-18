@@ -1,6 +1,6 @@
 // Advanced offline storage service using IndexedDB
 class OfflineStorageService {
-  private dbName = 'CMMS_Offline';
+  private dbName = 'ElevatedCompliance_Offline';
   private version = 1;
   private db: IDBDatabase | null = null;
 

@@ -46,7 +46,7 @@ const Layout = ({ children }: LayoutProps) => {
             </IconButton>
           )}
           <Typography variant="h6" noWrap component="div">
-            Compass CMMS
+            Elevated Compliance
           </Typography>
         </Toolbar>
       </AppBar>

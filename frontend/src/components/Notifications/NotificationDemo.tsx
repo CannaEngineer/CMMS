@@ -118,7 +118,7 @@ const NotificationDemoContent: React.FC<NotificationDemoProps> = ({ embedded = f
     },
     {
       title: 'System Update Complete',
-      message: 'CMMS system has been updated to version 2.1.0',
+      message: 'Elevated Compliance system has been updated to version 2.1.0',
       type: 'SUCCESS' as const,
       priority: 'LOW' as const,
       category: 'SYSTEM' as const,

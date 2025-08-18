@@ -490,7 +490,7 @@ export const initializePortalOfflineStorage = async (): Promise<void> => {
     await offlineStorage.init();
     
     // Add portal-specific object stores if they don't exist
-    const request = indexedDB.open('CMMS_Offline', 2); // Increment version
+    const request = indexedDB.open('ElevatedCompliance_Offline', 2); // Increment version
     
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;

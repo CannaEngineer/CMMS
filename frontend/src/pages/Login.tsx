@@ -124,10 +124,10 @@ export default function Login() {
             </Box>
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-            Compass CMMS
+            Elevated Compliance
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Maintenance Management System
+            Compliance Management System
           </Typography>
         </Box>
 
@@ -264,7 +264,7 @@ export default function Login() {
         }}
       >
         <Typography variant="caption" color="text.secondary">
-          © 2024 Compass CMMS. All rights reserved.
+          © 2024 Elevated Compliance. All rights reserved.
         </Typography>
       </Box>
     </Box>

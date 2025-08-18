@@ -114,7 +114,7 @@ const PortalDemo: React.FC = () => {
         </Typography>
         <Typography variant="body2">
           This system allows you to create public-facing portals where external users can submit maintenance requests, 
-          register new equipment, report safety incidents, and more - all without needing to log in to your CMMS.
+          register new equipment, report safety incidents, and more - all without needing to log in to your compliance system.
         </Typography>
       </Alert>
 
@@ -293,7 +293,7 @@ const PortalDemo: React.FC = () => {
                 📊 Auto Work Order Creation
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Submissions automatically create work orders in your CMMS with proper categorization, priority, and assignment.
+                Submissions automatically create work orders in your compliance system with proper categorization, priority, and assignment.
               </Typography>
             </Card>
           </Grid>

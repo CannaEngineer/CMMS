@@ -1015,7 +1015,7 @@ export default function Dashboard() {
   if (useCalendarView) {
     return (
       <PageLayout
-        title={isMobile ? "Dashboard" : "Maintenance Dashboard"}
+        title={isMobile ? "Dashboard" : "Compliance Dashboard"}
         loading={statsLoading}
         error={statsError ? "Failed to load dashboard data. Please try again later." : null}
         onRefresh={refresh}

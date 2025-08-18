@@ -125,7 +125,7 @@ export default function TechnicianLayout({ children }: TechnicianLayoutProps) {
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <AssetIcon sx={{ mr: 1 }} />
             <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
-              {isMobile ? 'CMMS' : 'Compass CMMS'}
+              {isMobile ? 'Elevated' : 'Elevated Compliance'}
             </Typography>
           </Box>
 

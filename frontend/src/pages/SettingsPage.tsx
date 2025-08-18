@@ -71,7 +71,7 @@ const SettingsPage: React.FC = () => {
     language: 'en',
     timezone: 'America/New_York',
     theme: 'light',
-    companyName: 'Compass CMMS',
+    companyName: 'Elevated Compliance',
     dateFormat: 'MM/dd/yyyy',
     timeFormat: '12h'
   });

@@ -618,7 +618,7 @@ export default function WorkOrders() {
                   sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.875rem' }}
                 >
                   <BusinessIcon fontSize="small" />
-                  CMMS
+                  Elevated Compliance
                 </Link>
                 <Typography color="text.primary" sx={{ fontSize: '0.875rem' }}>
                   Work Orders
@@ -719,7 +719,7 @@ export default function WorkOrders() {
                   sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                 >
                   <BusinessIcon fontSize="small" />
-                  CMMS
+                  Elevated Compliance
                 </Link>
                 <Typography color="text.primary">
                   Work Orders
