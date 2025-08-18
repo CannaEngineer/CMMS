@@ -1076,12 +1076,18 @@ export default function Dashboard() {
                   setSelectedWorkOrder(item);
                   setWorkOrderPreviewOpen(true);
                 } else if (item.type === 'PM_SCHEDULE') {
-                  // For PM schedules, check if there's an associated work order
-                  if (item.originalData?.workOrderId) {
+                  // For PM schedules, always look for the associated work order first
+                  const workOrderId = item.originalData?.workOrderId || 
+                                     item.originalData?.workOrder?.id ||
+                                     item.originalData?.id; // Sometimes the PM itself has the work order ID
+                  
+                  if (workOrderId) {
                     // Navigate to the associated work order
-                    navigate(`/work-orders/${item.originalData.workOrderId}`);
+                    navigate(`/work-orders/${workOrderId}`);
                   } else {
-                    // Navigate to the PM schedule itself
+                    // Fallback: try to find work order by PM schedule ID
+                    // This might be needed if the data structure is different
+                    console.warn('No work order found for PM schedule:', item);
                     navigate(`/maintenance/schedules/${item.id}`);
                   }
                 }
@@ -1346,10 +1352,15 @@ export default function Dashboard() {
                 if (item.itemType === 'WORK_ORDER') {
                   navigate(`/work-orders/${item.id}`);
                 } else if (item.itemType === 'PM_SCHEDULE') {
-                  // For PM schedules, check if there's an associated work order
-                  if (item.originalData?.workOrderId) {
-                    navigate(`/work-orders/${item.originalData.workOrderId}`);
+                  // For PM schedules, always look for the associated work order first
+                  const workOrderId = item.originalData?.workOrderId || 
+                                     item.originalData?.workOrder?.id ||
+                                     item.originalData?.id; // Sometimes the PM itself has the work order ID
+                  
+                  if (workOrderId) {
+                    navigate(`/work-orders/${workOrderId}`);
                   } else {
+                    console.warn('No work order found for PM schedule:', item);
                     navigate(`/maintenance/schedules/${item.id}`);
                   }
                 }

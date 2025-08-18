@@ -360,57 +360,32 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
           </Box>
         ) : (
           <>
-            {/* Week Day Headers - Matching PM Calendar Style */}
-            <Grid container spacing={1} sx={{ mb: 1 }} role="row">
-              {weekDays.map((day) => (
-                <Grid xs key={day}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      textAlign: 'center',
-                      backgroundColor: theme.palette.background.default,
-                      borderRadius: 2,
-                    }}
-                    role="columnheader"
-                    aria-label={day}
-                  >
-                    <Typography 
-                      variant="subtitle2" 
-                      sx={{ 
-                        fontWeight: 600,
-                        color: theme.palette.text.secondary,
-                      }}
-                    >
-                      {day}
-                    </Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
 
-            {/* Calendar Grid */}
+            {/* Calendar Grid - Mobile First */}
             <Box sx={{ 
               flex: 1, 
               overflow: 'auto',
-              // Ensure proper height calculation on mobile
-              ...(isMobile && {
-                minHeight: 400,
-                height: 'auto',
-              }),
+              // Mobile-first design with better spacing
+              minHeight: { xs: 400, sm: 500, md: 600 },
+              height: 'auto',
+              p: { xs: 0.5, sm: 1 },
             }}>
               {calendarGrid.map((week, weekIndex) => (
                 <Grid 
                   container 
-                  spacing={1}
+                  spacing={{ xs: 0.5, sm: 1 }}
                   key={weekIndex} 
                   sx={{ 
-                    mb: { xs: 0.5, sm: 1 }, 
-                    height: isMobile ? 'auto' : `${100 / calendarGrid.length}%`,
-                    minHeight: { xs: isSmallMobile ? 80 : 100, sm: 100, md: 120 },
-                    // Ensure consistent row heights on mobile
-                    ...(isMobile && {
-                      flex: '1 0 auto',
-                    }),
+                    mb: { xs: 1, sm: 1.5 }, 
+                    height: 'auto',
+                    minHeight: { 
+                      xs: isSmallMobile ? 90 : 110, 
+                      sm: 120, 
+                      md: 140 
+                    },
+                    // Better mobile layout
+                    display: 'flex',
+                    alignItems: 'stretch',
                   }}
                 >
                   {week.map((day) => {
@@ -427,11 +402,11 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                           sx={{
                             height: '100%',
                             minHeight: { 
-                              xs: isSmallMobile ? 80 : 100, 
-                              sm: 100, 
-                              md: 120 
+                              xs: isSmallMobile ? 90 : 110, 
+                              sm: 120, 
+                              md: 140 
                             },
-                            p: { xs: 1, sm: 1.5 },
+                            p: { xs: 1.5, sm: 2 },
                             bgcolor: isCurrentMonth 
                               ? (isToday ? 'primary.light' : 'background.paper')
                               : 'grey.50',
@@ -439,16 +414,19 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             borderColor: isToday ? 'primary.main' : 'divider',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease-in-out',
+                            borderRadius: { xs: 2, sm: 3 },
                             // Enhanced touch targets for mobile
                             WebkitTapHighlightColor: 'transparent',
                             touchAction: 'manipulation',
                             // Better mobile interactions
                             userSelect: 'none',
                             WebkitUserSelect: 'none',
+                            // Mobile-first responsive spacing
+                            mx: { xs: 0, sm: 'auto' },
                             '&:hover': {
                               bgcolor: isCurrentMonth ? 'action.hover' : 'grey.100',
                               transform: isMobile ? 'scale(1.02)' : 'translateY(-1px)',
-                              boxShadow: 2,
+                              boxShadow: 3,
                             },
                             '&:active': {
                               transform: 'scale(0.98)',
@@ -456,11 +434,10 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             display: 'flex',
                             flexDirection: 'column',
                             opacity: isCurrentMonth ? 1 : 0.6,
-                            // Improved mobile borders
+                            // Better mobile visual hierarchy
                             ...(isMobile && {
-                              borderRadius: 1,
-                              border: isToday ? `2px solid ${theme.palette.primary.main}` : '1px solid',
-                              borderColor: isToday ? 'primary.main' : 'divider',
+                              minWidth: 0, // Allow flex shrinking
+                              flex: 1,
                             }),
                           }}
                           onClick={() => handleDateClick(day)}
@@ -471,20 +448,24 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             display: 'flex', 
                             justifyContent: 'space-between', 
                             alignItems: 'center',
-                            mb: 0.5,
+                            mb: { xs: 1, sm: 0.5 },
                           }}>
                             <Typography 
                               variant="body2" 
                               sx={{ 
-                                fontWeight: isToday ? 'bold' : 'normal',
+                                fontWeight: isToday ? 'bold' : 'medium',
                                 color: isCurrentMonth 
                                   ? (isToday ? 'white' : 'text.primary') 
                                   : 'text.disabled',
                                 fontSize: { 
-                                  xs: isSmallMobile ? '0.7rem' : '0.75rem', 
-                                  sm: '0.875rem' 
+                                  xs: isSmallMobile ? '0.8rem' : '0.9rem', 
+                                  sm: '1rem' 
                                 },
                                 lineHeight: 1.2,
+                                // Better mobile visibility
+                                ...(isMobile && {
+                                  fontWeight: isToday ? 'bold' : '600',
+                                }),
                               }}
                             >
                               {day.format('D')}
@@ -494,20 +475,29 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                                 label={dayItems.length}
                                 size="small"
                                 sx={{
-                                  height: 16,
-                                  fontSize: '0.6rem',
+                                  height: { xs: 20, sm: 18 },
+                                  fontSize: { xs: '0.7rem', sm: '0.65rem' },
                                   bgcolor: dayItems.some(item => item.isOverdue) 
                                     ? 'error.main' 
-                                    : 'primary.light',
+                                    : 'primary.main',
                                   color: 'white',
-                                  minWidth: 16,
+                                  minWidth: { xs: 20, sm: 18 },
+                                  fontWeight: '600',
+                                  // Better mobile visibility
+                                  borderRadius: { xs: 1.5, sm: 1 },
                                 }}
                               />
                             )}
                           </Box>
                           
                           {/* Calendar Items */}
-                          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                          <Box sx={{ 
+                            flex: 1, 
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: { xs: 0.5, sm: 0.25 },
+                          }}>
                             {dayItems.slice(0, isSmallMobile ? 1 : isMobile ? 2 : 3).map((item, idx) => (
                               <Fade key={`${item.id}-${item.type}`} in timeout={300 + idx * 100}>
                                 <Tooltip 
@@ -522,36 +512,44 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                                     sx={{
                                       width: '100%',
                                       height: 'auto',
-                                      minHeight: { xs: 20, sm: 24 },
-                                      mb: 0.25,
+                                      minHeight: { xs: 24, sm: 26 },
                                       fontSize: { 
-                                        xs: isSmallMobile ? '0.5rem' : '0.55rem', 
-                                        sm: '0.65rem' 
+                                        xs: isSmallMobile ? '0.6rem' : '0.65rem', 
+                                        sm: '0.7rem' 
                                       },
                                       bgcolor: getItemColor(item),
                                       color: 'white',
-                                      borderRadius: isMobile ? 1 : 2,
+                                      borderRadius: { xs: 2, sm: 2.5 },
+                                      fontWeight: '500',
                                       '& .MuiChip-label': {
                                         display: 'block',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         maxWidth: '100%',
-                                        px: { xs: 0.25, sm: 0.5 },
-                                        py: { xs: 0.1, sm: 0.25 },
+                                        px: { xs: 0.5, sm: 0.75 },
+                                        py: { xs: 0.25, sm: 0.4 },
                                       },
                                       '& .MuiChip-icon': {
                                         color: 'white',
-                                        fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                                        ml: { xs: 0.25, sm: 0.5 },
+                                        fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                        ml: { xs: 0.5, sm: 0.75 },
                                       },
                                       '&:hover': {
                                         transform: 'scale(1.02)',
                                         boxShadow: 2,
+                                        filter: 'brightness(1.1)',
                                       },
                                       transition: 'all 0.2s ease-in-out',
                                       // Better mobile touch targets
                                       WebkitTapHighlightColor: 'transparent',
+                                      // Enhanced mobile interactions
+                                      ...(isMobile && {
+                                        minHeight: 28,
+                                        '&:active': {
+                                          transform: 'scale(0.98)',
+                                        },
+                                      }),
                                     }}
                                   />
                                 </Tooltip>
@@ -565,23 +563,31 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                                 sx={{ 
                                   color: 'primary.main', 
                                   fontSize: { 
-                                    xs: isSmallMobile ? '0.5rem' : '0.55rem', 
-                                    sm: '0.65rem' 
+                                    xs: isSmallMobile ? '0.6rem' : '0.65rem', 
+                                    sm: '0.7rem' 
                                   },
                                   fontWeight: 600,
-                                  minHeight: { xs: 20, sm: 24 },
-                                  padding: { xs: '1px 2px', sm: '2px 4px' },
+                                  minHeight: { xs: 24, sm: 26 },
+                                  padding: { xs: '2px 4px', sm: '3px 6px' },
                                   textTransform: 'none',
                                   width: '100%',
-                                  mt: 0.25,
-                                  borderRadius: isMobile ? 1 : 2,
+                                  borderRadius: { xs: 2, sm: 2.5 },
+                                  backgroundColor: 'action.hover',
                                   '&:hover': {
                                     backgroundColor: 'primary.light',
                                     transform: 'scale(1.05)',
+                                    color: 'white',
                                   },
                                   transition: 'all 0.2s ease',
                                   // Better mobile touch targets
                                   WebkitTapHighlightColor: 'transparent',
+                                  // Enhanced mobile interactions
+                                  ...(isMobile && {
+                                    minHeight: 28,
+                                    '&:active': {
+                                      transform: 'scale(0.98)',
+                                    },
+                                  }),
                                 }}
                                 onClick={(e) => handleShowMoreClick(day, dayItems, e)}
                               >
