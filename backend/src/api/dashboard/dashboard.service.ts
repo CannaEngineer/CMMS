@@ -138,13 +138,13 @@ export class DashboardService {
         startDate = new Date(now);
         startDate.setDate(now.getDate() - (now.getDay() + 6) % 7); // Adjust to Monday
         startDate.setHours(0, 0, 0, 0);
-        dateFormat = '%Y-%m-%d';
+        dateFormat = 'YYYY-MM-DD';
         periodGenerator = (d) => d.toISOString().substring(0, 10);
         numPeriods = 7; // Last 7 days including today
         break;
       case 'year':
         startDate = new Date(now.getFullYear() - 11, 0, 1); // Last 12 years
-        dateFormat = '%Y';
+        dateFormat = 'YYYY';
         periodGenerator = (d) => d.getFullYear().toString();
         numPeriods = 12;
         break;
@@ -152,7 +152,7 @@ export class DashboardService {
       default:
         startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1); // Last 6 months
         startDate.setHours(0, 0, 0, 0);
-        dateFormat = '%Y-%m';
+        dateFormat = 'YYYY-MM';
         periodGenerator = (d) => d.toISOString().substring(0, 7);
         numPeriods = 6;
         break;
@@ -175,31 +175,69 @@ export class DashboardService {
 
     console.log(`Fetching trends for period: ${period}, from startDate: ${startDate.toISOString()}`);
 
-    const createdTrend = await prisma.$queryRaw`
-      SELECT 
-        strftime(${dateFormat}, createdAt) as period,
-        COUNT(*) as created
-      FROM WorkOrder 
-      WHERE organizationId = ${organizationId} 
-        AND createdAt >= ${startDate.toISOString()}
-      GROUP BY strftime(${dateFormat}, createdAt)
-      ORDER BY period
-    `;
+    // Use database-agnostic approach with Prisma instead of raw SQL
+    const createdWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        organizationId,
+        createdAt: {
+          gte: startDate,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    });
 
-    const completedTrend = await prisma.$queryRaw`
-      SELECT 
-        strftime(${dateFormat}, updatedAt) as period,
-        COUNT(*) as completed
-      FROM WorkOrder 
-      WHERE organizationId = ${organizationId} 
-        AND status = 'COMPLETED'
-        AND updatedAt >= ${startDate.toISOString()}
-      GROUP BY strftime(${dateFormat}, updatedAt)
-      ORDER BY period
-    `;
+    const completedWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        organizationId,
+        status: 'COMPLETED',
+        updatedAt: {
+          gte: startDate,
+        },
+      },
+      select: {
+        updatedAt: true,
+      },
+    });
 
-    console.log("Raw Created Trend:", createdTrend);
-    console.log("Raw Completed Trend:", completedTrend);
+    // Group data by period using JavaScript instead of SQL
+    const createdTrend = createdWorkOrders.reduce((acc, wo) => {
+      const period = periodGenerator(wo.createdAt);
+      acc.push({ period, created: 1 });
+      return acc;
+    }, [] as any[]);
+
+    const completedTrend = completedWorkOrders.reduce((acc, wo) => {
+      const period = periodGenerator(wo.updatedAt!);
+      acc.push({ period, completed: 1 });
+      return acc;
+    }, [] as any[]);
+
+    // Aggregate the counts
+    const createdCounts = createdTrend.reduce((acc, item) => {
+      acc[item.period] = (acc[item.period] || 0) + item.created;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const completedCounts = completedTrend.reduce((acc, item) => {
+      acc[item.period] = (acc[item.period] || 0) + item.completed;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convert to array format for consistency
+    const createdTrendFormatted = Object.entries(createdCounts).map(([period, created]) => ({
+      period,
+      created,
+    }));
+
+    const completedTrendFormatted = Object.entries(completedCounts).map(([period, completed]) => ({
+      period,
+      completed,
+    }));
+
+    console.log("Raw Created Trend:", createdTrendFormatted);
+    console.log("Raw Completed Trend:", completedTrendFormatted);
 
     const trendData: Record<string, { period: string; created: number; completed: number }> = {};
 
@@ -207,12 +245,16 @@ export class DashboardService {
       trendData[p] = { period: p, created: 0, completed: 0 };
     });
 
-    (createdTrend as any[]).forEach(item => {
-      trendData[item.period].created = Number(item.created);
+    createdTrendFormatted.forEach(item => {
+      if (trendData[item.period]) {
+        trendData[item.period].created = Number(item.created);
+      }
     });
 
-    (completedTrend as any[]).forEach(item => {
-      trendData[item.period].completed = Number(item.completed);
+    completedTrendFormatted.forEach(item => {
+      if (trendData[item.period]) {
+        trendData[item.period].completed = Number(item.completed);
+      }
     });
 
     return Object.values(trendData).sort((a, b) => a.period.localeCompare(b.period));
