@@ -363,7 +363,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
             {/* Week Day Headers - Matching PM Calendar Style */}
             <Grid container spacing={1} sx={{ mb: 1 }} role="row">
               {weekDays.map((day) => (
-                <Grid xs={12/7} key={day}>
+                <Grid xs key={day}>
                   <Box
                     sx={{
                       p: 2,
@@ -401,7 +401,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               {calendarGrid.map((week, weekIndex) => (
                 <Grid 
                   container 
-                  spacing={isMobile ? 0.5 : 1}
+                  spacing={1}
                   key={weekIndex} 
                   sx={{ 
                     mb: { xs: 0.5, sm: 1 }, 
@@ -421,7 +421,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                     const isHovered = hoveredDate === dateKey;
 
                     return (
-                      <Grid xs={12/7} key={day.format('YYYY-MM-DD')}>
+                      <Grid xs key={day.format('YYYY-MM-DD')}>
                         <Paper
                           elevation={isHovered ? 3 : 1}
                           sx={{
@@ -431,7 +431,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                               sm: 100, 
                               md: 120 
                             },
-                            p: { xs: 0.5, sm: 1 },
+                            p: { xs: 1, sm: 1.5 },
                             bgcolor: isCurrentMonth 
                               ? (isToday ? 'primary.light' : 'background.paper')
                               : 'grey.50',

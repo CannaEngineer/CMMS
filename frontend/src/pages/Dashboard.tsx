@@ -246,7 +246,7 @@ export default function Dashboard() {
       status: item.status || 'SCHEDULED',
       // Additional fields for distinguishing types
       itemType: item.type, // 'PM_SCHEDULE' or 'WORK_ORDER'
-      originalId: item.originalId,
+      originalData: item, // Store the full original item
     }));
   }, [calendarItems]);
 
@@ -1076,8 +1076,14 @@ export default function Dashboard() {
                   setSelectedWorkOrder(item);
                   setWorkOrderPreviewOpen(true);
                 } else if (item.type === 'PM_SCHEDULE') {
-                  // Navigate to maintenance schedule detail page
-                  navigate(`/maintenance/schedules/${item.originalId}`);
+                  // For PM schedules, check if there's an associated work order
+                  if (item.originalData?.workOrderId) {
+                    // Navigate to the associated work order
+                    navigate(`/work-orders/${item.originalData.workOrderId}`);
+                  } else {
+                    // Navigate to the PM schedule itself
+                    navigate(`/maintenance/schedules/${item.id}`);
+                  }
                 }
               }}
               onDateClick={(date: Date) => {
@@ -1338,10 +1344,14 @@ export default function Dashboard() {
                 console.log('Calendar item clicked:', item);
                 // Navigate to appropriate detail view based on type
                 if (item.itemType === 'WORK_ORDER') {
-                  navigate(`/work-orders/${item.originalId}`);
+                  navigate(`/work-orders/${item.id}`);
                 } else if (item.itemType === 'PM_SCHEDULE') {
-                  // Navigate to PM schedule or maintenance detail
-                  navigate(`/maintenance/${item.originalId}`);
+                  // For PM schedules, check if there's an associated work order
+                  if (item.originalData?.workOrderId) {
+                    navigate(`/work-orders/${item.originalData.workOrderId}`);
+                  } else {
+                    navigate(`/maintenance/schedules/${item.id}`);
+                  }
                 }
               }}
               onDateClick={(date) => {
