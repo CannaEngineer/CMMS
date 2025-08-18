@@ -29,76 +29,8 @@
       "destination": "/api/test.js"
     },
     {
-      "source": "/api/dashboard/stats",
-      "destination": "/api/dashboard.js"
-    },
-    {
-      "source": "/api/dashboard/trends",
-      "destination": "/api/trends.js"
-    },
-    {
-      "source": "/api/calendar/stats", 
-      "destination": "/api/calendar.js"
-    },
-    {
-      "source": "/api/notifications/stats",
-      "destination": "/api/notifications.js"
-    },
-    {
-      "source": "/api/maintenance/stats",
-      "destination": "/api/maintenance.js"
-    },
-    {
-      "source": "/api/work-orders/recent",
-      "destination": "/api/work-orders.js"
-    },
-    {
-      "source": "/api/work-orders",
-      "destination": "/api/work-orders.js"
-    },
-    {
-      "source": "/api/import/(.*)",
-      "destination": "/api/import.js"
-    },
-    {
-      "source": "/api/assets/(.*)",
-      "destination": "/api/assets.js"
-    },
-    {
-      "source": "/api/assets",
-      "destination": "/api/assets.js"
-    },
-    {
-      "source": "/api/locations/(.*)",
-      "destination": "/api/locations.js"
-    },
-    {
-      "source": "/api/locations",
-      "destination": "/api/locations.js"
-    },
-    {
-      "source": "/api/users/(.*)",
-      "destination": "/api/users.js"
-    },
-    {
-      "source": "/api/users",
-      "destination": "/api/users.js"
-    },
-    {
-      "source": "/api/parts/(.*)",
-      "destination": "/api/parts.js"
-    },
-    {
-      "source": "/api/parts",
-      "destination": "/api/parts.js"
-    },
-    {
-      "source": "/api/auth/(.*)",
-      "destination": "/api/auth.js"
-    },
-    {
       "source": "/api/(.*)",
-      "destination": "/api/server-minimal.js"
+      "destination": "/api/server.js"
     },
     {
       "source": "/(.*)",
