@@ -60,7 +60,11 @@ class NotificationService {
     }
 
     // Skip WebSocket in production/serverless environments
-    if (this.baseUrl.includes('vercel.app')) {
+    const isVercel = window.location.hostname.includes('vercel.app') || 
+                     import.meta.env.PROD || 
+                     this.baseUrl.includes('vercel.app');
+    
+    if (isVercel) {
       console.warn('WebSocket disabled in serverless environment');
       return;
     }
