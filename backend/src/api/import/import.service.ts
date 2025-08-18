@@ -475,20 +475,24 @@ export class ImportService {
             if (field.enumValues) {
               // Special handling for WorkOrder status field - include DONE/Complete for compliance
               if (mapping.targetField === 'status' && entityType === 'workorders') {
-                const statusValue = String(value).replace(/ /g, '_').toUpperCase();
+                const statusValue = String(value).trim().replace(/ /g, '_').toUpperCase();
                 
+                // Map known status values
                 if (statusValue === 'DONE' || statusValue === 'COMPLETE') {
                   value = 'COMPLETED';
                 } else if (statusValue === 'APPROVED' || statusValue === 'PENDING') {
                   value = 'OPEN';
                 } else if (statusValue === 'REJECTED') {
                   value = 'CANCELED';
+                } else if (field.enumValues.includes(statusValue)) {
+                  // If it's already a valid enum value, use it
+                  value = statusValue;
                 } else {
-                  // Try to match standard enum values (case insensitive)
+                  // Try case-insensitive match as last resort
                   const matchedEnum = field.enumValues.find(
                     enumVal => enumVal.toLowerCase() === statusValue.toLowerCase()
                   );
-                  value = matchedEnum || field.enumValues[0];
+                  value = matchedEnum || 'OPEN'; // Default to OPEN for work orders
                 }
               } else {
                 // Standard enum handling for other fields
