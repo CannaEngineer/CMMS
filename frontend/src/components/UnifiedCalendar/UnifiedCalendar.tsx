@@ -366,9 +366,12 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
               flex: 1, 
               overflow: 'auto',
               // Mobile-first design with better spacing
-              minHeight: { xs: 400, sm: 500, md: 600 },
+              minHeight: { xs: 450, sm: 550, md: 600 },
               height: 'auto',
               p: { xs: 0.5, sm: 1 },
+              // Better scrolling on mobile
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'smooth',
             }}>
               {calendarGrid.map((week, weekIndex) => (
                 <Grid 
@@ -377,14 +380,16 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                   key={weekIndex} 
                   sx={{ 
                     mb: { xs: 1, sm: 1.5 }, 
-                    height: { 
+                    minHeight: { 
                       xs: isSmallMobile ? 100 : 120, 
                       sm: 140, 
                       md: 160 
                     },
-                    // Ensure all days are same height
+                    // Ensure all days are same height and prevent squishing
                     display: 'flex',
                     alignItems: 'stretch',
+                    width: '100%',
+                    flexWrap: 'nowrap', // Prevent wrapping on mobile
                   }}
                 >
                   {week.map((day) => {
@@ -401,8 +406,9 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                           sx={{
                             width: '100%',
                             height: '100%',
-                            aspectRatio: '1', // Make it a perfect square
-                            p: { xs: 1, sm: 1.5 },
+                            // Remove aspect ratio constraint to prevent squishing
+                            minHeight: { xs: isSmallMobile ? 90 : 110, sm: 130, md: 150 },
+                            p: { xs: 0.75, sm: 1.5 },
                             bgcolor: isCurrentMonth 
                               ? (isToday ? 'primary.light' : 'background.paper')
                               : 'grey.50',
@@ -414,6 +420,7 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             // Enhanced touch targets for mobile
                             WebkitTapHighlightColor: 'transparent',
                             touchAction: 'manipulation',
+                            minWidth: { xs: 44, sm: 60 }, // Ensure minimum touch target
                             // Better mobile interactions
                             userSelect: 'none',
                             WebkitUserSelect: 'none',
@@ -428,9 +435,11 @@ const UnifiedCalendar: React.FC<UnifiedCalendarProps> = ({
                             display: 'flex',
                             flexDirection: 'column',
                             opacity: isCurrentMonth ? 1 : 0.6,
-                            // Ensure consistent sizing
+                            // Ensure consistent sizing and prevent squishing
                             position: 'relative',
                             overflow: 'hidden',
+                            // Mobile-first improvements to prevent squishing
+                            flexShrink: 0,
                           }}
                           onClick={() => {
                             if (dayItems.length > 0) {

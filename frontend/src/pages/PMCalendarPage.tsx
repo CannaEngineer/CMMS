@@ -41,8 +41,17 @@ const PMCalendarPage: React.FC = () => {
   });
 
   const handlePMClick = (pm: PMScheduleItem) => {
-    // The modal will handle the display of PM details
-    // Navigation to work orders or maintenance schedules will be handled by the modal's action buttons
+    // For PM schedules, always look for the associated work order first
+    const workOrderId = pm.workOrderId || pm.workOrder?.id;
+    
+    if (workOrderId) {
+      // Navigate to the associated work order
+      navigate(`/work-orders/${workOrderId}`);
+    } else {
+      // Fallback: If no work order exists yet, navigate to PM detail
+      console.warn('No work order found for PM schedule:', pm);
+      navigate(`/maintenance/schedules/${pm.id}`);
+    }
   };
 
   const handlePMReschedule = (pmId: number, newDate: Date) => {
