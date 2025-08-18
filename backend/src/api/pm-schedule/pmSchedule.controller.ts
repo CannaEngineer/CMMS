@@ -16,7 +16,7 @@ export class PMScheduleController {
     }
   }
 
-  async getPMScheduleById(req: Request, res: Response) {
+  async getPMScheduleById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const schedule = await pmScheduleService.getPMScheduleById(Number(id));
@@ -31,17 +31,34 @@ export class PMScheduleController {
     }
   }
 
-  async createPMSchedule(req: Request, res: Response) {
+  async createPMSchedule(req: AuthenticatedRequest, res: Response) {
     try {
-      const newSchedule = await pmScheduleService.createPMSchedule(req.body);
+      const organizationId = req.user?.organizationId;
+      
+      if (!organizationId) {
+        return res.status(401).json({ error: 'User not authenticated or organization not found' });
+      }
+      
+      // Add organizationId to the request data
+      const pmData = {
+        ...req.body,
+        organizationId
+      };
+      
+      console.log('Creating PM schedule with data:', pmData);
+      
+      const newSchedule = await pmScheduleService.createPMSchedule(pmData);
       res.status(201).json(newSchedule);
     } catch (error) {
       console.error('Error creating PM schedule:', error);
-      res.status(500).json({ error: 'Failed to create PM schedule' });
+      res.status(500).json({ 
+        error: 'Failed to create PM schedule',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 
-  async updatePMSchedule(req: Request, res: Response) {
+  async updatePMSchedule(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const updatedSchedule = await pmScheduleService.updatePMSchedule(Number(id), req.body);
@@ -52,7 +69,7 @@ export class PMScheduleController {
     }
   }
 
-  async deletePMSchedule(req: Request, res: Response) {
+  async deletePMSchedule(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await pmScheduleService.deletePMSchedule(Number(id));

@@ -1154,6 +1154,20 @@ export class ImportService {
                     console.log(`Assigned default location ${defaultLocation.id} to asset`);
                   }
                   break;
+                case 'parts':
+                  // For parts, ensure name field is present (required field)
+                  if (!row.name || row.name.trim() === '') {
+                    // Use description as name if name is missing
+                    if (row.description && row.description.trim() !== '') {
+                      row.name = row.description.trim();
+                      console.log(`Using description as name for part: "${row.name}"`);
+                    } else {
+                      // Generate a default name if both name and description are missing
+                      row.name = `Part ${Date.now()}`;
+                      console.log(`Generated default name for part: "${row.name}"`);
+                    }
+                  }
+                  break;
               }
 
               // Check for duplicates and update if found (especially for status updates)
@@ -1170,6 +1184,17 @@ export class ImportService {
                 console.log(`Successfully updated record with ID:`, updatedRecord.id);
                 importedCount++;
                 continue;
+              }
+
+              // Validate required fields before creation
+              const requiredFields = config.fields.filter(field => field.required);
+              const missingFields = requiredFields.filter(field => 
+                !row[field.key] || (typeof row[field.key] === 'string' && row[field.key].trim() === '')
+              );
+              
+              if (missingFields.length > 0) {
+                const missingFieldNames = missingFields.map(field => field.key).join(', ');
+                throw new Error(`Missing required fields: ${missingFieldNames}`);
               }
 
               console.log(`Creating ${config.tableName} record with data:`, row);
