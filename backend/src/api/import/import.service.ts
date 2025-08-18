@@ -914,200 +914,222 @@ export class ImportService {
       const resolvedData = await this.resolveRelationships(transformedData, entityType, organizationId);
       console.log('Resolved data sample:', resolvedData.slice(0, 2));
 
-      console.log('Starting transaction with', resolvedData.length, 'records...');
-      // Import data within a transaction
-      await prisma.$transaction(async (tx) => {
-        // First import PM tasks if detected
-        if (pmConversion.pmTasks.length > 0) {
-          console.log(`Importing ${pmConversion.pmTasks.length} PM tasks...`);
-          for (let i = 0; i < pmConversion.pmTasks.length; i++) {
-            const pmTask = pmConversion.pmTasks[i];
-            pmTask.organizationId = organizationId;
-            
-            try {
-              const createdPMTask = await (tx as any).pMTask.create({
-                data: pmTask
-              });
-              console.log(`Successfully created PM task with ID:`, createdPMTask.id);
-              importedRecordIds.push(createdPMTask.id);
-              importedCount++;
-            } catch (error: any) {
-              console.error(`Error importing PM task ${i + 1}:`, error);
-              if (error.code === 'P2002') {
-                duplicates.push(`PM Task ${i + 1}: Duplicate record`);
-              } else {
-                errors.push(`PM Task ${i + 1}: ${error.message}`);
-              }
-              skippedCount++;
-            }
-          }
-        }
+      console.log('Starting batch import with', resolvedData.length, 'records...');
+      
+      // Process data in smaller batches to avoid transaction timeouts
+      const BATCH_SIZE = 50; // Process 50 records at a time
+      const batches = [];
+      for (let i = 0; i < resolvedData.length; i += BATCH_SIZE) {
+        batches.push(resolvedData.slice(i, i + BATCH_SIZE));
+      }
+      
+      console.log(`Processing ${batches.length} batches of up to ${BATCH_SIZE} records each`);
 
-        // Then import PM schedules if detected
-        if (pmConversion.pmSchedules.length > 0) {
-          console.log(`Importing ${pmConversion.pmSchedules.length} PM schedules...`);
-          for (let i = 0; i < pmConversion.pmSchedules.length; i++) {
-            const pmSchedule = pmConversion.pmSchedules[i];
-            
-            try {
-              // Resolve asset relationship
-              const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
-              if (resolvedPMSchedule.length > 0) {
-                // Remove organizationId and locationId as PMSchedule doesn't have these fields
-                const { organizationId: _, locationId: __, dueDate: ___, ...scheduleData } = resolvedPMSchedule[0];
-                
-                console.log('Resolved PM Schedule Data:', JSON.stringify(resolvedPMSchedule[0], null, 2));
-                console.log('Cleaned Schedule Data:', JSON.stringify(scheduleData, null, 2));
-                
-                // Check if required assetId was resolved
-                if (!scheduleData.assetId) {
-                  console.log(`Skipping PM schedule ${i + 1}: Asset not found for "${pmSchedule.assetName}"`);
-                  errors.push(`PM Schedule ${i + 1}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
-                  skippedCount++;
-                  continue;
-                }
-                
-                const createdPMSchedule = await (tx as any).pMSchedule.create({
-                  data: scheduleData
+      // Process PM tasks and schedules first (smaller transaction)
+      if (pmConversion.pmTasks.length > 0 || pmConversion.pmSchedules.length > 0) {
+        await prisma.$transaction(async (tx) => {
+          // First import PM tasks if detected
+          if (pmConversion.pmTasks.length > 0) {
+            console.log(`Importing ${pmConversion.pmTasks.length} PM tasks...`);
+            for (let i = 0; i < pmConversion.pmTasks.length; i++) {
+              const pmTask = pmConversion.pmTasks[i];
+              pmTask.organizationId = organizationId;
+              
+              try {
+                const createdPMTask = await (tx as any).pMTask.create({
+                  data: pmTask
                 });
-                console.log(`Successfully created PM schedule with ID:`, createdPMSchedule.id);
-                
-                // Create a work order for this PM schedule
-                const pmWorkOrderData = {
-                  title: pmSchedule.title || `PM: ${scheduleData.title || 'Maintenance Task'}`,
-                  description: pmSchedule.description,
-                  status: 'OPEN',
-                  priority: pmSchedule.priority || 'MEDIUM',
-                  assetId: scheduleData.assetId,
-                  assignedToId: scheduleData.assignedToId,
-                  pmScheduleId: createdPMSchedule.id,
-                  organizationId: organizationId,
-                  estimatedHours: pmSchedule.estimatedHours || null
-                };
-                
-                console.log('PM Work Order Data before create:', JSON.stringify(pmWorkOrderData, null, 2));
-                
-                const createdWorkOrder = await (tx as any).workOrder.create({
-                  data: pmWorkOrderData
-                });
-                console.log(`Successfully created work order ${createdWorkOrder.id} for PM schedule ${createdPMSchedule.id}`);
-                
-                importedRecordIds.push(createdPMSchedule.id);
+                console.log(`Successfully created PM task with ID:`, createdPMTask.id);
+                importedRecordIds.push(createdPMTask.id);
                 importedCount++;
-              } else {
-                console.log(`Skipping PM schedule ${i + 1}: Could not resolve relationships`);
-                errors.push(`PM Schedule ${i + 1}: Could not resolve asset or location relationships`);
+              } catch (error: any) {
+                console.error(`Error importing PM task ${i + 1}:`, error);
+                if (error.code === 'P2002') {
+                  duplicates.push(`PM Task ${i + 1}: Duplicate record`);
+                } else {
+                  errors.push(`PM Task ${i + 1}: ${error.message}`);
+                }
                 skippedCount++;
               }
-            } catch (error: any) {
-              console.error(`Error importing PM schedule ${i + 1}:`, error);
-              if (error.code === 'P2002') {
-                duplicates.push(`PM Schedule ${i + 1}: Duplicate record`);
-              } else {
-                errors.push(`PM Schedule ${i + 1}: ${error.message}`);
-              }
-              skippedCount++;
             }
           }
-        }
 
-        // Import regular data
-        for (let i = 0; i < resolvedData.length; i++) {
-          const row = resolvedData[i];
-          console.log(`Processing row ${i + 1}:`, row);
-          
-          // CRITICAL: Ensure organizationId is ALWAYS included for organization isolation
-          row.organizationId = organizationId;
-          
-          try {
-            // Special handling for different entity types
-            switch (entityType) {
-              case 'users':
-                // Hash password for users
-                if (!row.password) {
-                  row.password = await bcrypt.hash('defaultpassword', 10);
-                }
-                break;
-              case 'assets':
-                // For assets, ensure location relationship is handled properly
-                if (!row.locationId) {
-                  // Create or find a default location if no location is specified
-                  let defaultLocation = await tx.location.findFirst({
-                    where: {
-                      organizationId: organizationId,
-                      name: 'Default Location'
-                    }
-                  });
+          // Then import PM schedules if detected
+          if (pmConversion.pmSchedules.length > 0) {
+            console.log(`Importing ${pmConversion.pmSchedules.length} PM schedules...`);
+            for (let i = 0; i < pmConversion.pmSchedules.length; i++) {
+              const pmSchedule = pmConversion.pmSchedules[i];
+              
+              try {
+                // Resolve asset relationship
+                const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
+                if (resolvedPMSchedule.length > 0) {
+                  // Remove organizationId and locationId as PMSchedule doesn't have these fields
+                  const { organizationId: _, locationId: __, dueDate: ___, ...scheduleData } = resolvedPMSchedule[0];
                   
-                  if (!defaultLocation) {
-                    defaultLocation = await tx.location.create({
-                      data: {
-                        name: 'Default Location',
-                        description: 'Auto-created default location for assets without specified location',
-                        organizationId: organizationId
-                      }
-                    });
-                    console.log(`Created default location with ID: ${defaultLocation.id}`);
+                  console.log('Resolved PM Schedule Data:', JSON.stringify(resolvedPMSchedule[0], null, 2));
+                  console.log('Cleaned Schedule Data:', JSON.stringify(scheduleData, null, 2));
+                  
+                  // Check if required assetId was resolved
+                  if (!scheduleData.assetId) {
+                    console.log(`Skipping PM schedule ${i + 1}: Asset not found for "${pmSchedule.assetName}"`);
+                    errors.push(`PM Schedule ${i + 1}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
+                    skippedCount++;
+                    continue;
                   }
                   
-                  row.locationId = defaultLocation.id;
-                  console.log(`Assigned default location ${defaultLocation.id} to asset`);
+                  const createdPMSchedule = await (tx as any).pMSchedule.create({
+                    data: scheduleData
+                  });
+                  console.log(`Successfully created PM schedule with ID:`, createdPMSchedule.id);
+                  
+                  // Create a work order for this PM schedule
+                  const pmWorkOrderData = {
+                    title: pmSchedule.title || `PM: ${scheduleData.title || 'Maintenance Task'}`,
+                    description: pmSchedule.description,
+                    status: 'OPEN',
+                    priority: pmSchedule.priority || 'MEDIUM',
+                    assetId: scheduleData.assetId,
+                    assignedToId: scheduleData.assignedToId,
+                    pmScheduleId: createdPMSchedule.id,
+                    organizationId: organizationId,
+                    estimatedHours: pmSchedule.estimatedHours || null
+                  };
+                  
+                  console.log('PM Work Order Data before create:', JSON.stringify(pmWorkOrderData, null, 2));
+                  
+                  const createdWorkOrder = await (tx as any).workOrder.create({
+                    data: pmWorkOrderData
+                  });
+                  console.log(`Successfully created work order ${createdWorkOrder.id} for PM schedule ${createdPMSchedule.id}`);
+                  
+                  importedRecordIds.push(createdPMSchedule.id);
+                  importedCount++;
+                } else {
+                  console.log(`Skipping PM schedule ${i + 1}: Could not resolve relationships`);
+                  errors.push(`PM Schedule ${i + 1}: Could not resolve asset or location relationships`);
+                  skippedCount++;
                 }
-                break;
+              } catch (error: any) {
+                console.error(`Error importing PM schedule ${i + 1}:`, error);
+                if (error.code === 'P2002') {
+                  duplicates.push(`PM Schedule ${i + 1}: Duplicate record`);
+                } else {
+                  errors.push(`PM Schedule ${i + 1}: ${error.message}`);
+                }
+                skippedCount++;
+              }
             }
-
-            // Check for duplicates before creating
-            const isDuplicate = await this.checkForDuplicate(tx, entityType, row, organizationId);
-            if (isDuplicate) {
-              console.log(`Skipping row ${i + 1}: Duplicate record detected`);
-              duplicates.push(`Row ${i + 1}: Duplicate record - already exists in database`);
-              skippedCount++;
-              continue;
-            }
-
-            console.log(`Creating ${config.tableName} record with data:`, row);
-            // Create record
-            const createdRecord = await (tx as any)[config.tableName].create({
-              data: row
-            });
-            console.log(`Successfully created record with ID:`, createdRecord.id);
-            
-            importedRecordIds.push(createdRecord.id);
-            importedCount++;
-          } catch (error: any) {
-            console.error(`Error importing row ${i + 1}:`, error);
-            console.error('Error code:', error.code);
-            console.error('Error meta:', error.meta);
-            
-            let userFriendlyMessage = '';
-            
-            if (error.code === 'P2002') {
-              // Duplicate key error
-              const field = error.meta?.target?.[0] || 'unique field';
-              duplicates.push(`Row ${i + 1}: Duplicate ${field} - this record already exists`);
-            } else if (error.message.includes('Unknown argument')) {
-              // Field doesn't exist in database
-              const match = error.message.match(/Unknown argument `(\w+)`/);
-              const fieldName = match ? match[1] : 'field';
-              userFriendlyMessage = `Invalid field "${fieldName}" - this field is not supported in the database`;
-            } else if (error.message.includes('Invalid enum value')) {
-              // Invalid enum value
-              userFriendlyMessage = error.message.replace(/Invalid.*?enum/, 'Invalid value for');
-            } else if (error.message.includes('Foreign key constraint')) {
-              // Missing related record
-              userFriendlyMessage = 'Related record not found - please check asset, location, or user references';
-            } else if (error.message.includes('required field')) {
-              userFriendlyMessage = 'Required field is missing or empty';
-            } else {
-              // Generic error
-              userFriendlyMessage = `Database error: ${error.message}`;
-            }
-            
-            errors.push(`Row ${i + 1}: ${userFriendlyMessage}`);
-            skippedCount++;
           }
-        }
-      });
+        }, { timeout: 30000 }); // 30 second timeout for PM tasks
+      }
+
+      // Process regular data in batches
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        const batch = batches[batchIndex];
+        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} records...`);
+        
+        await prisma.$transaction(async (tx) => {
+          for (let i = 0; i < batch.length; i++) {
+            const row = batch[i];
+            const globalIndex = (batchIndex * BATCH_SIZE) + i + 1; // Global row number for error reporting
+            console.log(`Processing row ${globalIndex}:`, row);
+            
+            // CRITICAL: Ensure organizationId is ALWAYS included for organization isolation
+            row.organizationId = organizationId;
+            
+            try {
+              // Special handling for different entity types
+              switch (entityType) {
+                case 'users':
+                  // Hash password for users
+                  if (!row.password) {
+                    row.password = await bcrypt.hash('defaultpassword', 10);
+                  }
+                  break;
+                case 'assets':
+                  // For assets, ensure location relationship is handled properly
+                  if (!row.locationId) {
+                    // Create or find a default location if no location is specified
+                    let defaultLocation = await tx.location.findFirst({
+                      where: {
+                        organizationId: organizationId,
+                        name: 'Default Location'
+                      }
+                    });
+                    
+                    if (!defaultLocation) {
+                      defaultLocation = await tx.location.create({
+                        data: {
+                          name: 'Default Location',
+                          description: 'Auto-created default location for assets without specified location',
+                          organizationId: organizationId
+                        }
+                      });
+                      console.log(`Created default location with ID: ${defaultLocation.id}`);
+                    }
+                    
+                    row.locationId = defaultLocation.id;
+                    console.log(`Assigned default location ${defaultLocation.id} to asset`);
+                  }
+                  break;
+              }
+
+              // Check for duplicates before creating
+              const isDuplicate = await this.checkForDuplicate(tx, entityType, row, organizationId);
+              if (isDuplicate) {
+                console.log(`Skipping row ${globalIndex}: Duplicate record detected`);
+                duplicates.push(`Row ${globalIndex}: Duplicate record - already exists in database`);
+                skippedCount++;
+                continue;
+              }
+
+              console.log(`Creating ${config.tableName} record with data:`, row);
+              // Create record
+              const createdRecord = await (tx as any)[config.tableName].create({
+                data: row
+              });
+              console.log(`Successfully created record with ID:`, createdRecord.id);
+              
+              importedRecordIds.push(createdRecord.id);
+              importedCount++;
+            } catch (error: any) {
+              console.error(`Error importing row ${globalIndex}:`, error);
+              console.error('Error code:', error.code);
+              console.error('Error meta:', error.meta);
+              
+              let userFriendlyMessage = '';
+              
+              if (error.code === 'P2002') {
+                // Duplicate key error
+                const field = error.meta?.target?.[0] || 'unique field';
+                duplicates.push(`Row ${globalIndex}: Duplicate ${field} - this record already exists`);
+              } else if (error.message.includes('Unknown argument')) {
+                // Field doesn't exist in database
+                const match = error.message.match(/Unknown argument `(\w+)`/);
+                const fieldName = match ? match[1] : 'field';
+                userFriendlyMessage = `Invalid field "${fieldName}" - this field is not supported in the database`;
+              } else if (error.message.includes('Invalid enum value')) {
+                // Invalid enum value
+                userFriendlyMessage = error.message.replace(/Invalid.*?enum/, 'Invalid value for');
+              } else if (error.message.includes('Foreign key constraint')) {
+                // Missing related record
+                userFriendlyMessage = 'Related record not found - please check asset, location, or user references';
+              } else if (error.message.includes('required field')) {
+                userFriendlyMessage = 'Required field is missing or empty';
+              } else {
+                // Generic error
+                userFriendlyMessage = `Database error: ${error.message}`;
+              }
+              
+              errors.push(`Row ${globalIndex}: ${userFriendlyMessage}`);
+              skippedCount++;
+            }
+          }
+        }, { timeout: 30000 }); // 30 second timeout per batch
+        
+        console.log(`Completed batch ${batchIndex + 1}/${batches.length}. Running total: ${importedCount} imported, ${skippedCount} skipped`);
+      }
       console.log('Transaction completed successfully');
 
       const endTime = Date.now();
