@@ -32,6 +32,7 @@ import organizationRouter from './api/organization/organization.router';
 import { notificationRouter } from './api/notification/notification.router';
 import calendarRouter from './api/calendar/calendar.router';
 import qrRouter from './api/qr/qr.router';
+import settingsRouter from './api/settings/settings.routes';
 import { authenticate } from './middleware/auth.middleware';
 import { uploadService } from './services/uploadService';
 import { WebSocketService } from './services/websocket.service';
@@ -129,6 +130,7 @@ app.use('/api/maintenance-history', authenticate, maintenanceHistoryRouter);
 app.use('/api/comments', authenticate, commentRouter);
 app.use('/api/import', authenticate, importRouter);
 app.use('/api/notifications', authenticate, notificationRouter);
+app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/qr', qrRouter); // QR routes include their own authentication where needed
 
 // Serve static files from uploads directory

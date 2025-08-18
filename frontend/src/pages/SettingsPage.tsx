@@ -22,7 +22,14 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Chip,
-  Grid
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Collapse,
+  Divider
 } from '@mui/material';
 import { 
   Upload as ImportIcon,
@@ -32,7 +39,9 @@ import {
   Security as SecurityIcon,
   Save as SaveIcon,
   Language as LanguageIcon,
-  ColorLens as ThemeIcon
+  ColorLens as ThemeIcon,
+  DeleteForever as DeleteIcon,
+  Warning as WarningIcon
 } from '@mui/icons-material';
 import ImportManager from '../components/ImportManager';
 import ImportHistory from '../components/ImportHistory';
@@ -97,6 +106,13 @@ const SettingsPage: React.FC = () => {
     ipRestriction: false
   });
 
+  // Clean Slate State
+  const [cleanSlateOpen, setCleanSlateOpen] = useState(false);
+  const [confirmationCode, setConfirmationCode] = useState('');
+  const [cleanSlateStep, setCleanSlateStep] = useState(0);
+  const [isCleaningSlate, setIsCleaningSlate] = useState(false);
+  const [showDangerZone, setShowDangerZone] = useState(false);
+
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -121,6 +137,54 @@ const SettingsPage: React.FC = () => {
       securitySettings
     );
     // Show success message or handle errors
+  };
+
+  const handleCleanSlate = async () => {
+    if (cleanSlateStep === 0) {
+      setCleanSlateStep(1);
+      return;
+    }
+    
+    if (cleanSlateStep === 1) {
+      setCleanSlateStep(2);
+      return;
+    }
+
+    // Final step - execute clean slate
+    setIsCleaningSlate(true);
+    try {
+      const response = await fetch('/api/settings/clean-slate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ confirmationCode })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        alert(`Clean slate completed successfully!\n\nDeleted records:\n${Object.entries(result.deletedCounts).map(([key, count]) => `• ${key}: ${count}`).join('\n')}`);
+        setCleanSlateOpen(false);
+        setCleanSlateStep(0);
+        setConfirmationCode('');
+      } else {
+        alert(`Clean slate failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Clean slate error:', error);
+      alert('Failed to execute clean slate. Please try again.');
+    } finally {
+      setIsCleaningSlate(false);
+    }
+  };
+
+  const resetCleanSlateDialog = () => {
+    setCleanSlateOpen(false);
+    setCleanSlateStep(0);
+    setConfirmationCode('');
+    setIsCleaningSlate(false);
   };
 
   return (
@@ -589,6 +653,77 @@ const SettingsPage: React.FC = () => {
               </Typography>
             </Alert>
 
+            {/* Danger Zone - Hidden by default */}
+            <Box sx={{ mt: 4 }}>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    '&:hover': { color: 'error.main' }
+                  }}
+                  onClick={() => setShowDangerZone(!showDangerZone)}
+                >
+                  {'⚠️ '.repeat(5)} Advanced System Options {'⚠️ '.repeat(5)}
+                </Typography>
+              </Box>
+              
+              <Collapse in={showDangerZone}>
+                <Card sx={{ border: '2px solid', borderColor: 'error.main', backgroundColor: 'error.light', opacity: 0.9 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'error.dark' }}>
+                      <WarningIcon sx={{ mr: 1 }} />
+                      Danger Zone
+                    </Typography>
+                    
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                      <Typography variant="body2">
+                        <strong>WARNING:</strong> The actions in this section are irreversible and will permanently delete data.
+                        Only system administrators should access these functions.
+                      </Typography>
+                    </Alert>
+
+                    <Box sx={{ 
+                      p: 2, 
+                      border: '1px dashed', 
+                      borderColor: 'error.main', 
+                      borderRadius: 1,
+                      backgroundColor: 'background.paper'
+                    }}>
+                      <Typography variant="subtitle1" gutterBottom sx={{ color: 'error.dark' }}>
+                        Clean Slate - Reset All Data
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        This will permanently delete ALL operational data including work orders, assets, locations, 
+                        PM schedules, parts, and import history. User accounts and organization settings will be preserved.
+                      </Typography>
+                      
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => setCleanSlateOpen(true)}
+                        sx={{
+                          borderWidth: 2,
+                          '&:hover': {
+                            borderWidth: 2,
+                            backgroundColor: 'error.main',
+                            color: 'white'
+                          }
+                        }}
+                      >
+                        Initialize Clean Slate
+                      </Button>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Collapse>
+            </Box>
+
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
               <Button
                 variant="contained"
@@ -602,6 +737,155 @@ const SettingsPage: React.FC = () => {
           </Box>
         </TabPanel>
       </Paper>
+
+      {/* Clean Slate Confirmation Dialog */}
+      <Dialog 
+        open={cleanSlateOpen} 
+        onClose={resetCleanSlateDialog}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { 
+            border: '3px solid', 
+            borderColor: 'error.main',
+            backgroundColor: 'error.light'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'error.main', 
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <WarningIcon sx={{ mr: 1 }} />
+          {cleanSlateStep === 0 && 'Clean Slate Warning'}
+          {cleanSlateStep === 1 && 'Final Confirmation Required'}
+          {cleanSlateStep === 2 && 'Enter Confirmation Code'}
+        </DialogTitle>
+        
+        <DialogContent sx={{ mt: 2 }}>
+          {cleanSlateStep === 0 && (
+            <Box>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  ⚠️ DANGER: This action cannot be undone! ⚠️
+                </Typography>
+              </Alert>
+              
+              <Typography variant="body1" gutterBottom>
+                You are about to permanently delete ALL operational data from your system:
+              </Typography>
+              
+              <Box component="ul" sx={{ mt: 1, mb: 2 }}>
+                <li>All work orders</li>
+                <li>All assets and equipment</li>
+                <li>All locations</li>
+                <li>All PM schedules and tasks</li>
+                <li>All parts and inventory</li>
+                <li>All portals and submissions</li>
+                <li>All import history</li>
+                <li>All maintenance history</li>
+              </Box>
+              
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  <strong>What will be preserved:</strong> User accounts, organization settings, and system configuration will remain intact.
+                </Typography>
+              </Alert>
+              
+              <Typography variant="body1" color="error" fontWeight="bold">
+                This action is intended for testing environments or complete system resets only.
+              </Typography>
+            </Box>
+          )}
+          
+          {cleanSlateStep === 1 && (
+            <Box>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  Last chance to cancel!
+                </Typography>
+              </Alert>
+              
+              <Typography variant="body1" gutterBottom>
+                Are you absolutely sure you want to proceed? This will immediately and permanently delete all data.
+              </Typography>
+              
+              <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+                Click "Proceed" only if you understand the consequences and have proper authorization.
+              </Typography>
+            </Box>
+          )}
+          
+          {cleanSlateStep === 2 && (
+            <Box>
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                <Typography variant="body1">
+                  Enter the confirmation code to proceed:
+                </Typography>
+              </Alert>
+              
+              <Typography variant="body2" sx={{ mb: 2, fontFamily: 'monospace', bgcolor: 'grey.100', p: 1, borderRadius: 1 }}>
+                DELETE-ELEVATED-COMPLIANCE
+              </Typography>
+              
+              <TextField
+                fullWidth
+                label="Confirmation Code"
+                value={confirmationCode}
+                onChange={(e) => setConfirmationCode(e.target.value)}
+                placeholder="DELETE-ELEVATED-COMPLIANCE"
+                error={confirmationCode !== '' && confirmationCode !== 'DELETE-ELEVATED-COMPLIANCE'}
+                helperText={confirmationCode !== '' && confirmationCode !== 'DELETE-ELEVATED-COMPLIANCE' ? 'Incorrect confirmation code' : ''}
+                sx={{ mt: 1 }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 2, bgcolor: 'background.paper' }}>
+          <Button 
+            onClick={resetCleanSlateDialog}
+            variant="outlined"
+            disabled={isCleaningSlate}
+          >
+            Cancel
+          </Button>
+          
+          {cleanSlateStep === 0 && (
+            <Button 
+              onClick={handleCleanSlate}
+              color="error"
+              variant="contained"
+            >
+              I Understand - Continue
+            </Button>
+          )}
+          
+          {cleanSlateStep === 1 && (
+            <Button 
+              onClick={handleCleanSlate}
+              color="error"
+              variant="contained"
+            >
+              Proceed with Clean Slate
+            </Button>
+          )}
+          
+          {cleanSlateStep === 2 && (
+            <Button 
+              onClick={handleCleanSlate}
+              color="error"
+              variant="contained"
+              disabled={confirmationCode !== 'DELETE-ELEVATED-COMPLIANCE' || isCleaningSlate}
+              startIcon={isCleaningSlate ? <DeleteIcon /> : <WarningIcon />}
+            >
+              {isCleaningSlate ? 'Deleting All Data...' : 'EXECUTE CLEAN SLATE'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
