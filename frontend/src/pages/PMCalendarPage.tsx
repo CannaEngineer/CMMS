@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -18,6 +19,7 @@ import { mockPMSchedules } from '../data/mockPMData';
 
 const PMCalendarPage: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [pmSchedules] = useState<PMScheduleItem[]>(mockPMSchedules);
   const [filters, setFilters] = useState<CalendarFilters>({
     assetTypes: [],
@@ -38,11 +40,13 @@ const PMCalendarPage: React.FC = () => {
   });
 
   const handlePMClick = (pm: PMScheduleItem) => {
-    setSnackbar({
-      open: true,
-      message: `Opened PM: ${pm.title} for ${pm.assetName}`,
-      severity: 'info',
-    });
+    // If the PM has an associated work order, navigate to the work order
+    // Otherwise, navigate to the maintenance schedule detail page
+    if (pm.workOrderId) {
+      navigate(`/work-orders/${pm.workOrderId}`);
+    } else {
+      navigate(`/maintenance/schedules/${pm.id}`);
+    }
   };
 
   const handlePMReschedule = (pmId: number, newDate: Date) => {

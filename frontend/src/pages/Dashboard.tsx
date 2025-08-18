@@ -1186,9 +1186,9 @@ export default function Dashboard() {
               onItemClick={(item: CalendarItem) => {
                 if (item.type === 'WORK_ORDER') {
                   navigate(`/work-orders/${item.id}`);
-                } else {
-                  // Open PM schedule details
-                  console.log('PM Schedule clicked:', item);
+                } else if (item.type === 'PM_SCHEDULE') {
+                  // Navigate to maintenance schedule detail page
+                  navigate(`/maintenance/schedules/${item.originalId}`);
                 }
               }}
               onDateClick={(date: Date) => {
