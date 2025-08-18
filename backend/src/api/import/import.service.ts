@@ -416,9 +416,9 @@ export class ImportService {
         const field = config.fields.find(f => f.key === mapping.targetField);
         if (!field) return;
 
-        // Skip metadata fields that are used for PM detection but not stored in the entity
-        if (mapping.targetField === 'workType' || mapping.targetField === 'recurrence') {
-          return; // Skip these metadata fields
+        // Keep workType for linking PM work orders to schedules, but skip recurrence
+        if (mapping.targetField === 'recurrence') {
+          return; // Skip recurrence as it's not stored in work orders
         }
 
         // Use bracket notation with trimmed field name to avoid any string issues
@@ -475,24 +475,32 @@ export class ImportService {
             if (field.enumValues) {
               // Special handling for WorkOrder status field - include DONE/Complete for compliance
               if (mapping.targetField === 'status' && entityType === 'workorders') {
-                const statusValue = String(value).trim().replace(/ /g, '_').toUpperCase();
+                const originalValue = String(value);
+                const statusValue = originalValue.trim().replace(/ /g, '_').toUpperCase();
+                
+                console.log(`[STATUS TRANSFORM] Original: "${originalValue}" → Normalized: "${statusValue}"`);
                 
                 // Map known status values
                 if (statusValue === 'DONE' || statusValue === 'COMPLETE') {
                   value = 'COMPLETED';
+                  console.log(`[STATUS TRANSFORM] ✅ Mapped DONE/COMPLETE to: ${value}`);
                 } else if (statusValue === 'APPROVED' || statusValue === 'PENDING') {
                   value = 'OPEN';
+                  console.log(`[STATUS TRANSFORM] Mapped APPROVED/PENDING to: ${value}`);
                 } else if (statusValue === 'REJECTED') {
                   value = 'CANCELED';
+                  console.log(`[STATUS TRANSFORM] Mapped REJECTED to: ${value}`);
                 } else if (field.enumValues.includes(statusValue)) {
                   // If it's already a valid enum value, use it
                   value = statusValue;
+                  console.log(`[STATUS TRANSFORM] Already valid enum: ${value}`);
                 } else {
                   // Try case-insensitive match as last resort
                   const matchedEnum = field.enumValues.find(
                     enumVal => enumVal.toLowerCase() === statusValue.toLowerCase()
                   );
                   value = matchedEnum || 'OPEN'; // Default to OPEN for work orders
+                  console.log(`[STATUS TRANSFORM] ⚠️ Defaulted to: ${value} (unrecognized: "${statusValue}")`);
                 }
               } else {
                 // Standard enum handling for other fields
@@ -633,6 +641,7 @@ export class ImportService {
     const descriptionMapping = mappings.find(m => m.targetField === 'description');
     const assetMapping = mappings.find(m => m.targetField === 'assetName');
     const locationMapping = mappings.find(m => m.targetField === 'locationName');
+    const statusMapping = mappings.find(m => m.targetField === 'status');
     
     // Look for Work Type and Recurrence fields specifically
     const workTypeMapping = mappings.find(m => m.targetField === 'workType');
@@ -645,12 +654,17 @@ export class ImportService {
       const locationName = locationMapping?.csvColumn ? row[locationMapping.csvColumn] : '';
       const workType = workTypeMapping?.csvColumn ? row[workTypeMapping.csvColumn] : '';
       const recurrence = recurrenceMapping?.csvColumn ? row[recurrenceMapping.csvColumn] : '';
+      const status = statusMapping?.csvColumn ? row[statusMapping.csvColumn] : '';
 
       // Check if this is a PREVENTIVE work order
       const isPreventive = workType && workType.toUpperCase() === 'PREVENTIVE';
 
       if (isPreventive) {
-        // Create PM Task
+        // IMPORTANT: Always keep the work order for compliance tracking
+        // If it's DONE/COMPLETED, it will be imported as a completed work order
+        remainingWorkOrders.push(row);
+        
+        // Also create PM Task for future reference
         const pmTask = {
           title: title || `PM Task ${index + 1}`,
           description: description || '',
@@ -671,7 +685,9 @@ export class ImportService {
             assetName: assetName.trim(),
             locationName: locationName || undefined,
             nextDue: this.calculateNextDueFromRecurrence(recurrence),
-            organizationId: 0 // Will be set during import
+            organizationId: 0, // Will be set during import
+            // Store original status to track if this PM was completed
+            originalStatus: status
           };
           pmSchedules.push(pmSchedule);
         } else if (recurrence && !assetName) {
@@ -1019,25 +1035,34 @@ export class ImportService {
                   });
                   console.log(`Successfully created PM schedule with ID:`, createdPMSchedule.id);
                   
-                  // Create a work order for this PM schedule
-                  const pmWorkOrderData = {
-                    title: pmSchedule.title || `PM: ${scheduleData.title || 'Maintenance Task'}`,
-                    description: pmSchedule.description,
-                    status: 'OPEN',
-                    priority: pmSchedule.priority || 'MEDIUM',
-                    assetId: scheduleData.assetId,
-                    assignedToId: scheduleData.assignedToId,
-                    pmScheduleId: createdPMSchedule.id,
-                    organizationId: organizationId,
-                    estimatedHours: pmSchedule.estimatedHours || null
-                  };
+                  // Only create a new OPEN work order if the original PM wasn't completed
+                  // Completed PM work orders will be imported separately with COMPLETED status
+                  const originalStatus = pmSchedule.originalStatus ? String(pmSchedule.originalStatus).toUpperCase() : '';
+                  const isCompleted = originalStatus === 'DONE' || originalStatus === 'COMPLETE' || originalStatus === 'COMPLETED';
                   
-                  console.log('PM Work Order Data before create:', JSON.stringify(pmWorkOrderData, null, 2));
-                  
-                  const createdWorkOrder = await (tx as any).workOrder.create({
-                    data: pmWorkOrderData
-                  });
-                  console.log(`Successfully created work order ${createdWorkOrder.id} for PM schedule ${createdPMSchedule.id}`);
+                  if (!isCompleted) {
+                    // Create a new OPEN work order for future PM
+                    const pmWorkOrderData = {
+                      title: pmSchedule.title || `PM: ${scheduleData.title || 'Maintenance Task'}`,
+                      description: pmSchedule.description,
+                      status: 'OPEN',
+                      priority: pmSchedule.priority || 'MEDIUM',
+                      assetId: scheduleData.assetId,
+                      assignedToId: scheduleData.assignedToId,
+                      pmScheduleId: createdPMSchedule.id,
+                      organizationId: organizationId,
+                      estimatedHours: pmSchedule.estimatedHours || null
+                    };
+                    
+                    console.log('Creating new OPEN PM Work Order:', JSON.stringify(pmWorkOrderData, null, 2));
+                    
+                    const createdWorkOrder = await (tx as any).workOrder.create({
+                      data: pmWorkOrderData
+                    });
+                    console.log(`Successfully created work order ${createdWorkOrder.id} for PM schedule ${createdPMSchedule.id}`);
+                  } else {
+                    console.log(`PM schedule ${createdPMSchedule.id} was originally completed - work order will be imported with COMPLETED status`);
+                  }
                   
                   importedRecordIds.push(createdPMSchedule.id);
                   importedCount++;
@@ -1084,10 +1109,33 @@ export class ImportService {
                   }
                   break;
                 case 'workorders':
+                  console.log(`[WO IMPORT] Processing work order: "${row.title}" with status: "${row.status}"`);
+                  
                   // Set completion timestamp for COMPLETED work orders for compliance tracking
                   if (row.status === 'COMPLETED' && !row.completedAt) {
                     row.completedAt = row.updatedAt || row.createdAt || new Date();
+                    console.log(`[WO IMPORT] ✅ Set completedAt timestamp for COMPLETED work order`);
                   }
+                  
+                  // Link PM work orders to their PM schedules if applicable
+                  // This is for preventive work orders that have been imported
+                  if (row.workType === 'PREVENTIVE' && row.assetId) {
+                    // Try to find a matching PM schedule
+                    const pmSchedule = await tx.pMSchedule.findFirst({
+                      where: {
+                        assetId: row.assetId,
+                        title: row.title
+                      }
+                    });
+                    
+                    if (pmSchedule) {
+                      row.pmScheduleId = pmSchedule.id;
+                      console.log(`[WO IMPORT] Linked work order "${row.title}" to PM schedule ${pmSchedule.id}`);
+                    }
+                  }
+                  
+                  // Remove workType as it's not a field in the WorkOrder model
+                  delete row.workType;
                   break;
                 case 'assets':
                   // For assets, ensure location relationship is handled properly
