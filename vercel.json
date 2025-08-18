@@ -33,8 +33,28 @@
       "destination": "/api/dashboard.js"
     },
     {
+      "source": "/api/dashboard/trends",
+      "destination": "/api/trends.js"
+    },
+    {
       "source": "/api/calendar/stats", 
       "destination": "/api/calendar.js"
+    },
+    {
+      "source": "/api/notifications/stats",
+      "destination": "/api/notifications.js"
+    },
+    {
+      "source": "/api/maintenance/stats",
+      "destination": "/api/maintenance.js"
+    },
+    {
+      "source": "/api/work-orders/recent",
+      "destination": "/api/work-orders.js"
+    },
+    {
+      "source": "/api/work-orders",
+      "destination": "/api/work-orders.js"
     },
     {
       "source": "/api/(.*)",

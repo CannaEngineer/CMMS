@@ -41,7 +41,9 @@ interface NotificationPreference {
 
 class NotificationService {
   private socket: Socket | null = null;
-  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  private baseUrl = import.meta.env.PROD 
+    ? (import.meta.env.VITE_API_URL || '') 
+    : 'http://localhost:5000';
   private listeners: Map<string, Function[]> = new Map();
 
   private getAuthHeaders() {
