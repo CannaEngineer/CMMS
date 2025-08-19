@@ -184,15 +184,17 @@ app.use('/api/portals', authenticate, portalRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// Temporarily disabled periodic notification checks due to connection pool issues
+// TODO: Re-enable with proper connection pool management
 // Set up periodic notification checks (run every 5 minutes)
-setInterval(() => {
-  notificationTriggersService.runPeriodicChecks();
-}, 5 * 60 * 1000);
+// setInterval(() => {
+//   notificationTriggersService.runPeriodicChecks();
+// }, 5 * 60 * 1000);
 
 // Cleanup old notifications every hour
-setInterval(() => {
-  notificationTriggersService.cleanupOldNotifications();
-}, 60 * 60 * 1000);
+// setInterval(() => {
+//   notificationTriggersService.cleanupOldNotifications();
+// }, 60 * 60 * 1000);
 
 // For local development, start the server
 if (process.env.NODE_ENV !== 'production') {

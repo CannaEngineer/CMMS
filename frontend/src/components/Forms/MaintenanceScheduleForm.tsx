@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
+import { api } from '../../services/api';
 
 // Aligned with PMSchedule model from database schema
 interface MaintenanceScheduleFormData {
@@ -30,6 +31,9 @@ interface MaintenanceScheduleFormData {
   frequency: string; // matches database string field
   nextDue: string;
   assetId: number;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  estimatedHours?: number;
+  assignedToId?: number;
 }
 
 interface MaintenanceScheduleFormProps {
@@ -56,16 +60,11 @@ const typeOptions = [
 ];
 
 const frequencyOptions = [
-  { value: 'DAILY', label: 'Daily' },
-  { value: 'WEEKLY', label: 'Weekly' },
-  { value: 'BIWEEKLY', label: 'Every 2 Weeks' },
-  { value: 'MONTHLY', label: 'Monthly' },
-  { value: 'BIMONTHLY', label: 'Every 2 Months' },
-  { value: 'QUARTERLY', label: 'Quarterly (Every 3 Months)' },
-  { value: 'SEMIANNUALLY', label: 'Semi-Annually (Every 6 Months)' },
-  { value: 'YEARLY', label: 'Yearly' },
-  { value: 'ON_CONDITION', label: 'On Condition' },
-  { value: 'CUSTOM', label: 'Custom Interval' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly (Every 3 Months)' },
+  { value: 'yearly', label: 'Yearly' },
 ];
 
 const customFrequencyUnitOptions = [
@@ -74,13 +73,7 @@ const customFrequencyUnitOptions = [
   { value: 'MONTHS', label: 'Months' },
 ];
 
-const assetOptions = [
-  { value: '1', label: 'Water Pump #3 - Building A' },
-  { value: '2', label: 'HVAC Unit #5 - Building B' },
-  { value: '3', label: 'Conveyor System C - Production Floor' },
-  { value: '4', label: 'Generator #2 - Basement' },
-  { value: '5', label: 'Air Compressor #4 - Workshop' },
-];
+// Asset options will be fetched dynamically
 
 const userOptions = [
   { value: '1', label: 'John Doe - Senior Technician' },
@@ -114,18 +107,45 @@ export default function MaintenanceScheduleForm({
   const [formData, setFormData] = useState<MaintenanceScheduleFormData>({
     title: '',
     description: '',
-    frequency: 'MONTHLY',
+    frequency: 'monthly',
     nextDue: '',
     assetId: 0,
+    priority: 'MEDIUM',
+    estimatedHours: 1,
+    assignedToId: undefined,
     ...initialData,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(true);
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
       setFormData(prevData => ({ ...prevData, ...initialData }));
     }
   }, [initialData]);
+
+  // Fetch assets when component mounts
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        setLoadingAssets(true);
+        const response = await api.get('/assets');
+        const assetOptions = response.data.map((asset: any) => ({
+          value: asset.id.toString(),
+          label: `${asset.name}${asset.description ? ` - ${asset.description}` : ''}`
+        }));
+        setAssets(assetOptions);
+      } catch (error) {
+        console.error('Error fetching assets:', error);
+        setAssets([]);
+      } finally {
+        setLoadingAssets(false);
+      }
+    };
+
+    fetchAssets();
+  }, []);
 
   const handleFieldChange = (name: string, value: any) => {
     setFormData({ ...formData, [name]: value });
@@ -172,7 +192,7 @@ export default function MaintenanceScheduleForm({
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Asset</Typography>
                 <Typography variant="body1">
-                  {assetOptions.find(a => a.value.toString() === formData.assetId.toString())?.label}
+                  {assets.find(a => a.value.toString() === formData.assetId.toString())?.label || 'Loading...'}
                 </Typography>
               </Grid>
               <Grid xs={6}>
@@ -184,6 +204,16 @@ export default function MaintenanceScheduleForm({
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Next Due</Typography>
                 <Typography variant="body1">{formData.nextDue}</Typography>
+              </Grid>
+              <Grid xs={6}>
+                <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
+                <Typography variant="body1">
+                  {priorityOptions.find(opt => opt.value === formData.priority)?.label || formData.priority}
+                </Typography>
+              </Grid>
+              <Grid xs={6}>
+                <Typography variant="subtitle2" color="text.secondary">Estimated Hours</Typography>
+                <Typography variant="body1">{formData.estimatedHours || 'Not specified'}</Typography>
               </Grid>
             </Grid>
           </CardContent>
@@ -224,10 +254,11 @@ export default function MaintenanceScheduleForm({
           label="Asset"
           value={formData.assetId.toString()}
           onChange={(name, value) => handleFieldChange(name, parseInt(value) || 0)}
-          options={assetOptions}
+          options={assets}
           required
           error={errors.assetId}
-          disabled={mode === 'view'}
+          disabled={mode === 'view' || loadingAssets}
+          helperText={loadingAssets ? 'Loading assets...' : undefined}
         />
       </Grid>
       <Grid xs={12} md={6}>
@@ -254,6 +285,28 @@ export default function MaintenanceScheduleForm({
           required
           error={errors.nextDue}
           disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="select"
+          name="priority"
+          label="Priority"
+          value={formData.priority}
+          onChange={handleFieldChange}
+          options={priorityOptions}
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid xs={12} md={6}>
+        <FormField
+          type="number"
+          name="estimatedHours"
+          label="Estimated Hours"
+          value={formData.estimatedHours}
+          onChange={handleFieldChange}
+          disabled={mode === 'view'}
+          helperText="Estimated time to complete this maintenance"
         />
       </Grid>
     </Grid>
