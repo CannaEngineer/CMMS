@@ -2,6 +2,7 @@ import { PrismaClient, QRCodeType, QRCodeStatus, QRScanActionType, QRBatchOperat
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { blobUploadService } from './blobUploadService';
 
 const prisma = new PrismaClient();
 
@@ -122,16 +123,29 @@ export class QRService {
     // Generate QR code URL
     const qrCodeUrl = this.generateQRCodeUrl(secureToken);
 
-    // Generate QR code image
-    const qrCodeDataUrl = await QRCode.toDataURL(qrCodeUrl, {
+    // Generate QR code image as buffer
+    const qrCodeBuffer = await QRCode.toBuffer(qrCodeUrl, {
       width: 400,
       margin: 2,
+      type: 'png',
       color: {
         dark: '#000000',
         light: '#FFFFFF',
       },
       errorCorrectionLevel: 'M',
     });
+
+    // Upload QR code image to Vercel Blob
+    const qrCodeBlob = await blobUploadService.uploadFromBuffer(
+      qrCodeBuffer,
+      `qr-${request.entityType}-${request.entityId}-${Date.now()}.png`,
+      'image/png',
+      'qr-codes',
+      {
+        access: 'public',
+        cacheControlMaxAge: 31536000 // 1 year cache for QR codes
+      }
+    );
 
     // Save to database
     const qrCode = await prisma.qRCode.create({
@@ -141,7 +155,7 @@ export class QRService {
         entityName: request.entityName,
         secureToken,
         organizationId,
-        qrCodeDataUrl,
+        qrCodeDataUrl: qrCodeBlob.url, // Store Vercel Blob URL instead of data URL
         metadata: encryptedMetadata as any,
         status: QRCodeStatus.ACTIVE,
         isPublic: request.isPublic || false,
@@ -298,7 +312,7 @@ export class QRService {
               entityName: item.entityName,
               status: 'COMPLETED',
               resultData: {
-                qrCodeDataUrl: qrCode.qrCodeDataUrl,
+                qrCodeImageUrl: qrCode.qrCodeDataUrl, // This is now a Vercel Blob URL
                 secureToken: qrCode.secureToken
               },
               processedAt: new Date()

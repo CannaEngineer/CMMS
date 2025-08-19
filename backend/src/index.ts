@@ -35,6 +35,7 @@ import qrRouter from './api/qr/qr.router';
 import settingsRouter from './api/settings/settings.routes';
 import { authenticate } from './middleware/auth.middleware';
 import { uploadService } from './services/uploadService';
+import { blobUploadService } from './services/blobUploadService';
 import { WebSocketService } from './services/websocket.service';
 import { notificationTriggersService } from './services/notification-triggers.service';
 import { 
@@ -133,19 +134,13 @@ app.use('/api/notifications', authenticate, notificationRouter);
 app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/qr', qrRouter); // QR routes include their own authentication where needed
 
-// Serve static files from uploads directory
+// Serve static files from uploads directory (legacy - now using Vercel Blob)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Public portal routes (no authentication) - MUST come before authenticated routes
-app.get('/api/portals/public/:slug', (req, res) => {
-  const { getPublicPortal } = require('./api/portal/portal.controller');
-  getPublicPortal(req, res);
-});
-
-// File upload endpoint for portals
-app.post('/api/portals/public/:slug/upload', (req, res) => {
-  const upload = uploadService.getMulterConfig();
-  upload.array('files', 5)(req, res, async (err) => {
+// Generic file upload endpoint for authenticated users
+const handleUpload = (req: any, res: any) => {
+  const upload = blobUploadService.getMulterConfig();
+  upload.array('files', 10)(req, res, async (err) => {
     if (err) {
       console.error('Upload error:', err);
       return res.status(400).json({ error: err.message });
@@ -157,7 +152,63 @@ app.post('/api/portals/public/:slug/upload', (req, res) => {
         return res.status(400).json({ error: 'No files uploaded' });
       }
 
-      const processedFiles = await uploadService.processUploadedFiles(files, 'portal_files');
+      const { entityType, entityId } = req.params;
+      const organizationId = req.user?.organizationId;
+      
+      // Create folder structure: entityType/organizationId/entityId (if provided)
+      const folder = entityId 
+        ? `${entityType}/${organizationId}/${entityId}`
+        : `${entityType}/${organizationId}`;
+
+      const processedFiles = await blobUploadService.processUploadedFiles(files, folder, {
+        access: 'public',
+        addRandomSuffix: true,
+        cacheControlMaxAge: 86400 // 1 day cache
+      });
+      
+      res.json({
+        success: true,
+        files: processedFiles
+      });
+    } catch (error) {
+      console.error('File processing error:', error);
+      res.status(500).json({ error: 'Failed to process uploaded files' });
+    }
+  });
+};
+
+// Upload routes with and without entity ID
+app.post('/api/uploads/:entityType/:entityId', authenticate, handleUpload);
+app.post('/api/uploads/:entityType', authenticate, handleUpload);
+
+// Public portal routes (no authentication) - MUST come before authenticated routes
+app.get('/api/portals/public/:slug', (req, res) => {
+  const { getPublicPortal } = require('./api/portal/portal.controller');
+  getPublicPortal(req, res);
+});
+
+// File upload endpoint for portals
+app.post('/api/portals/public/:slug/upload', (req, res) => {
+  const upload = blobUploadService.getMulterConfig();
+  upload.array('files', 10)(req, res, async (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      const { slug } = req.params;
+      const processedFiles = await blobUploadService.processUploadedFiles(files, `portals/${slug}`, {
+        access: 'public',
+        addRandomSuffix: true,
+        cacheControlMaxAge: 86400 // 1 day cache
+      });
+      
       res.json({
         success: true,
         files: processedFiles
