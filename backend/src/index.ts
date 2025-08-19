@@ -34,7 +34,6 @@ import calendarRouter from './api/calendar/calendar.router';
 import qrRouter from './api/qr/qr.router';
 import settingsRouter from './api/settings/settings.routes';
 import { authenticate } from './middleware/auth.middleware';
-import { uploadService } from './services/uploadService';
 import { blobUploadService } from './services/blobUploadService';
 import { WebSocketService } from './services/websocket.service';
 import { notificationTriggersService } from './services/notification-triggers.service';
@@ -134,8 +133,7 @@ app.use('/api/notifications', authenticate, notificationRouter);
 app.use('/api/settings', authenticate, settingsRouter);
 app.use('/api/qr', qrRouter); // QR routes include their own authentication where needed
 
-// Serve static files from uploads directory (legacy - now using Vercel Blob)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static file serving removed - all files now served from Vercel Blob CDN
 
 // Generic file upload endpoint for authenticated users
 const handleUpload = (req: any, res: any) => {
