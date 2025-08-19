@@ -20,7 +20,7 @@ import {
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
-import { api } from '../../services/api';
+import { apiClient as api } from '../../services/api';
 
 // Aligned with PMSchedule model from database schema
 interface MaintenanceScheduleFormData {

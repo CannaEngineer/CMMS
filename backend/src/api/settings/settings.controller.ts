@@ -1,11 +1,12 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { AuthenticatedRequest } from '../../types/auth';
 
 const prisma = new PrismaClient();
 
 export const settingsController = {
   // Clean slate - delete all operational data
-  async cleanSlate(req: Request, res: Response) {
+  async cleanSlate(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.user?.id;
       const organizationId = req.user?.organizationId;
@@ -209,7 +210,7 @@ export const settingsController = {
   },
 
   // Get organization settings
-  async getSettings(req: Request, res: Response) {
+  async getSettings(req: AuthenticatedRequest, res: Response) {
     try {
       const organizationId = req.user?.organizationId;
 
@@ -218,10 +219,7 @@ export const settingsController = {
         select: {
           id: true,
           name: true,
-          address: true,
-          phone: true,
-          email: true,
-          website: true,
+          settings: true,
           createdAt: true,
           _count: {
             select: {
