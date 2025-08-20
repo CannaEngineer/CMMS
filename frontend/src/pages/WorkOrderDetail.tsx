@@ -286,17 +286,6 @@ export default function WorkOrderDetail() {
     },
   });
 
-  // Update work order attachments mutation
-  const updateAttachmentsMutation = useMutation({
-    mutationFn: (attachments: FileAttachment[]) => {
-      if (!id) throw new Error('Work order ID is required');
-      return updateWorkOrderMutation.mutateAsync({ attachments });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-order', id] });
-    },
-  });
-
   const handleDelete = () => {
     if (workOrder && window.confirm(`Are you sure you want to delete "${workOrder.title}"?`)) {
       deleteWorkOrderMutation.mutate(workOrder.id.toString());
@@ -355,7 +344,7 @@ export default function WorkOrderDetail() {
   };
 
   const handleAttachmentsChange = (attachments: FileAttachment[]) => {
-    updateAttachmentsMutation.mutate(attachments);
+    updateWorkOrderMutation.mutate({ attachments });
   };
 
   const handlePrint = () => {

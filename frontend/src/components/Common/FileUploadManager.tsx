@@ -28,7 +28,7 @@ export interface FileAttachment {
 }
 
 interface FileUploadManagerProps {
-  entityType: 'asset' | 'workOrder';
+  entityType: 'asset' | 'workOrder' | 'part';
   entityId: string;
   attachments?: FileAttachment[];
   onAttachmentsChange: (attachments: FileAttachment[]) => void;

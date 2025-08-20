@@ -40,6 +40,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partsService } from '../services/api';
 import QRCodeDisplay from '../components/QR/QRCodeDisplay';
+import { FileUploadManager, FileAttachment } from '../components/Common';
 
 export default function PartDetail() {
   const { id } = useParams<{ id: string }>();
@@ -134,6 +135,12 @@ export default function PartDetail() {
         name: part.name,
         description: part.description || '',
       });
+    }
+  };
+
+  const handleAttachmentsChange = (attachments: FileAttachment[]) => {
+    if (part?.id) {
+      updatePartMutation.mutate({ attachments });
     }
   };
 
@@ -301,6 +308,20 @@ export default function PartDetail() {
               <strong>Low Stock Warning:</strong> Stock level is at or below the reorder point. Consider reordering soon.
             </Alert>
           )}
+
+          {/* Attachments Section */}
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <FileUploadManager
+                entityType="part"
+                entityId={part.id.toString()}
+                attachments={part.attachments || []}
+                onAttachmentsChange={handleAttachmentsChange}
+                title="Part Documentation & Images"
+                maxFiles={8}
+              />
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* QR Code and Actions Sidebar */}
