@@ -23,7 +23,6 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
-  Snackbar,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -39,7 +38,6 @@ import {
   History as HistoryIcon,
   Add as AddIcon,
   NavigateNext as NavigateNextIcon,
-  CloudUpload as UploadIcon,
   AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -48,6 +46,7 @@ import { assetsService, workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 import AssetForm from '../components/Forms/AssetForm';
+import { FileUploadManager, FileAttachment } from '../components/Common';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -72,9 +71,6 @@ export default function AssetDetail() {
   
   const [tabValue, setTabValue] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Fetch asset data
   const { data: asset, isLoading, error } = useQuery({
@@ -131,79 +127,13 @@ export default function AssetDetail() {
     navigate(`/work-orders/new?assetId=${id}`);
   };
 
-  // File upload handler
-  const handleFileUpload = async (files: FileList) => {
-    if (!files || files.length === 0 || !asset) return;
-
-    setIsUploading(true);
-    setUploadError(null);
-    
-    try {
-      const newAttachments: any[] = [];
-      
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('entityType', 'asset');
-        formData.append('entityId', asset.id.toString());
-        
-        try {
-          const response = await fetch('/api/upload/blob', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: formData,
-          });
-          
-          if (response.ok) {
-            const uploadResult = await response.json();
-            if (uploadResult.success && uploadResult.url) {
-              newAttachments.push({
-                url: uploadResult.url,
-                filename: uploadResult.filename || file.name,
-                size: uploadResult.size || file.size,
-                type: file.type,
-                fileId: uploadResult.fileId,
-              });
-            }
-          } else {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(errorData.error || 'Upload failed');
-          }
-        } catch (error) {
-          console.error('Upload error for file:', file.name, error);
-          throw error;
-        }
-      }
-      
-      // Update asset with new attachments
-      const existingAttachments = asset.attachments || [];
-      const updatedAttachments = [...existingAttachments, ...newAttachments];
-      
-      // Update the asset in the backend
-      await updateAssetMutation.mutateAsync({
+  const handleAttachmentsChange = (attachments: FileAttachment[]) => {
+    if (asset?.id) {
+      updateAssetMutation.mutate({
         id: asset.id.toString(),
-        data: { attachments: updatedAttachments }
+        data: { attachments }
       });
-      
-      setUploadSuccess(true);
-    } catch (error) {
-      console.error('File upload error:', error);
-      setUploadError(error instanceof Error ? error.message : 'Upload failed');
-    } finally {
-      setIsUploading(false);
     }
-  };
-
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      handleFileUpload(event.target.files);
-    }
-    // Reset input
-    event.target.value = '';
   };
 
   if (isLoading) {
@@ -434,123 +364,16 @@ export default function AssetDetail() {
                 
                 {/* Attachments Section */}
                 <Grid item xs={12}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3, mb: 2 }}>
-                    <Typography variant="h6">
-                      Attachments ({asset.attachments?.length || 0})
-                    </Typography>
-                    <Box>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf,.doc,.docx,.txt"
-                        style={{ display: 'none' }}
-                        id="asset-detail-file-upload"
-                        onChange={handleFileInputChange}
-                        disabled={isUploading}
-                      />
-                      <label htmlFor="asset-detail-file-upload">
-                        <Button
-                          variant="outlined"
-                          component="span"
-                          startIcon={isUploading ? <CircularProgress size={20} /> : <UploadIcon />}
-                          disabled={isUploading}
-                          size="small"
-                        >
-                          {isUploading ? 'Uploading...' : 'Add Files'}
-                        </Button>
-                      </label>
-                    </Box>
+                  <Box sx={{ mt: 3 }}>
+                    <FileUploadManager
+                      entityType="asset"
+                      entityId={asset.id.toString()}
+                      attachments={asset.attachments || []}
+                      onAttachmentsChange={handleAttachmentsChange}
+                      title="Asset Attachments"
+                      maxFiles={10}
+                    />
                   </Box>
-                  
-                  {asset.attachments && asset.attachments.length > 0 ? (
-                    <Grid container spacing={2}>
-                      {asset.attachments.map((attachment: any, index: number) => (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
-                          <Card variant="outlined" sx={{ height: '100%' }}>
-                            <CardContent sx={{ p: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <img
-                                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Im0xNCAxMi0zIDMtMiAyIDUgNS03LjVIOS41TDIgMTJsNy01LjVINFYyaDEwdjEweiIvPjwvc3ZnPg=="
-                                  alt=""
-                                  style={{ width: 16, height: 16 }}
-                                />
-                                <Typography variant="subtitle2" noWrap>
-                                  {attachment.filename || `Attachment ${index + 1}`}
-                                </Typography>
-                              </Box>
-                              
-                              {attachment.url && (attachment.url.includes('.png') || attachment.url.includes('.jpg') || attachment.url.includes('.jpeg') || attachment.url.includes('.gif')) ? (
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    height: 120,
-                                    backgroundImage: `url(${attachment.url})`,
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    borderRadius: 1,
-                                    mb: 1,
-                                    cursor: 'pointer',
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                  }}
-                                  onClick={() => window.open(attachment.url, '_blank')}
-                                />
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    height: 120,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: 'grey.100',
-                                    borderRadius: 1,
-                                    mb: 1,
-                                  }}
-                                >
-                                  <img
-                                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iNDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iNDBweCIgZmlsbD0iIzk5OTk5OSI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTE2LjUgNmgtMWwtLjUtLjVoLTVMLjUtNmgtMUM4IDYgOCA2LjQ1IDggMVY5aDh2LTNjMC0uNTUtLjQ1LTEtMS0xem0uNSAydjhoLTNWMTNoM3ptLTUgNXYtM2g0djNoLTR6Ii8+PC9zdmc+"
-                                    alt="File"
-                                    style={{ width: 40, height: 40 }}
-                                  />
-                                </Box>
-                              )}
-                              
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Size: {((attachment.size || 0) / 1024).toFixed(1)} KB
-                              </Typography>
-                              
-                              <Button
-                                fullWidth
-                                size="small"
-                                variant="outlined"
-                                onClick={() => window.open(attachment.url, '_blank')}
-                                sx={{ mt: 1 }}
-                              >
-                                View/Download
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  ) : (
-                    <Box 
-                      sx={{ 
-                        textAlign: 'center', 
-                        py: 4, 
-                        color: 'text.secondary',
-                        border: '1px dashed',
-                        borderColor: 'divider',
-                        borderRadius: 1 
-                      }}
-                    >
-                      <AttachFileIcon sx={{ fontSize: 48, mb: 1, color: 'text.disabled' }} />
-                      <Typography variant="body2">
-                        No attachments yet. Click "Add Files" to upload documents or images.
-                      </Typography>
-                    </Box>
-                  )}
                 </Grid>
               </Grid>
             </TabPanel>
@@ -728,20 +551,6 @@ export default function AssetDetail() {
         loading={updateAssetMutation.isPending}
       />
 
-      {/* Upload Success/Error Notifications */}
-      <Snackbar
-        open={uploadSuccess}
-        autoHideDuration={4000}
-        onClose={() => setUploadSuccess(false)}
-        message="Files uploaded successfully!"
-      />
-      
-      <Snackbar
-        open={!!uploadError}
-        autoHideDuration={6000}
-        onClose={() => setUploadError(null)}
-        message={`Upload failed: ${uploadError}`}
-      />
     </Container>
   );
 }

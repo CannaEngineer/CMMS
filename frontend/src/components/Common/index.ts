@@ -37,5 +37,9 @@ export type {
 // Loading Components System
 export * from '../Loading';
 
+// File Upload Manager
+export { default as FileUploadManager } from './FileUploadManager';
+export type { FileAttachment } from './FileUploadManager';
+
 // Re-export examples for documentation and development
 export * as Examples from './examples';
