@@ -191,11 +191,13 @@ export default function AssetForm({
         
         // Create form data for upload
         const formData = new FormData();
-        formData.append('files', file);
+        formData.append('file', file);
+        formData.append('entityType', 'asset');
+        formData.append('entityId', initialData?.id?.toString() || 'temp');
         
         try {
-          // Upload to backend storage via correct API endpoint
-          const response = await fetch('/api/uploads/asset', {
+          // Upload to Vercel Blob storage via our API
+          const response = await fetch('/api/upload/blob', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -205,15 +207,14 @@ export default function AssetForm({
           
           if (response.ok) {
             const uploadResult = await response.json();
-            // Backend returns { success: true, files: [BlobFile[]] }
-            if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
-              const uploadedFile = uploadResult.files[0];
+            // Backend returns { success: true, url, fileId, filename, size }
+            if (uploadResult.success && uploadResult.url) {
               newFiles.push({
-                url: uploadedFile.url,
-                filename: uploadedFile.filename,
-                size: uploadedFile.size,
-                type: uploadedFile.mimetype,
-                fileId: uploadedFile.id,
+                url: uploadResult.url,
+                filename: uploadResult.filename || file.name,
+                size: uploadResult.size || file.size,
+                type: file.type,
+                fileId: uploadResult.fileId,
               });
             }
           } else {

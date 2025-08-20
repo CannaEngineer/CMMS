@@ -145,10 +145,12 @@ export default function AssetDetail() {
         const file = files[i];
         
         const formData = new FormData();
-        formData.append('files', file);
+        formData.append('file', file);
+        formData.append('entityType', 'asset');
+        formData.append('entityId', asset.id.toString());
         
         try {
-          const response = await fetch('/api/uploads/asset', {
+          const response = await fetch('/api/upload/blob', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -158,14 +160,13 @@ export default function AssetDetail() {
           
           if (response.ok) {
             const uploadResult = await response.json();
-            if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
-              const uploadedFile = uploadResult.files[0];
+            if (uploadResult.success && uploadResult.url) {
               newAttachments.push({
-                url: uploadedFile.url,
-                filename: uploadedFile.filename,
-                size: uploadedFile.size,
-                type: uploadedFile.mimetype,
-                fileId: uploadedFile.id,
+                url: uploadResult.url,
+                filename: uploadResult.filename || file.name,
+                size: uploadResult.size || file.size,
+                type: file.type,
+                fileId: uploadResult.fileId,
               });
             }
           } else {

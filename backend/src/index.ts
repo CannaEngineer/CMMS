@@ -179,6 +179,49 @@ const handleUpload = (req: any, res: any) => {
 app.post('/api/uploads/:entityType/:entityId', authenticate, handleUpload);
 app.post('/api/uploads/:entityType', authenticate, handleUpload);
 
+// Legacy blob upload route (for backward compatibility)
+app.post('/api/upload/blob', authenticate, (req, res) => {
+  const upload = blobUploadService.getMulterConfig();
+  upload.single('file')(req, res, async (err) => {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const { entityType = 'general', entityId } = req.body;
+      const organizationId = req.user?.organizationId;
+      
+      // Create folder structure
+      const folder = entityId 
+        ? `${entityType}/${organizationId}/${entityId}`
+        : `${entityType}/${organizationId}`;
+
+      const processedFile = await blobUploadService.uploadFile(file, folder, {
+        access: 'public',
+        addRandomSuffix: true,
+        cacheControlMaxAge: 86400
+      });
+      
+      res.json({
+        success: true,
+        url: processedFile.url,
+        fileId: processedFile.id,
+        filename: processedFile.filename,
+        size: processedFile.size
+      });
+    } catch (error) {
+      console.error('File processing error:', error);
+      res.status(500).json({ error: 'Failed to process uploaded file' });
+    }
+  });
+});
+
 // Public portal routes (no authentication) - MUST come before authenticated routes
 app.get('/api/portals/public/:slug', (req, res) => {
   const { getPublicPortal } = require('./api/portal/portal.controller');
