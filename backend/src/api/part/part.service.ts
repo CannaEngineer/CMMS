@@ -350,4 +350,15 @@ export class PartService {
     console.log(`🧹 Cleanup complete: ${mergeResults.groupsProcessed} groups processed, ${mergeResults.partsMerged} parts merged, ${mergeResults.partsDeleted} duplicates removed, ${mergeResults.errors} errors`);
     return mergeResults;
   }
+
+  async getRecentActivity(organizationId: number, limit: number = 10) {
+    return prisma.part.findMany({
+      where: { organizationId },
+      include: {
+        supplier: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: limit,
+    });
+  }
 }

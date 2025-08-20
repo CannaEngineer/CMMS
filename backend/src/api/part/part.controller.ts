@@ -219,4 +219,21 @@ export class PartController {
       res.status(500).json({ error: 'Failed to cleanup duplicates' });
     }
   }
+
+  async getRecentActivity(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization ID required' });
+      }
+
+      const activity = await partService.getRecentActivity(organizationId, limit);
+      res.json(activity);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      res.status(500).json({ error: 'Failed to fetch recent activity' });
+    }
+  }
 }
