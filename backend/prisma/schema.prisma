@@ -1,16 +1,964 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"  // Change to postgresql for production
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ENUMS for data consistency
+model User {
+  id                        Int                      @id @default(autoincrement())
+  legacyId                  Int?                     @unique
+  email                     String                   @unique
+  name                      String
+  password                  String
+  role                      UserRole                 @default(TECHNICIAN)
+  organizationId            Int
+  isOnline                  Boolean                  @default(false)
+  lastSeen                  DateTime?
+  lastActivity              DateTime?
+  createdAt                 DateTime                 @default(now())
+  updatedAt                 DateTime                 @updatedAt
+  editedComments            Comment[]                @relation("CommentEdits")
+  comments                  Comment[]                @relation("UserComments")
+  rolledBackImports         ImportHistory[]          @relation("ImportRollback")
+  importHistory             ImportHistory[]          @relation("ImportHistory")
+  maintenancePerformed      MaintenanceHistory[]     @relation("MaintenancePerformedBy")
+  maintenanceSigned         MaintenanceHistory[]     @relation("MaintenanceSignedBy")
+  meterReadings             MeterReading[]           @relation("MeterReadingRecordedBy")
+  createdNotifications      Notification[]           @relation("NotificationCreator")
+  notifications             Notification[]           @relation("UserNotifications")
+  notificationDevices       NotificationDevice[]
+  notificationPreferences   NotificationPreference[]
+  portalCommunicationsSent  PortalCommunication[]
+  portalSubmissionsAssigned PortalSubmission[]
+  moderatedComments         PublicComment[]          @relation("CommentModerator")
+  qrBatchOperationsCreated  QRBatchOperation[]       @relation("QRBatchOperationCreator")
+  qrCodesCreated            QRCode[]                 @relation("QRCodeCreator")
+  qrScanLogs                QRScanLog[]              @relation("QRScanLogs")
+  qrTemplatesCreated        QRTemplate[]             @relation("QRTemplateCreator")
+  organization              Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrders                WorkOrder[]
+  createdShares             WorkOrderShare[]         @relation("ShareCreator")
+  tasksCompleted            WorkOrderTask[]          @relation("TaskCompletedBy")
+  tasksSigned               WorkOrderTask[]          @relation("TaskSignedBy")
+  timeLogs                  WorkOrderTimeLog[]       @relation("TimeLogUser")
+}
+
+model Organization {
+  id                Int                @id @default(autoincrement())
+  legacyId          Int?               @unique
+  name              String             @unique
+  settings          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  assets            Asset[]
+  importHistory     ImportHistory[]    @relation("ImportHistory")
+  locations         Location[]
+  pmTasks           PMTask[]
+  parts             Part[]
+  portals           Portal[]
+  qrBatchOperations QRBatchOperation[]
+  qrCodes           QRCode[]
+  qrScanLogs        QRScanLog[]
+  qrTemplates       QRTemplate[]
+  suppliers         Supplier[]
+  users             User[]
+  workOrders        WorkOrder[]
+  workOrderShares   WorkOrderShare[]   @relation("WorkOrderShares")
+}
+
+model Asset {
+  id                 Int                  @id @default(autoincrement())
+  legacyId           Int?                 @unique
+  name               String
+  description        String?
+  serialNumber       String?
+  modelNumber        String?
+  manufacturer       String?
+  year               Int?
+  status             AssetStatus          @default(ONLINE)
+  criticality        AssetCriticality     @default(MEDIUM)
+  barcode            String?
+  imageUrl           String?
+  attachments        Json?
+  locationId         Int
+  organizationId     Int
+  parentId           Int?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  location           Location             @relation(fields: [locationId], references: [id])
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent             Asset?               @relation("AssetHierarchy", fields: [parentId], references: [id])
+  children           Asset[]              @relation("AssetHierarchy")
+  maintenanceHistory MaintenanceHistory[]
+  meterReadings      MeterReading[]
+  pmSchedules        PMSchedule[]
+  portalSubmissions  PortalSubmission[]
+  workOrders         WorkOrder[]
+
+  @@index([organizationId])
+  @@index([locationId])
+  @@index([status])
+  @@index([criticality])
+  @@index([parentId])
+}
+
+model Location {
+  id                Int                @id @default(autoincrement())
+  legacyId          Int?               @unique
+  name              String
+  description       String?
+  address           String?
+  latitude          Float?
+  longitude         Float?
+  barcode           String?
+  url               String?
+  organizationId    Int
+  parentId          Int?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  assets            Asset[]
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent            Location?          @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children          Location[]         @relation("LocationHierarchy")
+  portalSubmissions PortalSubmission[]
+}
+
+model WorkOrder {
+  id                 Int                  @id @default(autoincrement())
+  uniqueId           String?              @unique @default(cuid())
+  legacyId           Int?                 @unique
+  title              String
+  description        String?
+  status             WorkOrderStatus      @default(OPEN)
+  priority           WorkOrderPriority    @default(MEDIUM)
+  dueDate            DateTime?
+  assetId            Int?
+  assignedToId       Int?
+  pmScheduleId       Int?
+  organizationId     Int
+  totalLoggedHours   Float?               @default(0)
+  estimatedHours     Float?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  attachments        Json?
+  maintenanceHistory MaintenanceHistory[]
+  portalSubmissions  PortalSubmission[]
+  asset              Asset?               @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assignedTo         User?                @relation(fields: [assignedToId], references: [id])
+  organization       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pmSchedule         PMSchedule?          @relation(fields: [pmScheduleId], references: [id])
+  shares             WorkOrderShare[]
+  tasks              WorkOrderTask[]
+  timeLogs           WorkOrderTimeLog[]
+
+  @@index([organizationId])
+  @@index([assetId])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([pmScheduleId])
+}
+
+model PMSchedule {
+  id                 Int                  @id @default(autoincrement())
+  uniqueId           String?              @unique @default(cuid())
+  legacyId           Int?                 @unique
+  title              String
+  description        String?
+  frequency          String
+  nextDue            DateTime
+  assetId            Int
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  maintenanceHistory MaintenanceHistory[]
+  asset              Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  tasks              PMScheduleTask[]
+  triggers           PMTrigger[]
+  workOrders         WorkOrder[]
+
+  @@index([assetId])
+  @@index([nextDue])
+  @@index([assetId, nextDue])
+}
+
+model Part {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  name           String
+  description    String?
+  sku            String?      @unique
+  stockLevel     Int          @default(0)
+  reorderPoint   Int          @default(0)
+  unitCost       Float?
+  totalCost      Float?
+  barcode        String?
+  location       String?
+  organizationId Int
+  supplierId     Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplier       Supplier?    @relation(fields: [supplierId], references: [id])
+}
+
+model Supplier {
+  id             Int          @id @default(autoincrement())
+  legacyId       Int?         @unique
+  name           String
+  contactInfo    String?
+  address        String?
+  phone          String?
+  email          String?
+  organizationId Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  parts          Part[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model PMTask {
+  id                 Int              @id @default(autoincrement())
+  title              String
+  description        String?
+  type               TaskType         @default(OTHER)
+  procedure          String?
+  safetyRequirements String?
+  toolsRequired      String?
+  partsRequired      String?
+  estimatedMinutes   Int?
+  organizationId     Int
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  pmScheduleTasks    PMScheduleTask[]
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrderTasks     WorkOrderTask[]
+
+  @@index([organizationId])
+  @@index([type])
+}
+
+model PMTrigger {
+  id                 Int           @id @default(autoincrement())
+  type               PMTriggerType
+  pmScheduleId       Int
+  isActive           Boolean       @default(true)
+  intervalDays       Int?
+  intervalWeeks      Int?
+  intervalMonths     Int?
+  dayOfWeek          Int?
+  dayOfMonth         Int?
+  timeOfDay          String?
+  meterType          MeterType?
+  thresholdValue     Float?
+  sensorField        String?
+  comparisonOperator String?
+  eventType          String?
+  lastTriggered      DateTime?
+  nextDue            DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  pmSchedule         PMSchedule    @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
+
+  @@index([pmScheduleId])
+  @@index([type])
+  @@index([nextDue])
+  @@index([meterType])
+}
+
+model WorkOrderTask {
+  id            Int                  @id @default(autoincrement())
+  workOrderId   Int
+  pmTaskId      Int?
+  title         String
+  description   String?
+  procedure     String?
+  orderIndex    Int                  @default(0)
+  status        TaskCompletionStatus @default(NOT_STARTED)
+  completedById Int?
+  completedAt   DateTime?
+  notes         String?
+  actualMinutes Int?
+  requiresSign  Boolean              @default(false)
+  signedById    Int?
+  signedAt      DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  completedBy   User?                @relation("TaskCompletedBy", fields: [completedById], references: [id])
+  pmTask        PMTask?              @relation(fields: [pmTaskId], references: [id])
+  signedBy      User?                @relation("TaskSignedBy", fields: [signedById], references: [id])
+  workOrder     WorkOrder            @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@index([completedById])
+  @@index([pmTaskId])
+}
+
+model MeterReading {
+  id           Int       @id @default(autoincrement())
+  assetId      Int
+  meterType    MeterType
+  value        Float
+  unit         String?
+  readingDate  DateTime  @default(now())
+  recordedById Int?
+  notes        String?
+  isAutomatic  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  asset        Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  recordedBy   User?     @relation("MeterReadingRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([assetId, meterType])
+  @@index([readingDate])
+  @@index([meterType])
+  @@index([assetId, meterType, readingDate])
+}
+
+model PMScheduleTask {
+  id           Int        @id @default(autoincrement())
+  pmScheduleId Int
+  pmTaskId     Int
+  orderIndex   Int        @default(0)
+  isRequired   Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  pmSchedule   PMSchedule @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
+  pmTask       PMTask     @relation(fields: [pmTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([pmScheduleId, pmTaskId])
+  @@index([pmScheduleId])
+  @@index([pmTaskId])
+}
+
+model MaintenanceHistory {
+  id              Int             @id @default(autoincrement())
+  assetId         Int
+  workOrderId     Int?
+  pmScheduleId    Int?
+  type            MaintenanceType
+  title           String
+  description     String?
+  performedById   Int?
+  performedAt     DateTime        @default(now())
+  durationMinutes Int?
+  laborCost       Float?
+  partsCost       Float?
+  totalCost       Float?
+  isCompleted     Boolean         @default(false)
+  completedAt     DateTime?
+  notes           String?
+  attachments     Json?
+  signedById      Int?
+  signedAt        DateTime?
+  complianceNotes String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  performedBy     User?           @relation("MaintenancePerformedBy", fields: [performedById], references: [id])
+  pmSchedule      PMSchedule?     @relation(fields: [pmScheduleId], references: [id])
+  signedBy        User?           @relation("MaintenanceSignedBy", fields: [signedById], references: [id])
+  workOrder       WorkOrder?      @relation(fields: [workOrderId], references: [id])
+
+  @@index([assetId])
+  @@index([workOrderId])
+  @@index([pmScheduleId])
+  @@index([type])
+  @@index([performedAt])
+  @@index([performedById])
+  @@index([isCompleted])
+}
+
+model Portal {
+  id                   Int                @id @default(autoincrement())
+  name                 String
+  description          String?
+  type                 PortalType
+  status               PortalStatus       @default(ACTIVE)
+  slug                 String             @unique
+  organizationId       Int
+  isActive             Boolean            @default(true)
+  allowAnonymous       Boolean            @default(true)
+  requiresApproval     Boolean            @default(false)
+  autoCreateWorkOrders Boolean            @default(true)
+  maxSubmissionsPerDay Int?
+  publicUrl            String?
+  qrCodeUrl            String?
+  qrEnabled            Boolean            @default(true)
+  primaryColor         String             @default("#1976d2")
+  secondaryColor       String             @default("#ffffff")
+  accentColor          String             @default("#f50057")
+  logoUrl              String?
+  backgroundImageUrl   String?
+  customCss            String?
+  notificationEmails   String?
+  autoResponderEnabled Boolean            @default(true)
+  autoResponderMessage String?
+  rateLimitEnabled     Boolean            @default(true)
+  rateLimitRequests    Int                @default(100)
+  rateLimitWindow      Int                @default(3600)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  analytics            PortalAnalytics[]
+  fields               PortalField[]
+  submissions          PortalSubmission[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([type])
+  @@index([slug])
+}
+
+model PortalField {
+  id               Int       @id @default(autoincrement())
+  portalId         Int
+  name             String
+  label            String
+  type             FieldType
+  orderIndex       Int       @default(0)
+  isRequired       Boolean   @default(false)
+  placeholder      String?
+  helpText         String?
+  options          Json?
+  validations      Json?
+  conditionalLogic Json?
+  width            String?
+  cssClasses       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  portal           Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  @@index([portalId])
+  @@index([orderIndex])
+}
+
+model PortalSubmission {
+  id             Int                   @id @default(autoincrement())
+  portalId       Int
+  trackingCode   String                @unique
+  status         SubmissionStatus      @default(SUBMITTED)
+  submissionData Json
+  attachments    Json?
+  submitterName  String?
+  submitterEmail String?
+  submitterPhone String?
+  submitterIp    String?
+  userAgent      String?
+  assignedToId   Int?
+  reviewNotes    String?
+  internalNotes  String?
+  reviewedAt     DateTime?
+  completedAt    DateTime?
+  workOrderId    Int?
+  assetId        Int?
+  locationId     Int?
+  priority       WorkOrderPriority     @default(MEDIUM)
+  category       String?
+  tags           String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  communications PortalCommunication[]
+  asset          Asset?                @relation(fields: [assetId], references: [id])
+  assignedTo     User?                 @relation(fields: [assignedToId], references: [id])
+  location       Location?             @relation(fields: [locationId], references: [id])
+  portal         Portal                @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  workOrder      WorkOrder?            @relation(fields: [workOrderId], references: [id])
+
+  @@index([portalId])
+  @@index([status])
+  @@index([trackingCode])
+  @@index([assignedToId])
+  @@index([workOrderId])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model PortalCommunication {
+  id             Int              @id @default(autoincrement())
+  submissionId   Int
+  message        String
+  messageType    String           @default("MESSAGE")
+  isInternal     Boolean          @default(false)
+  sentById       Int?
+  recipientEmail String?
+  emailSent      Boolean          @default(false)
+  emailSentAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  sentBy         User?            @relation(fields: [sentById], references: [id])
+  submission     PortalSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([messageType])
+  @@index([isInternal])
+}
+
+model PortalAnalytics {
+  id                Int      @id @default(autoincrement())
+  portalId          Int
+  date              DateTime @default(now())
+  views             Int      @default(0)
+  submissions       Int      @default(0)
+  completions       Int      @default(0)
+  bounceRate        Float?
+  avgCompletionTime Int?
+  mobileViews       Int      @default(0)
+  desktopViews      Int      @default(0)
+  tabletViews       Int      @default(0)
+  qrCodeScans       Int      @default(0)
+  directAccess      Int      @default(0)
+  referralAccess    Int      @default(0)
+  country           String?
+  region            String?
+  city              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  portal            Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  @@unique([portalId, date])
+  @@index([portalId])
+  @@index([date])
+}
+
+model Comment {
+  id          Int       @id @default(autoincrement())
+  entityType  String
+  entityId    Int
+  content     String
+  isInternal  Boolean   @default(false)
+  isPinned    Boolean   @default(false)
+  userId      Int
+  parentId    Int?
+  attachments Json?
+  editedAt    DateTime?
+  editedById  Int?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  editedBy    User?     @relation("CommentEdits", fields: [editedById], references: [id])
+  parent      Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+  user        User      @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([parentId])
+}
+
+model ImportHistory {
+  id             Int          @id @default(autoincrement())
+  importId       String       @unique
+  entityType     String
+  fileName       String?
+  totalRows      Int
+  importedCount  Int
+  skippedCount   Int
+  status         String       @default("COMPLETED")
+  errors         Json?
+  warnings       Json?
+  duplicates     Json?
+  columnMappings Json
+  userId         Int
+  organizationId Int
+  canRollback    Boolean      @default(true)
+  rolledBack     Boolean      @default(false)
+  rolledBackAt   DateTime?
+  rolledBackById Int?
+  startedAt      DateTime     @default(now())
+  completedAt    DateTime?
+  durationMs     Int?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation("ImportHistory", fields: [organizationId], references: [id], onDelete: Cascade)
+  rolledBackBy   User?        @relation("ImportRollback", fields: [rolledBackById], references: [id])
+  user           User         @relation("ImportHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType])
+  @@index([status])
+  @@index([createdAt])
+  @@index([importId])
+}
+
+model WorkOrderTimeLog {
+  id          Int       @id @default(autoincrement())
+  workOrderId Int
+  userId      Int
+  description String
+  hours       Float
+  category    String?
+  billable    Boolean   @default(true)
+  loggedAt    DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation("TimeLogUser", fields: [userId], references: [id], onDelete: Cascade)
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([userId])
+  @@index([loggedAt])
+}
+
+model WorkOrderShare {
+  id                   String          @id @default(cuid())
+  workOrderId          Int
+  organizationId       Int
+  shareToken           String          @unique
+  isActive             Boolean         @default(true)
+  expiresAt            DateTime?
+  maxViews             Int?
+  currentViews         Int             @default(0)
+  allowComments        Boolean         @default(true)
+  allowDownload        Boolean         @default(false)
+  viewerCanSeeAssignee Boolean         @default(false)
+  sanitizationLevel    String          @default("STANDARD")
+  createdById          Int
+  lastAccessedAt       DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  comments             PublicComment[]
+  auditLogs            ShareAuditLog[] @relation("ShareAuditLogs")
+  createdBy            User            @relation("ShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  organization         Organization    @relation("WorkOrderShares", fields: [organizationId], references: [id], onDelete: Cascade)
+  workOrder            WorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([shareToken])
+  @@index([workOrderId])
+  @@index([organizationId])
+  @@index([expiresAt])
+}
+
+model PublicComment {
+  id            String         @id @default(cuid())
+  shareId       String
+  content       String
+  authorName    String?
+  authorEmail   String?
+  status        String         @default("PENDING")
+  ipAddressHash String
+  userAgent     String?
+  moderatedById Int?
+  moderatedAt   DateTime?
+  flagCount     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  moderatedBy   User?          @relation("CommentModerator", fields: [moderatedById], references: [id])
+  share         WorkOrderShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  @@index([shareId])
+  @@index([status])
+  @@index([ipAddressHash])
+}
+
+model ShareAuditLog {
+  id            String         @id @default(cuid())
+  shareId       String
+  action        String
+  ipAddressHash String
+  userAgent     String?
+  timestamp     DateTime       @default(now())
+  share         WorkOrderShare @relation("ShareAuditLogs", fields: [shareId], references: [id], onDelete: Cascade)
+
+  @@index([shareId])
+  @@index([timestamp])
+  @@index([ipAddressHash])
+}
+
+model Notification {
+  id                String               @id @default(cuid())
+  title             String
+  message           String
+  type              NotificationType     @default(INFO)
+  priority          NotificationPriority @default(MEDIUM)
+  category          NotificationCategory @default(SYSTEM)
+  userId            Int
+  organizationId    Int
+  isRead            Boolean              @default(false)
+  readAt            DateTime?
+  isArchived        Boolean              @default(false)
+  archivedAt        DateTime?
+  relatedEntityType String?
+  relatedEntityId   Int?
+  actionUrl         String?
+  actionLabel       String?
+  data              Json?
+  imageUrl          String?
+  expiresAt         DateTime?
+  channels          Json?
+  emailSent         Boolean              @default(false)
+  emailSentAt       DateTime?
+  smsSent           Boolean              @default(false)
+  smsSentAt         DateTime?
+  pushSent          Boolean              @default(false)
+  pushSentAt        DateTime?
+  createdById       Int?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  createdBy         User?                @relation("NotificationCreator", fields: [createdById], references: [id])
+  user              User                 @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([isRead])
+  @@index([category])
+  @@index([priority])
+  @@index([type])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([relatedEntityType, relatedEntityId])
+  @@index([userId, isRead])
+  @@index([userId, category])
+}
+
+model NotificationPreference {
+  id              Int                   @id @default(autoincrement())
+  userId          Int
+  organizationId  Int
+  category        NotificationCategory
+  channel         NotificationChannel
+  frequency       NotificationFrequency @default(IMMEDIATE)
+  enabled         Boolean               @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  weekdaysOnly    Boolean               @default(false)
+  minimumPriority NotificationPriority  @default(LOW)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, channel])
+  @@index([userId])
+  @@index([category])
+  @@index([channel])
+}
+
+model NotificationRule {
+  id               Int                  @id @default(autoincrement())
+  organizationId   Int
+  name             String
+  description      String?
+  isActive         Boolean              @default(true)
+  triggerType      String
+  triggerCondition Json
+  titleTemplate    String
+  messageTemplate  String
+  type             NotificationType     @default(INFO)
+  priority         NotificationPriority @default(MEDIUM)
+  category         NotificationCategory
+  targetUsers      Json?
+  channels         Json?
+  cooldownMinutes  Int                  @default(0)
+  maxPerDay        Int?
+  actionUrl        String?
+  actionLabel      String?
+  lastTriggered    DateTime?
+  triggerCount     Int                  @default(0)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([organizationId])
+  @@index([triggerType])
+  @@index([isActive])
+}
+
+model NotificationDelivery {
+  id               String              @id @default(cuid())
+  notificationId   String
+  channel          NotificationChannel
+  status           String              @default("PENDING")
+  attemptedAt      DateTime            @default(now())
+  deliveredAt      DateTime?
+  failedAt         DateTime?
+  errorMessage     String?
+  errorCode        String?
+  retryCount       Int                 @default(0)
+  recipientAddress String?
+  providerResponse Json?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([notificationId])
+  @@index([channel])
+  @@index([status])
+  @@index([attemptedAt])
+}
+
+model NotificationDevice {
+  id          String   @id @default(cuid())
+  userId      Int
+  deviceType  String
+  deviceToken String   @unique
+  deviceInfo  Json?
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([deviceType])
+  @@index([isActive])
+}
+
+model NotificationTemplate {
+  id                 Int                  @id @default(autoincrement())
+  organizationId     Int
+  key                String
+  name               String
+  description        String?
+  titleTemplate      String
+  messageTemplate    String
+  emailTemplate      String?
+  smsTemplate        String?
+  defaultType        NotificationType     @default(INFO)
+  defaultPriority    NotificationPriority @default(MEDIUM)
+  defaultCategory    NotificationCategory
+  availableVariables Json
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@index([key])
+}
+
+model QRCode {
+  id               String                 @id @default(cuid())
+  entityType       QRCodeType
+  entityId         String
+  entityName       String?
+  secureToken      String                 @unique
+  organizationId   Int
+  qrCodeDataUrl    String?
+  metadata         Json?
+  status           QRCodeStatus           @default(ACTIVE)
+  isPublic         Boolean                @default(false)
+  allowedUserRoles Json?
+  scanCount        Int                    @default(0)
+  maxScans         Int?
+  expiresAt        DateTime?
+  lastScannedAt    DateTime?
+  createdById      Int
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  batchOperations  QRBatchOperationItem[]
+  createdBy        User                   @relation("QRCodeCreator", fields: [createdById], references: [id])
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scanLogs         QRScanLog[]
+
+  @@index([entityType, entityId])
+  @@index([organizationId])
+  @@index([secureToken])
+  @@index([status, expiresAt])
+  @@index([createdById])
+}
+
+model QRScanLog {
+  id             String            @id @default(cuid())
+  qrCodeId       String
+  userId         Int?
+  sessionId      String?
+  actionTaken    QRScanActionType?
+  actionData     Json?
+  ipAddress      String?
+  userAgent      String?
+  deviceType     String?
+  location       Json?
+  isSuccessful   Boolean           @default(true)
+  errorCode      String?
+  riskScore      Float?
+  organizationId Int
+  scannedAt      DateTime          @default(now())
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  qrCode         QRCode            @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
+  user           User?             @relation("QRScanLogs", fields: [userId], references: [id])
+
+  @@index([qrCodeId, scannedAt])
+  @@index([userId, scannedAt])
+  @@index([organizationId, scannedAt])
+  @@index([actionTaken])
+  @@index([isSuccessful])
+}
+
+model QRBatchOperation {
+  id              String                 @id @default(cuid())
+  operationType   QRBatchOperationType
+  status          QRBatchOperationStatus @default(PENDING)
+  totalItems      Int
+  processedItems  Int                    @default(0)
+  successfulItems Int                    @default(0)
+  failedItems     Int                    @default(0)
+  options         Json?
+  errorLog        Json?
+  organizationId  Int
+  createdById     Int
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  createdBy       User                   @relation("QRBatchOperationCreator", fields: [createdById], references: [id])
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items           QRBatchOperationItem[]
+
+  @@index([organizationId])
+  @@index([createdById])
+  @@index([status, createdAt])
+}
+
+model QRBatchOperationItem {
+  id               String                 @id @default(cuid())
+  batchOperationId String
+  qrCodeId         String?
+  entityType       QRCodeType
+  entityId         String
+  entityName       String?
+  status           QRBatchOperationStatus @default(PENDING)
+  errorMessage     String?
+  resultData       Json?
+  processedAt      DateTime?
+  createdAt        DateTime               @default(now())
+  batchOperation   QRBatchOperation       @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
+  qrCode           QRCode?                @relation(fields: [qrCodeId], references: [id])
+
+  @@index([batchOperationId])
+  @@index([qrCodeId])
+  @@index([status])
+}
+
+model QRTemplate {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?
+  category        String
+  dimensions      Json
+  layout          String
+  qrSize          Int
+  fontSize        Json
+  includeQRBorder Boolean       @default(true)
+  customCSS       String?
+  logoUrl         String?
+  isPublic        Boolean       @default(true)
+  organizationId  Int?
+  createdById     Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  createdBy       User          @relation("QRTemplateCreator", fields: [createdById], references: [id])
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([isPublic])
+}
+
 enum UserRole {
   ADMIN
   MANAGER
@@ -45,10 +993,10 @@ enum AssetCriticality {
 }
 
 enum PMTriggerType {
-  TIME_BASED      // Fixed intervals (daily, weekly, monthly)
-  USAGE_BASED     // Based on meter readings (hours, miles, cycles)
-  CONDITION_BASED // Based on sensor thresholds
-  EVENT_BASED     // Manual triggers or system events
+  TIME_BASED
+  USAGE_BASED
+  CONDITION_BASED
+  EVENT_BASED
 }
 
 enum TaskType {
@@ -71,13 +1019,13 @@ enum TaskCompletionStatus {
 }
 
 enum MeterType {
-  HOURS           // Operating hours
-  MILES           // Distance traveled
-  CYCLES          // Number of cycles/operations
-  GALLONS         // Fuel consumption
-  TEMPERATURE     // Temperature readings
-  PRESSURE        // Pressure readings
-  VIBRATION       // Vibration levels
+  HOURS
+  MILES
+  CYCLES
+  GALLONS
+  TEMPERATURE
+  PRESSURE
+  VIBRATION
   OTHER
 }
 
@@ -154,1138 +1102,42 @@ enum PortalFieldValidationType {
 }
 
 enum NotificationType {
-  ALERT       // Critical issues requiring immediate attention
-  WARNING     // Important issues that should be addressed soon
-  INFO        // General information updates
-  SUCCESS     // Positive confirmations and completions
+  ALERT
+  WARNING
+  INFO
+  SUCCESS
 }
 
 enum NotificationPriority {
   LOW
-  MEDIUM  
+  MEDIUM
   HIGH
   URGENT
 }
 
 enum NotificationChannel {
-  IN_APP      // In-application notifications
-  EMAIL       // Email notifications
-  SMS         // SMS notifications (future)
-  PUSH        // Push notifications (future)
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
 }
 
 enum NotificationCategory {
-  WORK_ORDER           // Work order related notifications
-  ASSET               // Asset status and maintenance
-  MAINTENANCE         // PM schedules and overdue items
-  INVENTORY           // Stock levels and reorder alerts
-  USER                // User assignments and mentions
-  SYSTEM              // System maintenance and updates
-  PORTAL              // Portal submissions and communications
+  WORK_ORDER
+  ASSET
+  MAINTENANCE
+  INVENTORY
+  USER
+  SYSTEM
+  PORTAL
 }
 
 enum NotificationFrequency {
-  IMMEDIATE   // Send immediately when triggered
-  DIGEST      // Bundle into digest emails
-  DISABLED    // Don't send this type
+  IMMEDIATE
+  DIGEST
+  DISABLED
 }
 
-
-// MODELS
-model User {
-  id             Int          @id @default(autoincrement())
-  legacyId       Int?         @unique
-  email          String       @unique
-  name           String
-  password       String // Will be hashed
-  role           UserRole     @default(TECHNICIAN)
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // User status tracking fields
-  isOnline       Boolean      @default(false)
-  lastSeen       DateTime?
-  lastActivity   DateTime?
-  workOrders     WorkOrder[]
-  
-  // New relationships for PM system
-  tasksCompleted    WorkOrderTask[] @relation("TaskCompletedBy")
-  tasksSigned       WorkOrderTask[] @relation("TaskSignedBy")
-  meterReadings     MeterReading[]  @relation("MeterReadingRecordedBy")
-  maintenancePerformed MaintenanceHistory[] @relation("MaintenancePerformedBy")
-  maintenanceSigned    MaintenanceHistory[] @relation("MaintenanceSignedBy")
-  
-  // Portal relationships
-  portalSubmissionsAssigned PortalSubmission[]
-  portalCommunicationsSent  PortalCommunication[]
-  
-  // Comment relationships
-  comments         Comment[] @relation("UserComments")
-  editedComments   Comment[] @relation("CommentEdits")
-
-  // Import relationships
-  importHistory    ImportHistory[] @relation("ImportHistory")
-  rolledBackImports ImportHistory[] @relation("ImportRollback")
-  
-  // Time logging and sharing relationships
-  timeLogs         WorkOrderTimeLog[] @relation("TimeLogUser")
-  createdShares    WorkOrderShare[]   @relation("ShareCreator")
-  moderatedComments PublicComment[]   @relation("CommentModerator")
-
-  // Notification relationships
-  notifications            Notification[] @relation("UserNotifications")
-  createdNotifications     Notification[] @relation("NotificationCreator")
-  notificationPreferences  NotificationPreference[]
-  notificationDevices      NotificationDevice[]
-
-  // QR Code relationships
-  qrCodesCreated           QRCode[]                @relation("QRCodeCreator")
-  qrScanLogs               QRScanLog[]             @relation("QRScanLogs")
-  qrBatchOperationsCreated QRBatchOperation[]      @relation("QRBatchOperationCreator")
-  qrTemplatesCreated       QRTemplate[]            @relation("QRTemplateCreator")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Organization {
-  id        Int      @id @default(autoincrement())
-  legacyId  Int?     @unique
-  name      String @unique
-  settings  Json?
-  users     User[]
-  assets    Asset[]
-  locations Location[]
-  suppliers Supplier[]
-  parts     Part[]
-  workOrders WorkOrder[]
-  pmTasks   PMTask[]
-  portals   Portal[]
-  importHistory ImportHistory[] @relation("ImportHistory")
-  workOrderShares WorkOrderShare[] @relation("WorkOrderShares")
-
-  // QR Code relationships
-  qrCodes                  QRCode[]
-  qrScanLogs               QRScanLog[]
-  qrBatchOperations        QRBatchOperation[]
-  qrTemplates              QRTemplate[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Asset {
-  id             Int          @id @default(autoincrement())
-  legacyId       Int?         @unique
-  name           String
-  description    String?
-  serialNumber   String?
-  modelNumber    String?
-  manufacturer   String?
-  year           Int?
-  status         AssetStatus  @default(ONLINE)
-  criticality    AssetCriticality @default(MEDIUM)
-  barcode        String?
-  imageUrl       String?
-  attachments    Json?
-  locationId     Int
-  organizationId Int
-  parentId       Int?
-  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  parent         Asset?       @relation("AssetHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children       Asset[]      @relation("AssetHierarchy")
-  workOrders     WorkOrder[]
-  pmSchedules    PMSchedule[]
-  
-  // New relationships for PM system
-  meterReadings     MeterReading[]     
-  maintenanceHistory MaintenanceHistory[]
-  
-  // Portal relationships
-  portalSubmissions PortalSubmission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([organizationId])
-  @@index([locationId])
-  @@index([status])
-  @@index([criticality])
-  @@index([parentId])
-}
-
-model Location {
-  id             Int          @id @default(autoincrement())
-  legacyId       Int?         @unique
-  name           String
-  description    String?
-  address        String?
-  latitude       Float?       // GPS latitude coordinate
-  longitude      Float?       // GPS longitude coordinate
-  barcode        String?      // QR/Bar code from CSV
-  url            String?      // URL from CSV
-  organizationId Int
-  parentId       Int?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  parent         Location?    @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children       Location[]   @relation("LocationHierarchy")
-  assets         Asset[]
-  
-  // Portal relationships
-  portalSubmissions PortalSubmission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model WorkOrder {
-  id           Int               @id @default(autoincrement())
-  uniqueId     String?           @unique @default(cuid()) // Unique ID number for main entities
-  legacyId     Int?              @unique
-  title        String
-  description  String?
-  status       WorkOrderStatus   @default(OPEN)
-  priority     WorkOrderPriority @default(MEDIUM)
-  dueDate      DateTime?         // When this work order is due/scheduled to be completed
-  assetId      Int?
-  assignedToId Int?
-  pmScheduleId Int?              // Link to PM schedule that generated this work order
-  asset        Asset?            @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  assignedTo   User?             @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
-  pmSchedule   PMSchedule?       @relation(fields: [pmScheduleId], references: [id], onDelete: SetNull)
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Time tracking fields (new)
-  totalLoggedHours Float?           @default(0)
-  estimatedHours   Float?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  
-  // New relationships for PM system
-  tasks             WorkOrderTask[]
-  maintenanceHistory MaintenanceHistory[]
-  
-  // Portal relationships
-  portalSubmissions PortalSubmission[]
-  
-  // Time logging and sharing relationships (new)
-  timeLogs         WorkOrderTimeLog[]
-  shares           WorkOrderShare[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([organizationId])
-  @@index([assetId])
-  @@index([assignedToId])
-  @@index([status])
-  @@index([priority])
-  @@index([createdAt])
-  @@index([pmScheduleId])  // Index for PM schedule relationship
-}
-
-model PMSchedule {
-  id          Int      @id @default(autoincrement())
-  uniqueId    String?  @unique @default(cuid()) // Unique ID number for main entities
-  legacyId    Int?     @unique
-  title       String
-  description String?
-  frequency   String // e.g., "daily", "weekly", "monthly" - kept for backwards compatibility
-  nextDue     DateTime
-  assetId     Int
-  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  
-  // New relationships for advanced PM system
-  triggers           PMTrigger[]
-  tasks              PMScheduleTask[]
-  workOrders         WorkOrder[]           // Work orders generated from this PM schedule
-  maintenanceHistory MaintenanceHistory[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([assetId])
-  @@index([nextDue])
-  @@index([assetId, nextDue])
-}
-
-model Part {
-  id             Int       @id @default(autoincrement())
-  legacyId       Int?      @unique
-  name           String
-  description    String?
-  sku            String?   @unique
-  stockLevel     Int       @default(0)
-  reorderPoint   Int       @default(0)
-  unitCost       Float?    // Unit Cost from CSV
-  totalCost      Float?    // Total Cost from CSV
-  barcode        String?   // QR/Bar code from CSV
-  location       String?   // Location from CSV (as string reference)
-  organizationId Int
-  supplierId     Int?
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  supplier       Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Supplier {
-  id             Int      @id @default(autoincrement())
-  legacyId       Int?     @unique
-  name           String
-  contactInfo    String?
-  address        String?
-  phone          String?  // Phone number from CSV
-  email          String?  // Email from CSV
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  parts          Part[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// PM Task Templates - reusable task definitions
-model PMTask {
-  id               Int      @id @default(autoincrement())
-  title            String
-  description      String?
-  type             TaskType @default(OTHER)
-  procedure        String?  // Detailed step-by-step instructions
-  safetyRequirements String? // Safety protocols and PPE requirements
-  toolsRequired    String?  // Required tools and equipment
-  partsRequired    String?  // Comma-separated part SKUs or JSON
-  estimatedMinutes Int?     // Estimated completion time
-  organizationId   Int
-  isActive         Boolean  @default(true)
-  
-  // Relationships
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  pmScheduleTasks  PMScheduleTask[]
-  workOrderTasks   WorkOrderTask[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([organizationId])
-  @@index([type])
-}
-
-// PM Triggers - advanced scheduling conditions
-model PMTrigger {
-  id           Int           @id @default(autoincrement())
-  type         PMTriggerType
-  pmScheduleId Int
-  isActive     Boolean       @default(true)
-  
-  // Time-based trigger fields
-  intervalDays    Int?     // For TIME_BASED: interval in days
-  intervalWeeks   Int?     // For TIME_BASED: interval in weeks  
-  intervalMonths  Int?     // For TIME_BASED: interval in months
-  dayOfWeek       Int?     // For TIME_BASED: 0=Sunday, 1=Monday, etc.
-  dayOfMonth      Int?     // For TIME_BASED: 1-31
-  timeOfDay       String?  // For TIME_BASED: HH:MM format
-  
-  // Usage-based trigger fields
-  meterType       MeterType? // For USAGE_BASED: which meter to track
-  thresholdValue  Float?     // For USAGE_BASED/CONDITION_BASED: trigger value
-  
-  // Condition-based trigger fields
-  sensorField     String?    // For CONDITION_BASED: sensor data field name
-  comparisonOperator String? // For CONDITION_BASED: "gt", "lt", "eq", "gte", "lte"
-  
-  // Event-based trigger fields
-  eventType       String?    // For EVENT_BASED: event identifier
-  
-  // Calculation fields
-  lastTriggered   DateTime?
-  nextDue         DateTime?
-  
-  // Relationships
-  pmSchedule      PMSchedule @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([pmScheduleId])
-  @@index([type])
-  @@index([nextDue])
-  @@index([meterType])
-}
-
-// Work Order Tasks - checklist items for work orders
-model WorkOrderTask {
-  id               Int                 @id @default(autoincrement())
-  workOrderId      Int
-  pmTaskId         Int?                // Optional link to PM task template
-  title            String
-  description      String?
-  procedure        String?             // Task-specific instructions
-  orderIndex       Int                 @default(0) // For task ordering
-  status           TaskCompletionStatus @default(NOT_STARTED)
-  
-  // Completion tracking
-  completedById    Int?
-  completedAt      DateTime?
-  notes            String?             // Technician notes
-  actualMinutes    Int?                // Actual time spent
-  
-  // Quality control
-  requiresSign     Boolean             @default(false)
-  signedById       Int?                // Supervisor signature
-  signedAt         DateTime?
-  
-  // Relationships
-  workOrder        WorkOrder           @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  pmTask           PMTask?             @relation(fields: [pmTaskId], references: [id], onDelete: SetNull)
-  completedBy      User?               @relation("TaskCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
-  signedBy         User?               @relation("TaskSignedBy", fields: [signedById], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([workOrderId])
-  @@index([status])
-  @@index([completedById])
-  @@index([pmTaskId])
-}
-
-// Meter Readings - for tracking equipment usage and triggering PMs
-model MeterReading {
-  id          Int       @id @default(autoincrement())
-  assetId     Int
-  meterType   MeterType
-  value       Float
-  unit        String?   // e.g., "hours", "miles", "cycles", "°F", "PSI"
-  readingDate DateTime  @default(now())
-  recordedById Int?
-  notes       String?
-  isAutomatic Boolean   @default(false) // True if recorded by sensors/IoT
-  
-  // Relationships
-  asset       Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  recordedBy  User?     @relation("MeterReadingRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([assetId, meterType])
-  @@index([readingDate])
-  @@index([meterType])
-  @@index([assetId, meterType, readingDate])
-}
-
-// PM Schedule Tasks - junction table for PM schedules and task templates
-model PMScheduleTask {
-  id           Int      @id @default(autoincrement())
-  pmScheduleId Int
-  pmTaskId     Int
-  orderIndex   Int      @default(0) // Task execution order
-  isRequired   Boolean  @default(true)
-  
-  // Relationships
-  pmSchedule   PMSchedule @relation(fields: [pmScheduleId], references: [id], onDelete: Cascade)
-  pmTask       PMTask     @relation(fields: [pmTaskId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([pmScheduleId, pmTaskId])
-  @@index([pmScheduleId])
-  @@index([pmTaskId])
-}
-
-// Maintenance History - comprehensive log of all maintenance activities
-model MaintenanceHistory {
-  id              Int             @id @default(autoincrement())
-  assetId         Int
-  workOrderId     Int?            // Link to work order if applicable
-  pmScheduleId    Int?            // Link to PM schedule if applicable
-  type            MaintenanceType
-  title           String
-  description     String?
-  
-  // Execution details
-  performedById   Int?
-  performedAt     DateTime        @default(now())
-  durationMinutes Int?
-  laborCost       Float?
-  partsCost       Float?
-  totalCost       Float?
-  
-  // Completion details
-  isCompleted     Boolean         @default(false)
-  completedAt     DateTime?
-  notes           String?
-  attachments     Json?           // File URLs, photos, documents
-  
-  // Compliance and quality
-  signedById      Int?            // Supervisor signature
-  signedAt        DateTime?
-  complianceNotes String?
-  
-  // Relationships
-  asset           Asset           @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  workOrder       WorkOrder?      @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
-  pmSchedule      PMSchedule?     @relation(fields: [pmScheduleId], references: [id], onDelete: SetNull)
-  performedBy     User?           @relation("MaintenancePerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
-  signedBy        User?           @relation("MaintenanceSignedBy", fields: [signedById], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([assetId])
-  @@index([workOrderId])
-  @@index([pmScheduleId])
-  @@index([type])
-  @@index([performedAt])
-  @@index([performedById])
-  @@index([isCompleted])
-}
-
-// Portal Models
-model Portal {
-  id                   Int          @id @default(autoincrement())
-  name                 String
-  description          String?
-  type                 PortalType
-  status               PortalStatus @default(ACTIVE)
-  slug                 String       @unique
-  organizationId       Int
-  
-  // Portal Configuration
-  isActive             Boolean      @default(true)
-  allowAnonymous       Boolean      @default(true)
-  requiresApproval     Boolean      @default(false)
-  autoCreateWorkOrders Boolean      @default(true)
-  maxSubmissionsPerDay Int?
-  
-  // URLs and Access
-  publicUrl            String?
-  qrCodeUrl            String?
-  qrEnabled            Boolean      @default(true)
-  
-  // Branding
-  primaryColor         String       @default("#1976d2")
-  secondaryColor       String       @default("#ffffff") 
-  accentColor          String       @default("#f50057")
-  logoUrl              String?
-  backgroundImageUrl   String?
-  customCss            String?
-  
-  // Notifications
-  notificationEmails   String?      // JSON array of email addresses
-  autoResponderEnabled Boolean      @default(true)
-  autoResponderMessage String?
-  
-  // Rate Limiting
-  rateLimitEnabled     Boolean      @default(true)
-  rateLimitRequests    Int          @default(100)
-  rateLimitWindow      Int          @default(3600) // seconds
-  
-  // Organization relationship
-  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Related models
-  fields               PortalField[]
-  submissions          PortalSubmission[]
-  analytics            PortalAnalytics[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([organizationId])
-  @@index([status])
-  @@index([type])
-  @@index([slug])
-}
-
-model PortalField {
-  id           Int       @id @default(autoincrement())
-  portalId     Int
-  name         String    // Field name/key
-  label        String    // Display label
-  type         FieldType
-  orderIndex   Int       @default(0)
-  isRequired   Boolean   @default(false)
-  placeholder  String?
-  helpText     String?
-  
-  // Field Options (for select, radio, etc.)
-  options      Json?     // Array of options
-  
-  // Validation Rules
-  validations  Json?     // Array of validation rules
-  
-  // Conditional Logic
-  conditionalLogic Json? // Show/hide based on other fields
-  
-  // Styling
-  width        String?   // "full", "half", "third", etc.
-  cssClasses   String?
-  
-  // Relationships
-  portal       Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([portalId])
-  @@index([orderIndex])
-}
-
-model PortalSubmission {
-  id               Int              @id @default(autoincrement())
-  portalId         Int
-  trackingCode     String           @unique
-  status           SubmissionStatus @default(SUBMITTED)
-  
-  // Submission Data
-  submissionData   Json             // The actual form data
-  attachments      Json?            // File uploads
-  
-  // Submitter Information
-  submitterName    String?
-  submitterEmail   String?
-  submitterPhone   String?
-  submitterIp      String?
-  userAgent        String?
-  
-  // Processing Information
-  assignedToId     Int?
-  reviewNotes      String?
-  internalNotes    String?
-  reviewedAt       DateTime?
-  completedAt      DateTime?
-  
-  // Integration
-  workOrderId      Int?             // Created work order
-  assetId          Int?             // Related asset
-  locationId       Int?             // Related location
-  
-  // Priority and Classification
-  priority         WorkOrderPriority @default(MEDIUM)
-  category         String?
-  tags             String?          // Comma-separated tags
-  
-  // Relationships
-  portal           Portal           @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  assignedTo       User?            @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
-  workOrder        WorkOrder?       @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
-  asset            Asset?           @relation(fields: [assetId], references: [id], onDelete: SetNull)
-  location         Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  communications   PortalCommunication[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([portalId])
-  @@index([status])
-  @@index([trackingCode])
-  @@index([assignedToId])
-  @@index([workOrderId])
-  @@index([priority])
-  @@index([createdAt])
-}
-
-model PortalCommunication {
-  id                 Int               @id @default(autoincrement())
-  submissionId       Int
-  message            String
-  messageType        String            @default("MESSAGE") // MESSAGE, STATUS_UPDATE, INTERNAL_NOTE
-  isInternal         Boolean           @default(false)
-  sentById           Int?
-  recipientEmail     String?
-  emailSent          Boolean           @default(false)
-  emailSentAt        DateTime?
-  
-  // Relationships
-  submission         PortalSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  sentBy             User?             @relation(fields: [sentById], references: [id], onDelete: SetNull)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@index([submissionId])
-  @@index([messageType])
-  @@index([isInternal])
-}
-
-model PortalAnalytics {
-  id               Int      @id @default(autoincrement())
-  portalId         Int
-  date             DateTime @default(now())
-  
-  // Daily Metrics
-  views            Int      @default(0)
-  submissions      Int      @default(0)
-  completions      Int      @default(0)
-  bounceRate       Float?   // Percentage who left without submitting
-  avgCompletionTime Int?    // Seconds
-  
-  // Device/Browser Data
-  mobileViews      Int      @default(0)
-  desktopViews     Int      @default(0)
-  tabletViews      Int      @default(0)
-  
-  // Traffic Sources
-  qrCodeScans      Int      @default(0)
-  directAccess     Int      @default(0)
-  referralAccess   Int      @default(0)
-  
-  // Geographic Data (optional)
-  country          String?
-  region           String?
-  city             String?
-  
-  // Relationships
-  portal           Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([portalId, date])
-  @@index([portalId])
-  @@index([date])
-}
-
-// Comment System - Universal comments for all entities
-model Comment {
-  id           Int      @id @default(autoincrement())
-  
-  // Polymorphic association - allows linking to any entity
-  entityType   String   // "workOrder", "asset", "location", "part", "pmSchedule"
-  entityId     Int      // ID of the related entity
-  
-  // Comment content
-  content      String   
-  isInternal   Boolean  @default(false) // Internal notes vs visible to all
-  isPinned     Boolean  @default(false) // Pinned/important comments
-  
-  // User who created the comment
-  userId       Int
-  user         User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Optional parent for threaded comments
-  parentId     Int?
-  parent       Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies      Comment[] @relation("CommentReplies")
-  
-  // Attachments (optional)
-  attachments  Json?    // Array of file URLs
-  
-  // Metadata
-  editedAt     DateTime?
-  editedById   Int?
-  editedBy     User?    @relation("CommentEdits", fields: [editedById], references: [id], onDelete: SetNull)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  @@index([entityType, entityId])
-  @@index([userId])
-  @@index([createdAt])
-  @@index([parentId])
-}
-
-// Import History - Track CSV imports for audit and rollback
-model ImportHistory {
-  id               Int      @id @default(autoincrement())
-  importId         String   @unique // Unique identifier for the import batch
-  
-  // Import metadata
-  entityType       String   // Type of entity imported (assets, workorders, etc.)
-  fileName         String?  // Original CSV filename
-  totalRows        Int      // Total rows in CSV
-  importedCount    Int      // Successfully imported records
-  skippedCount     Int      // Skipped records due to errors
-  
-  // Import status
-  status           String   @default("COMPLETED") // COMPLETED, FAILED, PARTIAL
-  errors           Json?    // Array of error messages
-  warnings         Json?    // Array of warning messages
-  duplicates       Json?    // Array of duplicate records found
-  
-  // Column mappings used for import
-  columnMappings   Json     // Array of ColumnMapping objects
-  
-  // User and organization
-  userId           Int
-  organizationId   Int
-  user             User     @relation("ImportHistory", fields: [userId], references: [id], onDelete: Cascade)
-  organization     Organization @relation("ImportHistory", fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // Rollback information
-  canRollback      Boolean  @default(true)
-  rolledBack       Boolean  @default(false)
-  rolledBackAt     DateTime?
-  rolledBackById   Int?
-  rolledBackBy     User?    @relation("ImportRollback", fields: [rolledBackById], references: [id], onDelete: SetNull)
-  
-  // Import execution time
-  startedAt        DateTime @default(now())
-  completedAt      DateTime?
-  durationMs       Int?     // Import duration in milliseconds
-  
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
-  @@index([organizationId])
-  @@index([userId])
-  @@index([entityType])
-  @@index([status])
-  @@index([createdAt])
-  @@index([importId])
-}
-
-// Time Logging for Work Orders
-model WorkOrderTimeLog {
-  id             Int      @id @default(autoincrement())
-  workOrderId    Int
-  userId         Int
-  description    String
-  hours          Float
-  category       String?  // "LABOR", "TRAVEL", "MATERIALS", "OTHER"
-  billable       Boolean  @default(true)
-  loggedAt       DateTime @default(now())
-  
-  // Relationships
-  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  user           User     @relation("TimeLogUser", fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  @@index([workOrderId])
-  @@index([userId])
-  @@index([loggedAt])
-}
-
-// Public Work Order Sharing
-model WorkOrderShare {
-  id             String   @id @default(cuid())
-  workOrderId    Int
-  organizationId Int
-  shareToken     String   @unique
-  
-  // Access Control
-  isActive       Boolean  @default(true)
-  expiresAt      DateTime?
-  maxViews       Int?
-  currentViews   Int      @default(0)
-  
-  // Permissions
-  allowComments  Boolean  @default(true)
-  allowDownload  Boolean  @default(false)
-  viewerCanSeeAssignee Boolean @default(false)
-  
-  // Data Filtering
-  sanitizationLevel String @default("STANDARD") // "MINIMAL", "STANDARD", "STRICT"
-  
-  // Creator and Audit
-  createdById    Int
-  lastAccessedAt DateTime?
-  
-  // Relationships
-  workOrder      WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  organization   Organization @relation("WorkOrderShares", fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy      User     @relation("ShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  comments       PublicComment[]
-  auditLogs      ShareAuditLog[] @relation("ShareAuditLogs")
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  @@index([shareToken])
-  @@index([workOrderId])
-  @@index([organizationId])
-  @@index([expiresAt])
-}
-
-// Anonymous Comments for Public Shares
-model PublicComment {
-  id             String   @id @default(cuid())
-  shareId        String
-  content        String
-  
-  // Anonymous User Info
-  authorName     String?  // Optional display name
-  authorEmail    String?  // For notifications only, not displayed
-  
-  // Security and Moderation
-  status         String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED", "FLAGGED"
-  ipAddressHash  String   // Hashed IP for abuse tracking
-  userAgent      String?
-  
-  // Moderation
-  moderatedById  Int?
-  moderatedAt    DateTime?
-  flagCount      Int      @default(0)
-  
-  // Relationships
-  share          WorkOrderShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
-  moderatedBy    User?    @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  @@index([shareId])
-  @@index([status])
-  @@index([ipAddressHash])
-}
-
-// Share Access Audit Log
-model ShareAuditLog {
-  id             String   @id @default(cuid())
-  shareId        String
-  action         String   // "VIEW", "DOWNLOAD", "COMMENT"
-  ipAddressHash  String
-  userAgent      String?
-  timestamp      DateTime @default(now())
-  
-  share          WorkOrderShare @relation("ShareAuditLogs", fields: [shareId], references: [id], onDelete: Cascade)
-  
-  @@index([shareId])
-  @@index([timestamp])
-  @@index([ipAddressHash])
-}
-
-// ===================== NOTIFICATION SYSTEM MODELS =====================
-
-// Core notification model
-model Notification {
-  id               String            @id @default(cuid())
-  
-  // Basic notification properties
-  title            String            // Brief notification title
-  message          String            // Detailed notification message  
-  type             NotificationType  @default(INFO)
-  priority         NotificationPriority @default(MEDIUM)
-  category         NotificationCategory @default(SYSTEM)
-  
-  // Target user and organization
-  userId           Int
-  organizationId   Int
-  user             User              @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Status tracking
-  isRead           Boolean           @default(false)
-  readAt           DateTime?
-  isArchived       Boolean           @default(false)
-  archivedAt       DateTime?
-  
-  // Polymorphic reference to related entities
-  relatedEntityType String?          // "workOrder", "asset", "pmSchedule", etc.
-  relatedEntityId   Int?             // ID of the related entity
-  
-  // Action information
-  actionUrl        String?           // URL to navigate to when clicked
-  actionLabel      String?           // Label for the action button
-  
-  // Rich content support
-  data             Json?             // Additional structured data
-  imageUrl         String?           // Optional notification image
-  
-  // Metadata
-  expiresAt        DateTime?         // When notification should be auto-removed
-  channels         Json?             // Array of NotificationChannel enum values
-  
-  // Delivery tracking
-  emailSent        Boolean           @default(false)
-  emailSentAt      DateTime?
-  smsSent          Boolean           @default(false)
-  smsSentAt        DateTime?
-  pushSent         Boolean           @default(false)
-  pushSentAt       DateTime?
-  
-  // Creator information
-  createdById      Int?              // User who triggered the notification (optional)
-  createdBy        User?             @relation("NotificationCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  
-  @@index([userId])
-  @@index([organizationId])
-  @@index([isRead])
-  @@index([category])
-  @@index([priority])
-  @@index([type])
-  @@index([createdAt])
-  @@index([expiresAt])
-  @@index([relatedEntityType, relatedEntityId])
-  @@index([userId, isRead])
-  @@index([userId, category])
-}
-
-// User notification preferences
-model NotificationPreference {
-  id               Int                   @id @default(autoincrement())
-  userId           Int
-  organizationId   Int
-  
-  // Notification category and settings
-  category         NotificationCategory
-  channel          NotificationChannel
-  frequency        NotificationFrequency @default(IMMEDIATE)
-  enabled          Boolean               @default(true)
-  
-  // Time-based preferences
-  quietHoursStart  String?               // HH:MM format
-  quietHoursEnd    String?               // HH:MM format
-  weekdaysOnly     Boolean               @default(false)
-  
-  // Priority filtering
-  minimumPriority  NotificationPriority  @default(LOW)
-  
-  // Relationships
-  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  
-  @@unique([userId, category, channel])
-  @@index([userId])
-  @@index([category])
-  @@index([channel])
-}
-
-// Notification rules for automated notifications
-model NotificationRule {
-  id               Int                   @id @default(autoincrement())
-  organizationId   Int
-  
-  // Rule identification
-  name             String
-  description      String?
-  isActive         Boolean               @default(true)
-  
-  // Trigger conditions
-  triggerType      String                // "work_order_status", "asset_offline", "maintenance_due", etc.
-  triggerCondition Json                  // Complex condition logic
-  
-  // Notification template
-  titleTemplate    String
-  messageTemplate  String
-  type             NotificationType      @default(INFO)
-  priority         NotificationPriority  @default(MEDIUM)
-  category         NotificationCategory
-  
-  // Target settings
-  targetUsers      Json?                 // Array of user IDs or role-based targeting
-  channels         Json?                 // Array of NotificationChannel enum values
-  
-  // Throttling to prevent spam
-  cooldownMinutes  Int                   @default(0)
-  maxPerDay        Int?
-  
-  // Action configuration
-  actionUrl        String?
-  actionLabel      String?
-  
-  // Metadata
-  lastTriggered    DateTime?
-  triggerCount     Int                   @default(0)
-  
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  
-  @@index([organizationId])
-  @@index([triggerType])
-  @@index([isActive])
-}
-
-// Notification delivery log for auditing
-model NotificationDelivery {
-  id               String               @id @default(cuid())
-  notificationId   String
-  
-  // Delivery details
-  channel          NotificationChannel
-  status           String               @default("PENDING") // PENDING, SENT, FAILED, BOUNCED
-  attemptedAt      DateTime             @default(now())
-  deliveredAt      DateTime?
-  failedAt         DateTime?
-  
-  // Error information
-  errorMessage     String?
-  errorCode        String?
-  retryCount       Int                  @default(0)
-  
-  // Channel-specific data
-  recipientAddress String?              // Email address, phone number, etc.
-  providerResponse Json?                // Response from email/SMS provider
-  
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  
-  @@index([notificationId])
-  @@index([channel])
-  @@index([status])
-  @@index([attemptedAt])
-}
-
-// Device registration for push notifications (future)
-model NotificationDevice {
-  id               String               @id @default(cuid())
-  userId           Int
-  
-  // Device information
-  deviceType       String               // "web", "ios", "android"
-  deviceToken      String               @unique // FCM token, APNS token, etc.
-  deviceInfo       Json?                // Additional device metadata
-  
-  // Status
-  isActive         Boolean              @default(true)
-  lastUsedAt       DateTime             @default(now())
-  
-  // Relationships
-  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  
-  @@index([userId])
-  @@index([deviceType])
-  @@index([isActive])
-}
-
-// Notification templates for consistency
-model NotificationTemplate {
-  id               Int                  @id @default(autoincrement())
-  organizationId   Int
-  
-  // Template identification
-  key              String               // Unique identifier for the template
-  name             String
-  description      String?
-  
-  // Template content
-  titleTemplate    String
-  messageTemplate  String
-  emailTemplate    String?              // HTML email template
-  smsTemplate      String?              // SMS template
-  
-  // Default settings
-  defaultType      NotificationType     @default(INFO)
-  defaultPriority  NotificationPriority @default(MEDIUM)
-  defaultCategory  NotificationCategory
-  
-  // Variables that can be used in templates
-  availableVariables Json               // Array of variable names and descriptions
-  
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  
-  @@unique([organizationId, key])
-  @@index([organizationId])
-  @@index([key])
-}
-
-// QR Code System Enums
 enum QRCodeType {
   ASSET
   WORK_ORDER
@@ -1328,200 +1180,3 @@ enum QRBatchOperationStatus {
   FAILED
   CANCELLED
 }
-
-// QR Code System Models
-model QRCode {
-  id                String        @id @default(cuid())
-  
-  // Entity identification
-  entityType        QRCodeType
-  entityId          String        // Flexible to handle different ID types
-  entityName        String?       // Cached entity name for quick lookup
-  
-  // Security and access
-  secureToken       String        @unique  // Encrypted token for secure URLs
-  organizationId    Int
-  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // QR Code metadata
-  qrCodeDataUrl     String?       // Generated QR code image data URL
-  metadata          Json?         // Encrypted entity-specific metadata
-  
-  // Access control
-  status            QRCodeStatus  @default(ACTIVE)
-  isPublic          Boolean       @default(false)  // Allow anonymous scanning
-  allowedUserRoles  Json?         // Array of UserRole values that can scan
-  
-  // Usage tracking
-  scanCount         Int           @default(0)
-  maxScans          Int?          // Optional scan limit
-  
-  // Temporal controls
-  expiresAt         DateTime?     // Optional expiration
-  lastScannedAt     DateTime?
-  
-  // Audit trail
-  createdById       Int
-  createdBy         User          @relation("QRCodeCreator", fields: [createdById], references: [id])
-  
-  // Relationships
-  scanLogs          QRScanLog[]
-  batchOperations   QRBatchOperationItem[]
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  
-  @@index([entityType, entityId])
-  @@index([organizationId])
-  @@index([secureToken])
-  @@index([status, expiresAt])
-  @@index([createdById])
-}
-
-model QRScanLog {
-  id                String          @id @default(cuid())
-  
-  // QR Code reference
-  qrCodeId          String
-  qrCode            QRCode          @relation(fields: [qrCodeId], references: [id], onDelete: Cascade)
-  
-  // Scanner information
-  userId            Int?            // Null for anonymous scans
-  user              User?           @relation("QRScanLogs", fields: [userId], references: [id])
-  sessionId         String?         // For anonymous sessions
-  
-  // Scan context
-  actionTaken       QRScanActionType?
-  actionData        Json?           // Additional action-specific data
-  
-  // Technical details
-  ipAddress         String?
-  userAgent         String?
-  deviceType        String?         // mobile, desktop, tablet
-  
-  // Location data
-  location          Json?           // GPS coordinates if available
-  
-  // Security tracking
-  isSuccessful      Boolean         @default(true)
-  errorCode         String?         // If scan failed
-  riskScore         Float?          // Security risk assessment
-  
-  // Audit
-  organizationId    Int
-  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  scannedAt         DateTime        @default(now())
-  
-  @@index([qrCodeId, scannedAt])
-  @@index([userId, scannedAt])
-  @@index([organizationId, scannedAt])
-  @@index([actionTaken])
-  @@index([isSuccessful])
-}
-
-model QRBatchOperation {
-  id                String                   @id @default(cuid())
-  
-  // Operation details
-  operationType     QRBatchOperationType
-  status            QRBatchOperationStatus   @default(PENDING)
-  
-  // Progress tracking
-  totalItems        Int
-  processedItems    Int                      @default(0)
-  successfulItems   Int                      @default(0)
-  failedItems       Int                      @default(0)
-  
-  // Configuration
-  options           Json?                    // Generation options, filters, etc.
-  errorLog          Json?                    // Array of error messages
-  
-  // Security and access
-  organizationId    Int
-  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  createdById       Int
-  createdBy         User                     @relation("QRBatchOperationCreator", fields: [createdById], references: [id])
-  
-  // Relationships
-  items             QRBatchOperationItem[]
-  
-  // Timestamps
-  startedAt         DateTime?
-  completedAt       DateTime?
-  
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  
-  @@index([organizationId])
-  @@index([createdById])
-  @@index([status, createdAt])
-}
-
-model QRBatchOperationItem {
-  id                String              @id @default(cuid())
-  
-  // Batch reference
-  batchOperationId  String
-  batchOperation    QRBatchOperation    @relation(fields: [batchOperationId], references: [id], onDelete: Cascade)
-  
-  // QR Code reference (nullable for failed operations)
-  qrCodeId          String?
-  qrCode            QRCode?             @relation(fields: [qrCodeId], references: [id])
-  
-  // Item data
-  entityType        QRCodeType
-  entityId          String
-  entityName        String?
-  
-  // Status
-  status            QRBatchOperationStatus  @default(PENDING)
-  errorMessage      String?
-  
-  // Result
-  resultData        Json?               // Generated QR data, etc.
-  
-  processedAt       DateTime?
-  createdAt         DateTime            @default(now())
-  
-  @@index([batchOperationId])
-  @@index([qrCodeId])
-  @@index([status])
-}
-
-model QRTemplate {
-  id                String        @id @default(cuid())
-  
-  // Template identification
-  name              String
-  description       String?
-  category          String        // asset, work-order, location, etc.
-  
-  // Template configuration
-  dimensions        Json          // width, height, unit
-  layout            String        // horizontal, vertical
-  qrSize            Int           // QR code size in template units
-  fontSize          Json          // title, subtitle, info sizes
-  
-  // Styling
-  includeQRBorder   Boolean       @default(true)
-  customCSS         String?
-  logoUrl           String?
-  
-  // Access control
-  isPublic          Boolean       @default(true)
-  organizationId    Int?          // null = system template
-  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  createdById       Int
-  createdBy         User          @relation("QRTemplateCreator", fields: [createdById], references: [id])
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  
-  @@index([organizationId])
-  @@index([category])
-  @@index([isPublic])
-}
-

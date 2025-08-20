@@ -63,6 +63,8 @@ import {
   Timer as TimerIcon,
   AttachFile as AttachFileIcon,
   Notifications as NotifyIcon,
+  Image as ImageIcon,
+  GetApp as DownloadIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -908,6 +910,81 @@ export default function WorkOrderDetail() {
                     )}
                   </List>
                 </Grid>
+
+                {/* Attachments Section */}
+                {workOrder.attachments && workOrder.attachments.length > 0 && (
+                  <Grid xs={12}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                      Attachments ({workOrder.attachments.length})
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {workOrder.attachments.map((attachment: any, index: number) => (
+                        <Grid key={index} xs={12} sm={6} md={4}>
+                          <Card variant="outlined" sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: 2 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <ImageIcon color="primary" />
+                                <Typography variant="subtitle2" noWrap>
+                                  {attachment.filename || `Attachment ${index + 1}`}
+                                </Typography>
+                              </Box>
+                              
+                              {attachment.url && attachment.url.includes('.png') || attachment.url.includes('.jpg') || attachment.url.includes('.jpeg') || attachment.url.includes('.gif') ? (
+                                <Box
+                                  component="img"
+                                  src={attachment.url}
+                                  alt={attachment.filename || `Attachment ${index + 1}`}
+                                  sx={{
+                                    width: '100%',
+                                    height: 120,
+                                    objectFit: 'cover',
+                                    borderRadius: 1,
+                                    mb: 2,
+                                    cursor: 'pointer',
+                                    '&:hover': {
+                                      opacity: 0.8,
+                                    },
+                                  }}
+                                  onClick={() => window.open(attachment.url, '_blank')}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: 120,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'grey.100',
+                                    borderRadius: 1,
+                                    mb: 2,
+                                  }}
+                                >
+                                  <AttachFileIcon sx={{ fontSize: 40, color: 'grey.500' }} />
+                                </Box>
+                              )}
+                              
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                Size: {attachment.size ? (attachment.size / 1024).toFixed(1) + ' KB' : 'Unknown'}
+                              </Typography>
+                              
+                              <Button
+                                fullWidth
+                                variant="outlined"
+                                size="small"
+                                startIcon={<DownloadIcon />}
+                                onClick={() => window.open(attachment.url, '_blank')}
+                                disabled={!attachment.url}
+                              >
+                                View/Download
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Grid>
+                )}
               </Grid>
             </TabPanel>
 

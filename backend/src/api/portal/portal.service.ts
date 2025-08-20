@@ -337,6 +337,7 @@ export class PortalService {
         priority: submission.priority,
         organizationId: submission.portal.organizationId,
         assetId: submission.assetId,
+        attachments: (submission.submissionData as any)?.attachments || submission.attachments, // Transfer attachments with URLs from portal submission
       }
     });
 

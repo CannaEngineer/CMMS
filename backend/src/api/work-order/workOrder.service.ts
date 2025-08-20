@@ -19,6 +19,7 @@ export const getWorkOrderById = async (id: number, organizationId: number) => {
       organizationId 
     },
     include: { asset: true, assignedTo: true },
+    // Include all fields including attachments
   });
 };
 
