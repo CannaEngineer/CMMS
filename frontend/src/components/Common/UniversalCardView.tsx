@@ -24,7 +24,6 @@ import {
   CheckBox as CheckBoxIcon,
   CheckBoxOutlineBlank as CheckBoxBlankIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useView } from '../../contexts/ViewContext';
 
 export interface CardField {
@@ -247,24 +246,27 @@ const UniversalCardView = <T extends { id: string | number }>({
 
   return (
     <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-      <AnimatePresence>
-        {items.map((item, index) => {
-          const isSelected = selectedItems.has(item.id);
-          const isExpanded = expandedCards.has(item.id);
-          
-          return (
-            <motion.div
-              key={item.id}
-              initial={!prefersReducedMotion ? { opacity: 0, y: 20 } : {}}
-              animate={{ opacity: 1, y: 0 }}
-              exit={!prefersReducedMotion ? { opacity: 0, y: -20 } : {}}
-              transition={{
-                duration: prefersReducedMotion ? 0 : 0.3,
-                delay: prefersReducedMotion ? 0 : index * 0.05 + animationDelay,
-                ease: [0.4, 0, 0.2, 1],
+      {items.map((item, index) => {
+        const isSelected = selectedItems.has(item.id);
+        const isExpanded = expandedCards.has(item.id);
+        
+        return (
+          <Fade
+            key={item.id}
+            in={true}
+            timeout={prefersReducedMotion ? 0 : 300 + index * 50}
+            style={{ transitionDelay: prefersReducedMotion ? '0ms' : `${animationDelay + index * 50}ms` }}
+          >
+            <Box
+              sx={{
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': !prefersReducedMotion ? {
+                  transform: 'translateY(-4px)',
+                } : {},
+                '&:active': !prefersReducedMotion ? {
+                  transform: 'scale(0.98)',
+                } : {},
               }}
-              whileHover={!prefersReducedMotion ? { y: -4 } : {}}
-              whileTap={!prefersReducedMotion ? { scale: 0.98 } : {}}
             >
               <Card
                 sx={{
@@ -409,10 +411,10 @@ const UniversalCardView = <T extends { id: string | number }>({
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
-          );
-        })}
-      </AnimatePresence>
+            </Box>
+          </Fade>
+        );
+      })}
     </Box>
   );
 };

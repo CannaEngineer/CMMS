@@ -16,7 +16,6 @@ import {
   ViewKanban as KanbanViewIcon,
   AccountTree as TreeViewIcon,
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 
 export type ViewType = 'card' | 'table' | 'list' | 'kanban' | 'tree';
 
@@ -119,6 +118,9 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
               backgroundColor: alpha(theme.palette.action.hover, 0.8),
               transform: 'scale(1.05)',
             },
+            '&:active': {
+              transform: 'scale(0.95)',
+            },
             '&.Mui-selected': {
               backgroundColor: alpha(theme.palette.primary.main, 0.12),
               color: theme.palette.primary.main,
@@ -138,8 +140,6 @@ const ViewToggle: React.FC<ViewToggleProps> = ({
               key={view}
               value={view}
               aria-label={config.label}
-              component={motion.button}
-              whileTap={{ scale: 0.95 }}
             >
               <Tooltip title={config.description} placement="top">
                 <Box
