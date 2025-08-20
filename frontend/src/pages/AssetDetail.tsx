@@ -23,6 +23,7 @@ import {
   CircularProgress,
   useTheme,
   useMediaQuery,
+  Snackbar,
 } from '@mui/material';
 import {
   ArrowBack as BackIcon,
@@ -38,6 +39,8 @@ import {
   History as HistoryIcon,
   Add as AddIcon,
   NavigateNext as NavigateNextIcon,
+  CloudUpload as UploadIcon,
+  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -69,6 +72,9 @@ export default function AssetDetail() {
   
   const [tabValue, setTabValue] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Fetch asset data
   const { data: asset, isLoading, error } = useQuery({
@@ -123,6 +129,80 @@ export default function AssetDetail() {
 
   const handleCreateWorkOrder = () => {
     navigate(`/work-orders/new?assetId=${id}`);
+  };
+
+  // File upload handler
+  const handleFileUpload = async (files: FileList) => {
+    if (!files || files.length === 0 || !asset) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      const newAttachments: any[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        const formData = new FormData();
+        formData.append('files', file);
+        
+        try {
+          const response = await fetch('/api/uploads/asset', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: formData,
+          });
+          
+          if (response.ok) {
+            const uploadResult = await response.json();
+            if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
+              const uploadedFile = uploadResult.files[0];
+              newAttachments.push({
+                url: uploadedFile.url,
+                filename: uploadedFile.filename,
+                size: uploadedFile.size,
+                type: uploadedFile.mimetype,
+                fileId: uploadedFile.id,
+              });
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(errorData.error || 'Upload failed');
+          }
+        } catch (error) {
+          console.error('Upload error for file:', file.name, error);
+          throw error;
+        }
+      }
+      
+      // Update asset with new attachments
+      const existingAttachments = asset.attachments || [];
+      const updatedAttachments = [...existingAttachments, ...newAttachments];
+      
+      // Update the asset in the backend
+      await updateAssetMutation.mutateAsync({
+        id: asset.id.toString(),
+        data: { attachments: updatedAttachments }
+      });
+      
+      setUploadSuccess(true);
+    } catch (error) {
+      console.error('File upload error:', error);
+      setUploadError(error instanceof Error ? error.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      handleFileUpload(event.target.files);
+    }
+    // Reset input
+    event.target.value = '';
   };
 
   if (isLoading) {
@@ -352,11 +432,36 @@ export default function AssetDetail() {
                 </Grid>
                 
                 {/* Attachments Section */}
-                {asset.attachments && asset.attachments.length > 0 && (
-                  <Grid item xs={12}>
-                    <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                      Attachments ({asset.attachments.length})
+                <Grid item xs={12}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3, mb: 2 }}>
+                    <Typography variant="h6">
+                      Attachments ({asset.attachments?.length || 0})
                     </Typography>
+                    <Box>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx,.txt"
+                        style={{ display: 'none' }}
+                        id="asset-detail-file-upload"
+                        onChange={handleFileInputChange}
+                        disabled={isUploading}
+                      />
+                      <label htmlFor="asset-detail-file-upload">
+                        <Button
+                          variant="outlined"
+                          component="span"
+                          startIcon={isUploading ? <CircularProgress size={20} /> : <UploadIcon />}
+                          disabled={isUploading}
+                          size="small"
+                        >
+                          {isUploading ? 'Uploading...' : 'Add Files'}
+                        </Button>
+                      </label>
+                    </Box>
+                  </Box>
+                  
+                  {asset.attachments && asset.attachments.length > 0 ? (
                     <Grid container spacing={2}>
                       {asset.attachments.map((attachment: any, index: number) => (
                         <Grid item xs={12} sm={6} md={4} key={index}>
@@ -428,8 +533,24 @@ export default function AssetDetail() {
                         </Grid>
                       ))}
                     </Grid>
-                  </Grid>
-                )}
+                  ) : (
+                    <Box 
+                      sx={{ 
+                        textAlign: 'center', 
+                        py: 4, 
+                        color: 'text.secondary',
+                        border: '1px dashed',
+                        borderColor: 'divider',
+                        borderRadius: 1 
+                      }}
+                    >
+                      <AttachFileIcon sx={{ fontSize: 48, mb: 1, color: 'text.disabled' }} />
+                      <Typography variant="body2">
+                        No attachments yet. Click "Add Files" to upload documents or images.
+                      </Typography>
+                    </Box>
+                  )}
+                </Grid>
               </Grid>
             </TabPanel>
 
@@ -604,6 +725,21 @@ export default function AssetDetail() {
         initialData={asset}
         mode="edit"
         loading={updateAssetMutation.isPending}
+      />
+
+      {/* Upload Success/Error Notifications */}
+      <Snackbar
+        open={uploadSuccess}
+        autoHideDuration={4000}
+        onClose={() => setUploadSuccess(false)}
+        message="Files uploaded successfully!"
+      />
+      
+      <Snackbar
+        open={!!uploadError}
+        autoHideDuration={6000}
+        onClose={() => setUploadError(null)}
+        message={`Upload failed: ${uploadError}`}
       />
     </Container>
   );

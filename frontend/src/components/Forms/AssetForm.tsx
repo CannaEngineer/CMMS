@@ -191,13 +191,11 @@ export default function AssetForm({
         
         // Create form data for upload
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('entityType', 'asset');
-        formData.append('entityId', initialData?.id?.toString() || 'temp');
+        formData.append('files', file);
         
         try {
-          // Upload to Vercel Blob storage via our API
-          const response = await fetch('/api/upload/blob', {
+          // Upload to backend storage via correct API endpoint
+          const response = await fetch('/api/uploads/asset', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -207,15 +205,21 @@ export default function AssetForm({
           
           if (response.ok) {
             const uploadResult = await response.json();
-            newFiles.push({
-              url: uploadResult.url,
-              filename: file.name,
-              size: file.size,
-              type: file.type,
-              fileId: uploadResult.fileId || Date.now().toString(),
-            });
+            // Backend returns { success: true, files: [BlobFile[]] }
+            if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
+              const uploadedFile = uploadResult.files[0];
+              newFiles.push({
+                url: uploadedFile.url,
+                filename: uploadedFile.filename,
+                size: uploadedFile.size,
+                type: uploadedFile.mimetype,
+                fileId: uploadedFile.id,
+              });
+            }
           } else {
             console.error('Failed to upload file:', file.name);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('Upload error details:', errorData);
           }
         } catch (error) {
           console.error('Upload error for file:', file.name, error);
