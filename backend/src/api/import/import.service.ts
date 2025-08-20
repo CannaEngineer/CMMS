@@ -1080,21 +1080,22 @@ export class ImportService {
         }, { timeout: 30000 }); // 30 second timeout for PM tasks
       }
 
-      // Process regular data in batches
+      // Process regular data in batches with individual transactions for better error isolation
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
         console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} records...`);
         
-        await prisma.$transaction(async (tx) => {
-          for (let i = 0; i < batch.length; i++) {
-            const row = batch[i];
-            const globalIndex = (batchIndex * BATCH_SIZE) + i + 1; // Global row number for error reporting
-            console.log(`Processing row ${globalIndex}:`, row);
-            
-            // CRITICAL: Ensure organizationId is ALWAYS included for organization isolation
-            row.organizationId = organizationId;
-            
-            try {
+        // Process each record individually in its own transaction to avoid transaction aborts
+        for (let i = 0; i < batch.length; i++) {
+          const row = batch[i];
+          const globalIndex = (batchIndex * BATCH_SIZE) + i + 1; // Global row number for error reporting
+          console.log(`Processing row ${globalIndex}:`, row);
+          
+          try {
+            await prisma.$transaction(async (tx) => {
+              // CRITICAL: Ensure organizationId is ALWAYS included for organization isolation
+              row.organizationId = organizationId;
+              
               // Special handling for different entity types
               switch (entityType) {
                 case 'users':
@@ -1183,7 +1184,7 @@ export class ImportService {
                 });
                 console.log(`Successfully updated record with ID:`, updatedRecord.id);
                 importedCount++;
-                continue;
+                return; // Exit this transaction and move to next record
               }
 
               // Validate required fields before creation
@@ -1206,40 +1207,40 @@ export class ImportService {
               
               importedRecordIds.push(createdRecord.id);
               importedCount++;
-            } catch (error: any) {
-              console.error(`Error importing row ${globalIndex}:`, error);
-              console.error('Error code:', error.code);
-              console.error('Error meta:', error.meta);
-              
-              let userFriendlyMessage = '';
-              
-              if (error.code === 'P2002') {
-                // Duplicate key error
-                const field = error.meta?.target?.[0] || 'unique field';
-                duplicates.push(`Row ${globalIndex}: Duplicate ${field} - this record already exists`);
-              } else if (error.message.includes('Unknown argument')) {
-                // Field doesn't exist in database
-                const match = error.message.match(/Unknown argument `(\w+)`/);
-                const fieldName = match ? match[1] : 'field';
-                userFriendlyMessage = `Invalid field "${fieldName}" - this field is not supported in the database`;
-              } else if (error.message.includes('Invalid enum value')) {
-                // Invalid enum value
-                userFriendlyMessage = error.message.replace(/Invalid.*?enum/, 'Invalid value for');
-              } else if (error.message.includes('Foreign key constraint')) {
-                // Missing related record
-                userFriendlyMessage = 'Related record not found - please check asset, location, or user references';
-              } else if (error.message.includes('required field')) {
-                userFriendlyMessage = 'Required field is missing or empty';
-              } else {
-                // Generic error
-                userFriendlyMessage = `Database error: ${error.message}`;
-              }
-              
-              errors.push(`Row ${globalIndex}: ${userFriendlyMessage}`);
-              skippedCount++;
+            }, { timeout: 10000 }); // 10 second timeout per record
+          } catch (error: any) {
+            console.error(`Error importing row ${globalIndex}:`, error);
+            console.error('Error code:', error.code);
+            console.error('Error meta:', error.meta);
+            
+            let userFriendlyMessage = '';
+            
+            if (error.code === 'P2002') {
+              // Duplicate key error
+              const field = error.meta?.target?.[0] || 'unique field';
+              duplicates.push(`Row ${globalIndex}: Duplicate ${field} - this record already exists`);
+            } else if (error.message.includes('Unknown argument')) {
+              // Field doesn't exist in database
+              const match = error.message.match(/Unknown argument `(\w+)`/);
+              const fieldName = match ? match[1] : 'field';
+              userFriendlyMessage = `Invalid field "${fieldName}" - this field is not supported in the database`;
+            } else if (error.message.includes('Invalid enum value')) {
+              // Invalid enum value
+              userFriendlyMessage = error.message.replace(/Invalid.*?enum/, 'Invalid value for');
+            } else if (error.message.includes('Foreign key constraint')) {
+              // Missing related record
+              userFriendlyMessage = 'Related record not found - please check asset, location, or user references';
+            } else if (error.message.includes('required field')) {
+              userFriendlyMessage = 'Required field is missing or empty';
+            } else {
+              // Generic error
+              userFriendlyMessage = `Database error: ${error.message}`;
             }
+            
+            errors.push(`Row ${globalIndex}: ${userFriendlyMessage}`);
+            skippedCount++;
           }
-        }, { timeout: 30000 }); // 30 second timeout per batch
+        }
         
         console.log(`Completed batch ${batchIndex + 1}/${batches.length}. Running total: ${importedCount} imported, ${skippedCount} skipped`);
       }
