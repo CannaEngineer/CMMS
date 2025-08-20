@@ -350,6 +350,86 @@ export default function AssetDetail() {
                     )}
                   </List>
                 </Grid>
+                
+                {/* Attachments Section */}
+                {asset.attachments && asset.attachments.length > 0 && (
+                  <Grid item xs={12}>
+                    <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                      Attachments ({asset.attachments.length})
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {asset.attachments.map((attachment: any, index: number) => (
+                        <Grid item xs={12} sm={6} md={4} key={index}>
+                          <Card variant="outlined" sx={{ height: '100%' }}>
+                            <CardContent sx={{ p: 2 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                <img
+                                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMjRweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iMjRweCIgZmlsbD0iIzAwMDAwMCI+PHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Im0xNCAxMi0zIDMtMiAyIDUgNS03LjVIOS41TDIgMTJsNy01LjVINFYyaDEwdjEweiIvPjwvc3ZnPg=="
+                                  alt=""
+                                  style={{ width: 16, height: 16 }}
+                                />
+                                <Typography variant="subtitle2" noWrap>
+                                  {attachment.filename || `Attachment ${index + 1}`}
+                                </Typography>
+                              </Box>
+                              
+                              {attachment.url && (attachment.url.includes('.png') || attachment.url.includes('.jpg') || attachment.url.includes('.jpeg') || attachment.url.includes('.gif')) ? (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: 120,
+                                    backgroundImage: `url(${attachment.url})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    borderRadius: 1,
+                                    mb: 1,
+                                    cursor: 'pointer',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                  }}
+                                  onClick={() => window.open(attachment.url, '_blank')}
+                                />
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: 120,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: 'grey.100',
+                                    borderRadius: 1,
+                                    mb: 1,
+                                  }}
+                                >
+                                  <img
+                                    src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iNDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB3aWR0aD0iNDBweCIgZmlsbD0iIzk5OTk5OSI+PHBhdGggZD0iTTAgMGgyNHYyNEgwVjB6IiBmaWxsPSJub25lIi8+PHBhdGggZD0iTTE2LjUgNmgtMWwtLjUtLjVoLTVMLjUtNmgtMUM4IDYgOCA2LjQ1IDggMVY5aDh2LTNjMC0uNTUtLjQ1LTEtMS0xem0uNSAydjhoLTNWMTNoM3ptLTUgNXYtM2g0djNoLTR6Ii8+PC9zdmc+"
+                                    alt="File"
+                                    style={{ width: 40, height: 40 }}
+                                  />
+                                </Box>
+                              )}
+                              
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Size: {((attachment.size || 0) / 1024).toFixed(1)} KB
+                              </Typography>
+                              
+                              <Button
+                                fullWidth
+                                size="small"
+                                variant="outlined"
+                                onClick={() => window.open(attachment.url, '_blank')}
+                                sx={{ mt: 1 }}
+                              >
+                                View/Download
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Grid>
+                )}
               </Grid>
             </TabPanel>
 

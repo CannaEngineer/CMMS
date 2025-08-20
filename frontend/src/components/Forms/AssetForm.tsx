@@ -17,6 +17,9 @@ import {
   Divider,
   LinearProgress,
   Avatar,
+  Button,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
 import {
   Build as AssetIcon,
@@ -25,6 +28,12 @@ import {
   Inventory as SerialIcon,
   CalendarToday as DateIcon,
   Assessment as HealthIcon,
+  CloudUpload as UploadIcon,
+  AttachFile as AttachFileIcon,
+  Image as ImageIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { useQuery } from '@tanstack/react-query';
 import FormDialog from './FormDialog';
@@ -86,6 +95,9 @@ export default function AssetForm({
   mode,
   loading = false,
 }: AssetFormProps) {
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const {
     control,
     handleSubmit,
@@ -149,11 +161,82 @@ export default function AssetForm({
         parentId: undefined,
         ...initialData 
       });
+      
+      // Load existing attachments if any
+      if (initialData.attachments) {
+        setUploadedFiles(Array.isArray(initialData.attachments) ? initialData.attachments : []);
+      }
     }
   }, [initialData, reset]);
 
   const onFormSubmit = (data: AssetFormData) => {
-    onSubmit(data);
+    // Include uploaded files in the submission
+    const submitData = {
+      ...data,
+      attachments: uploadedFiles.length > 0 ? uploadedFiles : null,
+    };
+    onSubmit(submitData);
+  };
+
+  // File upload handlers
+  const handleFileUpload = async (files: FileList) => {
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const newFiles: any[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Create form data for upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('entityType', 'asset');
+        formData.append('entityId', initialData?.id?.toString() || 'temp');
+        
+        try {
+          // Upload to Vercel Blob storage via our API
+          const response = await fetch('/api/upload/blob', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: formData,
+          });
+          
+          if (response.ok) {
+            const uploadResult = await response.json();
+            newFiles.push({
+              url: uploadResult.url,
+              filename: file.name,
+              size: file.size,
+              type: file.type,
+              fileId: uploadResult.fileId || Date.now().toString(),
+            });
+          } else {
+            console.error('Failed to upload file:', file.name);
+          }
+        } catch (error) {
+          console.error('Upload error for file:', file.name, error);
+        }
+      }
+      
+      // Add new files to the list
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      handleFileUpload(event.target.files);
+    }
   };
 
   const getHealthScore = () => {
@@ -399,6 +482,84 @@ export default function AssetForm({
           disabled={mode === 'view'}
         />
       </Grid>
+      
+      {/* File Upload Section */}
+      {mode !== 'view' && (
+        <Grid item xs={12}>
+          <Typography variant="subtitle1" gutterBottom>
+            Attachments
+          </Typography>
+          
+          <Box sx={{ mb: 2 }}>
+            <input
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              style={{ display: 'none' }}
+              id="asset-file-upload"
+              onChange={handleFileInputChange}
+              disabled={isUploading}
+            />
+            <label htmlFor="asset-file-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                startIcon={isUploading ? <CircularProgress size={20} /> : <UploadIcon />}
+                disabled={isUploading}
+                sx={{ mr: 1 }}
+              >
+                {isUploading ? 'Uploading...' : 'Upload Files'}
+              </Button>
+            </label>
+          </Box>
+          
+          {/* Display uploaded files */}
+          {uploadedFiles.length > 0 && (
+            <Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Uploaded Files ({uploadedFiles.length})
+              </Typography>
+              <Grid container spacing={1}>
+                {uploadedFiles.map((file, index) => (
+                  <Grid item xs={12} sm={6} md={4} key={index}>
+                    <Card variant="outlined" sx={{ p: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography variant="body2" noWrap>
+                            {file.filename}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {(file.size / 1024).toFixed(1)} KB
+                          </Typography>
+                        </Box>
+                        
+                        {file.url && file.type?.startsWith('image/') && (
+                          <IconButton
+                            size="small"
+                            onClick={() => window.open(file.url, '_blank')}
+                            title="View image"
+                          >
+                            <ViewIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        
+                        <IconButton
+                          size="small"
+                          onClick={() => handleRemoveFile(index)}
+                          color="error"
+                          title="Remove file"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Grid>
+      )}
     </Grid>
   );
 
@@ -421,6 +582,76 @@ export default function AssetForm({
       <FormErrorDisplay errors={errors} />
 
       {mode === 'view' ? renderViewMode() : renderFormMode()}
+      
+      {/* Display attachments in view mode */}
+      {mode === 'view' && uploadedFiles.length > 0 && (
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Attachments ({uploadedFiles.length})
+          </Typography>
+          <Grid container spacing={2}>
+            {uploadedFiles.map((attachment: any, index: number) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card variant="outlined" sx={{ height: '100%' }}>
+                  <CardContent sx={{ p: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                      <ImageIcon color="primary" />
+                      <Typography variant="subtitle2" noWrap>
+                        {attachment.filename || `Attachment ${index + 1}`}
+                      </Typography>
+                    </Box>
+                    
+                    {attachment.url && (attachment.url.includes('.png') || attachment.url.includes('.jpg') || attachment.url.includes('.jpeg') || attachment.url.includes('.gif')) ? (
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 120,
+                          backgroundImage: `url(${attachment.url})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          borderRadius: 1,
+                          mb: 1,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => window.open(attachment.url, '_blank')}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: '100%',
+                          height: 120,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: 'grey.100',
+                          borderRadius: 1,
+                          mb: 1,
+                        }}
+                      >
+                        <AttachFileIcon sx={{ fontSize: 40, color: 'grey.400' }} />
+                      </Box>
+                    )}
+                    
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Size: {((attachment.size || 0) / 1024).toFixed(1)} KB
+                    </Typography>
+                    
+                    <Button
+                      fullWidth
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => window.open(attachment.url, '_blank')}
+                      sx={{ mt: 1 }}
+                    >
+                      View/Download
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      )}
     </FormDialog>
   );
 }

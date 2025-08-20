@@ -29,8 +29,16 @@ const shareService = new WorkOrderShareService();
 
 export const getAllWorkOrders = async (req: Request, res: Response) => {
   const { organizationId } = req.user;
-  const workOrders = await workOrderService.getAllWorkOrders(organizationId);
-  res.status(200).json(workOrders);
+  const { assetId } = req.query;
+  
+  // If assetId is provided, filter work orders by asset
+  if (assetId) {
+    const workOrders = await workOrderService.getWorkOrdersByAssetId(Number(assetId), organizationId);
+    res.status(200).json(workOrders);
+  } else {
+    const workOrders = await workOrderService.getAllWorkOrders(organizationId);
+    res.status(200).json(workOrders);
+  }
 };
 
 export const getWorkOrderById = async (req: Request, res: Response) => {

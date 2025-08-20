@@ -12,6 +12,17 @@ export const getAllWorkOrders = async (organizationId: number) => {
   });
 };
 
+export const getWorkOrdersByAssetId = async (assetId: number, organizationId: number) => {
+  return prisma.workOrder.findMany({
+    where: {
+      assetId,
+      organizationId,
+    },
+    include: { asset: true, assignedTo: true },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
 export const getWorkOrderById = async (id: number, organizationId: number) => {
   return prisma.workOrder.findFirst({
     where: { 

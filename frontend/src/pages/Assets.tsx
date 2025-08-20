@@ -461,8 +461,8 @@ export default function Assets() {
         onTouchEnd={handleTouchEnd}
         onClick={() => handleCardClick(asset)}
       >
-        {/* Selection checkbox for multi-select mode */}
-        {multiSelectMode && (
+        {/* Selection checkbox for multi-select mode - only show if no image */}
+        {multiSelectMode && !(asset.imageUrl || (asset.attachments && asset.attachments.length > 0)) && (
           <Box
             sx={{
               position: 'absolute',
@@ -483,7 +483,47 @@ export default function Assets() {
           </Box>
         )}
 
-        <CardContent sx={{ pb: 1.5, pt: multiSelectMode ? 4 : 2 }}>
+        {/* Asset Image */}
+        {(asset.imageUrl || (asset.attachments && asset.attachments.length > 0)) && (
+          <CardMedia
+            sx={{
+              height: 120,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              position: 'relative',
+            }}
+            image={
+              asset.imageUrl || 
+              (asset.attachments && asset.attachments.find((att: any) => 
+                att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+              )?.url)
+            }
+          >
+            {multiSelectMode && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  zIndex: 2,
+                }}
+              >
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectCard(asset.id);
+                  }}
+                  sx={{ bgcolor: 'background.paper', '&:hover': { bgcolor: 'background.paper' } }}
+                >
+                  {isSelected ? <CheckBoxIcon color="primary" /> : <CheckBoxBlankIcon />}
+                </IconButton>
+              </Box>
+            )}
+          </CardMedia>
+        )}
+        
+        <CardContent sx={{ pb: 1.5, pt: multiSelectMode && !(asset.imageUrl || (asset.attachments && asset.attachments.length > 0)) ? 4 : 2 }}>
           {/* Primary info - always visible */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -810,11 +850,16 @@ export default function Assets() {
 
           <Box sx={{ p: 2 }}>
             {/* Asset image placeholder */}
-            {selectedDetailAsset.imageUrl ? (
+            {selectedDetailAsset.imageUrl || (selectedDetailAsset.attachments && selectedDetailAsset.attachments.length > 0) ? (
               <CardMedia
                 component="img"
                 height="200"
-                image={selectedDetailAsset.imageUrl}
+                image={
+                  selectedDetailAsset.imageUrl || 
+                  (selectedDetailAsset.attachments && selectedDetailAsset.attachments.find((att: any) => 
+                    att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+                  )?.url)
+                }
                 alt={selectedDetailAsset.name}
                 sx={{ borderRadius: 2, mb: 2 }}
               />
@@ -1348,6 +1393,23 @@ export default function Assets() {
               }}
               onClick={() => handleCardClick(asset)}
             >
+              {/* Asset Image */}
+              {(asset.imageUrl || (asset.attachments && asset.attachments.length > 0)) && (
+                <CardMedia
+                  sx={{
+                    height: 140,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                  image={
+                    asset.imageUrl || 
+                    (asset.attachments && asset.attachments.find((att: any) => 
+                      att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+                    )?.url)
+                  }
+                />
+              )}
+              
               <CardContent sx={{ flex: 1 }}>
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   {asset.name}
