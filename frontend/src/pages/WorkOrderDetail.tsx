@@ -440,9 +440,8 @@ export default function WorkOrderDetail() {
       return;
     }
     
-    console.log('📎 Calling updateWorkOrderMutation with:', { id: workOrder.id, attachments });
+    console.log('📎 Calling updateWorkOrderMutation with:', { attachments });
     updateWorkOrderMutation.mutate({ 
-      id: workOrder.id,
       attachments 
     });
   };

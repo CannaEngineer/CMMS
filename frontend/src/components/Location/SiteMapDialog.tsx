@@ -188,7 +188,8 @@ export default function SiteMapDialog({
         center={mapCenter}
         zoom={13}
         style={{ height: '500px', width: '100%', borderRadius: '8px' }}
-        whenReady={(map) => {
+        whenReady={(event) => {
+          const map = event.target;
           console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
         }}
       >

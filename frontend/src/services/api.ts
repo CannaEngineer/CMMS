@@ -385,7 +385,8 @@ export const dashboardService = {
     try {
       return await apiClient.get<any>('/api/dashboard/inventory-metrics');
     } catch (error) {
-      console.warn('Inventory metrics API not available');
+      console.error('📊 Dashboard inventory metrics API error:', error);
+      console.warn('Inventory metrics API not available - returning fallback data');
       return {
         lowStockCount: 0,
         outOfStockCount: 0,
