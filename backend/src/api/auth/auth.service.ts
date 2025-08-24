@@ -323,7 +323,7 @@ export const initiatePasswordReset = async (email: string): Promise<boolean> => 
     // Send reset email
     const { emailService } = require('../../services/email.service');
     const baseUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
-    const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
 
     const success = await emailService.sendPasswordResetEmail(
       user.email,
