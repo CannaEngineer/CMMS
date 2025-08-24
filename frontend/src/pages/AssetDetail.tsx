@@ -47,6 +47,7 @@ import { statusColors } from '../theme/theme';
 import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 import AssetForm from '../components/Forms/AssetForm';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
+import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm';
 import { FileUploadManager, FileAttachment } from '../components/Common';
 
 interface TabPanelProps {
@@ -73,6 +74,8 @@ export default function AssetDetail() {
   const [tabValue, setTabValue] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [workOrderFormOpen, setWorkOrderFormOpen] = useState(false);
+  const [pmScheduleFormOpen, setPmScheduleFormOpen] = useState(false);
+  const [selectedPmSchedule, setSelectedPmSchedule] = useState<any>(null);
 
   // Fetch asset data
   const { data: asset, isLoading, error } = useQuery({
@@ -107,7 +110,7 @@ export default function AssetDetail() {
 
   // Fetch maintenance history for this asset
   const { data: maintenanceHistory = [] } = useQuery({
-    queryKey: ['asset-maintenance-history', id],
+    queryKey: ['asset-maintenance-history', id, workOrders.length],
     queryFn: async () => {
       if (!id) return [];
       // For now, use work orders as maintenance history
@@ -125,7 +128,7 @@ export default function AssetDetail() {
         cost: wo.totalCost || 0
       }));
     },
-    enabled: !!id && workOrders.length > 0,
+    enabled: !!id,
   });
 
   // Delete mutation
@@ -156,6 +159,26 @@ export default function AssetDetail() {
       setWorkOrderFormOpen(false);
       // Optionally navigate to the work order detail
       // navigate(`/work-orders/${data.id}`);
+    },
+  });
+
+  // Create PM schedule mutation
+  const createPmScheduleMutation = useMutation({
+    mutationFn: pmService.createSchedule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset-pm-schedules', id] });
+      setPmScheduleFormOpen(false);
+      setSelectedPmSchedule(null);
+    },
+  });
+
+  // Update PM schedule mutation
+  const updatePmScheduleMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => pmService.updateSchedule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset-pm-schedules', id] });
+      setPmScheduleFormOpen(false);
+      setSelectedPmSchedule(null);
     },
   });
 
@@ -190,6 +213,32 @@ export default function AssetDetail() {
         id: asset.id.toString(),
         data: { attachments }
       });
+    }
+  };
+
+  const handleCreatePmSchedule = () => {
+    setSelectedPmSchedule(null);
+    setPmScheduleFormOpen(true);
+  };
+
+  const handleEditPmSchedule = (schedule: any) => {
+    setSelectedPmSchedule(schedule);
+    setPmScheduleFormOpen(true);
+  };
+
+  const handlePmScheduleSubmit = (data: any) => {
+    const scheduleData = {
+      ...data,
+      assetId: asset?.id,
+    };
+    
+    if (selectedPmSchedule) {
+      updatePmScheduleMutation.mutate({ 
+        id: selectedPmSchedule.id.toString(), 
+        data: scheduleData 
+      });
+    } else {
+      createPmScheduleMutation.mutate(scheduleData);
     }
   };
 
@@ -498,10 +547,7 @@ export default function AssetDetail() {
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() => {
-                    // TODO: Implement PM schedule creation
-                    console.log('Create PM schedule for asset', id);
-                  }}
+                  onClick={handleCreatePmSchedule}
                 >
                   Create PM Schedule
                 </Button>
@@ -513,7 +559,7 @@ export default function AssetDetail() {
                   <br />
                   <Button 
                     color="primary" 
-                    onClick={() => console.log('Create first PM schedule')}
+                    onClick={handleCreatePmSchedule}
                     sx={{ mt: 1 }}
                   >
                     Create your first PM schedule
@@ -581,7 +627,7 @@ export default function AssetDetail() {
                           <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                             <Button 
                               size="small" 
-                              onClick={() => console.log('Edit schedule', schedule.id)}
+                              onClick={() => handleEditPmSchedule(schedule)}
                             >
                               Edit
                             </Button>
@@ -1004,6 +1050,26 @@ export default function AssetDetail() {
         }}
         mode="create"
         loading={createWorkOrderMutation.isPending}
+      />
+
+      {/* PM Schedule Form Dialog */}
+      <MaintenanceScheduleForm
+        open={pmScheduleFormOpen}
+        onClose={() => {
+          setPmScheduleFormOpen(false);
+          setSelectedPmSchedule(null);
+        }}
+        onSubmit={handlePmScheduleSubmit}
+        initialData={selectedPmSchedule || {
+          assetId: asset?.id,
+          assetName: asset?.name,
+          title: asset ? `PM Schedule for ${asset.name}` : '',
+          description: '',
+          frequency: 'MONTHLY',
+          status: 'ACTIVE',
+        }}
+        mode={selectedPmSchedule ? 'edit' : 'create'}
+        loading={createPmScheduleMutation.isPending || updatePmScheduleMutation.isPending}
       />
 
     </Container>
