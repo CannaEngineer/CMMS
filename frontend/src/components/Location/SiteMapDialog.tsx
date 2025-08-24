@@ -149,7 +149,7 @@ export default function SiteMapDialog({
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [showAssetCount, setShowAssetCount] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const [mapInstance, setMapInstance] = useState<any>(null);
+  const mapRef = React.useRef<any>(null);
 
   // Inject leaflet override styles when dialog opens
   useEffect(() => {
@@ -164,18 +164,20 @@ export default function SiteMapDialog({
     }
   }, [open]);
   
-  // Trigger map resize when map instance is available
+  // Trigger map resize when dialog opens
   useEffect(() => {
-    if (open && mapInstance) {
-      // Force resize after a short delay
+    if (open && mapRef.current) {
+      // Force resize after dialog animation
       const resizeTimer = setTimeout(() => {
-        mapInstance.invalidateSize();
-        console.log('🗺️ Map instance resized via useEffect');
-      }, 200);
+        if (mapRef.current) {
+          mapRef.current.invalidateSize();
+          console.log('🗺️ Map resized via useEffect');
+        }
+      }, 500);
       
       return () => clearTimeout(resizeTimer);
     }
-  }, [open, mapInstance]);
+  }, [open]);
 
   console.log('🗺️ SiteMapDialog render:', { open, locationsCount: locations.length, locations });
 
@@ -215,72 +217,37 @@ export default function SiteMapDialog({
     return mappableLocations.filter(loc => loc.type === selectedLayer);
   }, [mappableLocations, selectedLayer]);
 
-  // Real Map Component using Leaflet - only render when dialog is open
-  const RealSiteMap = () => {
-    console.log('🗺️ RealSiteMap render:', { mappableCount: mappableLocations.length, mapCenter, dialogOpen: open });
+  // Real Map Component using Leaflet - memoized to prevent re-renders
+  const RealSiteMap = React.useMemo(() => {
+    console.log('🗺️ Creating RealSiteMap component:', { open, mappableCount: mappableLocations.length });
     
-    // Don't render if dialog is closed
-    if (!open) {
-      console.log('🗺️ RealSiteMap: Dialog closed, not rendering map');
+    // Don't render if dialog is closed or no locations
+    if (!open || mappableLocations.length === 0) {
       return null;
     }
-    
-    if (mappableLocations.length === 0) {
-      console.log('🗺️ RealSiteMap: No mappable locations, returning null');
-      return null;
-    }
-
-    console.log('🗺️ Creating MapContainer with:', { center: mapCenter, zoom: 13 });
 
     return (
       <MapContainer
         center={mapCenter}
         zoom={13}
         style={{ height: '100%', minHeight: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
-        whenReady={(event) => {
-          const map = event.target;
-          setMapInstance(map); // Store map instance for later use
-          console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
-          
-          // Debug container size
-          const container = map.getContainer();
-          console.log('🗺️ Map container:', {
-            element: container,
-            offsetWidth: container.offsetWidth,
-            offsetHeight: container.offsetHeight,
-            clientWidth: container.clientWidth,
-            clientHeight: container.clientHeight,
-            display: window.getComputedStyle(container).display,
-            visibility: window.getComputedStyle(container).visibility,
-            position: window.getComputedStyle(container).position
-          });
-          
-          // Force multiple resize attempts to handle dialog animation
-          const resizeMap = () => {
-            map.invalidateSize();
-            const container = map.getContainer();
-            const hasSize = container.offsetWidth > 0 && container.offsetHeight > 0;
-            console.log('🗺️ Map resize attempt:', {
-              offsetWidth: container.offsetWidth,
-              offsetHeight: container.offsetHeight,
-              hasSize
-            });
+        ref={(map) => {
+          if (map && !mapRef.current) {
+            mapRef.current = map;
+            console.log('🗺️ Map instance stored in ref');
             
-            if (hasSize) {
-              // Pan to center to ensure tiles load
-              map.setView(mapCenter, 13);
-              console.log('🗺️ Map has size, view set to center');
-            }
-            return hasSize;
-          };
-          
-          // Try immediate resize
-          resizeMap();
-          
-          // Then try after delays to catch dialog animation
-          setTimeout(() => resizeMap(), 300);
-          setTimeout(() => resizeMap(), 600);
-          setTimeout(() => resizeMap(), 1000);
+            // Force resize after a delay
+            setTimeout(() => {
+              if (mapRef.current) {
+                mapRef.current.invalidateSize();
+                const container = mapRef.current.getContainer();
+                console.log('🗺️ Map resized after ref set:', {
+                  offsetWidth: container.offsetWidth,
+                  offsetHeight: container.offsetHeight
+                });
+              }
+            }, 100);
+          }
         }}
       >
         <LayersControl position="topright">
@@ -356,7 +323,7 @@ export default function SiteMapDialog({
         ))}
       </MapContainer>
     );
-  };
+  }, [open, mappableLocations, mapCenter, filteredLocations]);
 
   const layerOptions = [
     { value: 'all', label: 'All Locations' },
@@ -431,7 +398,7 @@ export default function SiteMapDialog({
               <Card sx={{ height: '540px' }}>
                 <CardContent sx={{ p: 1, height: '100%' }}>
                   <Box sx={{ height: '100%', width: '100%' }}>
-                    <RealSiteMap />
+                    {RealSiteMap}
                   </Box>
                 </CardContent>
               </Card>
