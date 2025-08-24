@@ -37,7 +37,20 @@ import {
   Fade,
   Avatar,
   Stack,
+  LinearProgress,
+  Stepper,
+  Step,
+  StepLabel,
 } from '@mui/material';
+import {
+  Timeline,
+  TimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+  TimelineOppositeContent,
+} from '@mui/lab';
 import {
   ArrowBack as BackIcon,
   Edit as EditIcon,
@@ -65,6 +78,19 @@ import {
   Notifications as NotifyIcon,
   Image as ImageIcon,
   GetApp as DownloadIcon,
+  TrendingUp as TrendingUpIcon,
+  CheckBoxOutlined as TaskIcon,
+  AccountCircle as UserIcon,
+  SwapVert as ChangeIcon,
+  NoteAdd as NoteIcon,
+  Schedule as ClockIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon,
+  Error as ErrorIcon,
+  CheckCircleOutline as CheckIcon,
+  RadioButtonUnchecked as PendingIcon,
+  PlayCircleOutline as InProgressIcon,
+  PauseCircleOutline as OnHoldIcon,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -195,6 +221,36 @@ export default function WorkOrderDetail() {
     queryFn: async () => {
       if (!id) return { totalHours: 0, billableHours: 0 };
       return workOrdersService.getTimeStats(id);
+    },
+    enabled: !!id,
+  });
+
+  // Fetch tasks for the work order
+  const { data: tasks = [] } = useQuery({
+    queryKey: ['work-order-tasks', id],
+    queryFn: async () => {
+      if (!id) return [];
+      return workOrdersService.getTasks(id);
+    },
+    enabled: !!id,
+  });
+
+  // Fetch progress data for the work order
+  const { data: progressData } = useQuery({
+    queryKey: ['work-order-progress', id],
+    queryFn: async () => {
+      if (!id) return {};
+      return workOrdersService.getProgress(id);
+    },
+    enabled: !!id,
+  });
+
+  // Fetch history data for the work order
+  const { data: historyData = [] } = useQuery({
+    queryKey: ['work-order-history', id],
+    queryFn: async () => {
+      if (!id) return [];
+      return workOrdersService.getHistory(id);
     },
     enabled: !!id,
   });
@@ -484,6 +540,306 @@ export default function WorkOrderDetail() {
       default:
         return 'default';
     }
+  };
+
+  // Helper functions for Progress tab
+  const calculateProgressPercentage = () => {
+    if (!workOrder) return 0;
+    
+    // Base progress on status
+    switch (workOrder.status) {
+      case 'COMPLETED':
+        return 100;
+      case 'IN_PROGRESS':
+        // Calculate based on tasks and time if available
+        const taskProgress = tasks.length > 0 ? (getCompletedTasks() / tasks.length) * 60 : 30;
+        const timeProgress = workOrder.estimatedHours ? 
+          Math.min((timeStats?.totalHours || 0) / workOrder.estimatedHours * 40, 40) : 0;
+        return Math.round(taskProgress + timeProgress);
+      case 'ON_HOLD':
+        return Math.max(calculateProgressPercentage() - 10, 0);
+      case 'PENDING':
+      case 'OPEN':
+      default:
+        return 0;
+    }
+  };
+
+  const getProgressStatus = () => {
+    const percentage = calculateProgressPercentage();
+    if (percentage >= 100) return 'Completed';
+    if (percentage >= 75) return 'Nearly Complete';
+    if (percentage >= 50) return 'In Progress';
+    if (percentage >= 25) return 'Getting Started';
+    return 'Not Started';
+  };
+
+  const getCompletedTasks = () => {
+    return tasks.filter((task: any) => task.status === 'COMPLETED').length;
+  };
+
+  const getTimeProgressPercentage = () => {
+    if (!workOrder?.estimatedHours) return 0;
+    return Math.min(((timeStats?.totalHours || 0) / workOrder.estimatedHours) * 100, 100);
+  };
+
+  const getTimeRemaining = () => {
+    if (!workOrder?.dueDate) return 'N/A';
+    const now = new Date();
+    const due = new Date(workOrder.dueDate);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return '1 day';
+    return `${diffDays} days`;
+  };
+
+  const getDueDateColor = () => {
+    if (!workOrder?.dueDate) return 'text.secondary';
+    const now = new Date();
+    const due = new Date(workOrder.dueDate);
+    const diffTime = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'error.main';
+    if (diffDays <= 1) return 'warning.main';
+    return 'text.secondary';
+  };
+
+  const formatDueDate = () => {
+    if (!workOrder?.dueDate) return '';
+    return new Date(workOrder.dueDate).toLocaleDateString();
+  };
+
+  const getActiveStatusStep = () => {
+    switch (workOrder?.status) {
+      case 'PENDING':
+      case 'OPEN':
+        return 0;
+      case 'IN_PROGRESS':
+        return 1;
+      case 'COMPLETED':
+      case 'ON_HOLD':
+        return 2;
+      default:
+        return 0;
+    }
+  };
+
+  const getTaskStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'success';
+      case 'IN_PROGRESS':
+        return 'primary';
+      case 'FAILED':
+        return 'error';
+      case 'SKIPPED':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
+
+  const getBlockersAndAlerts = () => {
+    const alerts = [];
+    
+    // Check for overdue
+    if (workOrder?.dueDate) {
+      const now = new Date();
+      const due = new Date(workOrder.dueDate);
+      if (due < now && workOrder.status !== 'COMPLETED') {
+        alerts.push({
+          type: 'error',
+          title: 'Work Order Overdue',
+          description: `This work order was due on ${formatDueDate()}`
+        });
+      }
+    }
+    
+    // Check for time overrun
+    if (workOrder?.estimatedHours && timeStats?.totalHours) {
+      if (timeStats.totalHours > workOrder.estimatedHours * 1.2) {
+        alerts.push({
+          type: 'warning',
+          title: 'Time Budget Exceeded',
+          description: `${timeStats.totalHours}h logged vs ${workOrder.estimatedHours}h estimated`
+        });
+      }
+    }
+    
+    // Check for stuck tasks
+    const stuckTasks = tasks.filter((task: any) => 
+      task.status === 'IN_PROGRESS' && 
+      task.updatedAt && 
+      new Date(task.updatedAt) < new Date(Date.now() - 24 * 60 * 60 * 1000)
+    );
+    
+    if (stuckTasks.length > 0) {
+      alerts.push({
+        type: 'warning',
+        title: 'Tasks May Be Stuck',
+        description: `${stuckTasks.length} task(s) in progress for over 24 hours`
+      });
+    }
+    
+    return alerts;
+  };
+
+  // Helper function for History timeline
+  const getTimelineEvents = () => {
+    const events = [];
+
+    // Add creation event
+    if (workOrder?.createdAt) {
+      events.push({
+        time: new Date(workOrder.createdAt).toLocaleDateString() + ' ' + new Date(workOrder.createdAt).toLocaleTimeString(),
+        title: 'Work Order Created',
+        description: `Work order "${workOrder.title}" was created`,
+        user: workOrder.createdBy || 'System',
+        icon: <WorkOrderIcon />,
+        color: 'primary',
+        variant: 'filled'
+      });
+    }
+
+    // Add assignment events
+    if (workOrder?.assignedTo) {
+      events.push({
+        time: workOrder.updatedAt ? new Date(workOrder.updatedAt).toLocaleDateString() + ' ' + new Date(workOrder.updatedAt).toLocaleTimeString() : 'Recent',
+        title: 'Work Order Assigned',
+        description: `Assigned to ${typeof workOrder.assignedTo === 'string' ? workOrder.assignedTo : workOrder.assignedTo.name}`,
+        icon: <AssignIcon />,
+        color: 'info',
+        variant: 'filled'
+      });
+    }
+
+    // Add status change events
+    if (workOrder?.startedAt && workOrder.status !== 'PENDING') {
+      events.push({
+        time: new Date(workOrder.startedAt).toLocaleDateString() + ' ' + new Date(workOrder.startedAt).toLocaleTimeString(),
+        title: 'Work Started',
+        description: 'Work order status changed to In Progress',
+        icon: <StartIcon />,
+        color: 'success',
+        variant: 'filled'
+      });
+    }
+
+    // Add time log events (show recent ones)
+    if (timeLogs && timeLogs.length > 0) {
+      timeLogs
+        .sort((a: any, b: any) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
+        .slice(0, 5) // Show last 5 time entries
+        .forEach((log: any) => {
+          events.push({
+            time: new Date(log.loggedAt).toLocaleDateString() + ' ' + new Date(log.loggedAt).toLocaleTimeString(),
+            title: `${log.hours}h Time Logged`,
+            description: log.description,
+            details: `Category: ${log.category || 'Labor'} | Billable: ${log.billable ? 'Yes' : 'No'}`,
+            user: log.user?.name || log.userId || 'Unknown',
+            icon: <TimerIcon />,
+            color: 'default',
+            variant: 'outlined'
+          });
+        });
+    }
+
+    // Add task completion events
+    tasks
+      .filter((task: any) => task.status === 'COMPLETED' && task.completedAt)
+      .forEach((task: any) => {
+        events.push({
+          time: new Date(task.completedAt).toLocaleDateString() + ' ' + new Date(task.completedAt).toLocaleTimeString(),
+          title: 'Task Completed',
+          description: task.title || task.description || 'Task completed',
+          user: task.completedBy?.name || 'Technician',
+          icon: <CheckIcon />,
+          color: 'success',
+          variant: 'filled'
+        });
+      });
+
+    // Add comment events
+    if (comments && comments.length > 0) {
+      comments
+        .filter((comment: any) => !comment.isInternal || true) // Show all for now
+        .slice(0, 3) // Show recent 3 comments
+        .forEach((comment: any) => {
+          events.push({
+            time: new Date(comment.createdAt).toLocaleDateString() + ' ' + new Date(comment.createdAt).toLocaleTimeString(),
+            title: comment.isInternal ? 'Internal Note Added' : 'Comment Added',
+            description: comment.content.length > 100 ? comment.content.substring(0, 100) + '...' : comment.content,
+            user: comment.user?.name || 'User',
+            icon: <CommentIcon />,
+            color: comment.isInternal ? 'warning' : 'info',
+            variant: 'outlined'
+          });
+        });
+    }
+
+    // Add completion event
+    if (workOrder?.completedAt) {
+      events.push({
+        time: new Date(workOrder.completedAt).toLocaleDateString() + ' ' + new Date(workOrder.completedAt).toLocaleTimeString(),
+        title: 'Work Order Completed',
+        description: 'Work order marked as completed',
+        icon: <CompleteIcon />,
+        color: 'success',
+        variant: 'filled'
+      });
+    }
+
+    // Add from historyData if available
+    if (historyData && historyData.length > 0) {
+      historyData.forEach((event: any) => {
+        let icon = <InfoIcon />;
+        let color = 'primary';
+        
+        switch (event.type) {
+          case 'STATUS_CHANGE':
+            icon = <ChangeIcon />;
+            color = 'primary';
+            break;
+          case 'PRIORITY_CHANGE':
+            icon = <PriorityIcon />;
+            color = 'warning';
+            break;
+          case 'ASSIGNMENT_CHANGE':
+            icon = <AssignIcon />;
+            color = 'info';
+            break;
+          case 'COMMENT':
+            icon = <NoteIcon />;
+            color = 'default';
+            break;
+          default:
+            icon = <InfoIcon />;
+            color = 'primary';
+        }
+
+        events.push({
+          time: new Date(event.timestamp || event.createdAt).toLocaleDateString() + ' ' + new Date(event.timestamp || event.createdAt).toLocaleTimeString(),
+          title: event.title || event.action || 'Activity',
+          description: event.description || event.details || '',
+          user: event.user?.name || event.userName || 'System',
+          details: event.metadata ? JSON.stringify(event.metadata) : undefined,
+          icon,
+          color,
+          variant: 'filled'
+        });
+      });
+    }
+
+    // Sort events by time (most recent first)
+    return events.sort((a, b) => {
+      const timeA = new Date(a.time.replace(' at ', ' ')).getTime();
+      const timeB = new Date(b.time.replace(' at ', ' ')).getTime();
+      return timeB - timeA;
+    });
   };
 
   if (isLoading) {
@@ -1056,18 +1412,273 @@ export default function WorkOrderDetail() {
               <Typography variant="h6" gutterBottom>
                 Work Progress
               </Typography>
-              <Alert severity="info">
-                Progress tracking coming soon.
-              </Alert>
+              
+              {/* Progress Overview */}
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid xs={12} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <TrendingUpIcon color="primary" />
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Overall Progress
+                        </Typography>
+                      </Box>
+                      <Typography variant="h4" gutterBottom>
+                        {progressData?.completionPercentage || calculateProgressPercentage()}%
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={progressData?.completionPercentage || calculateProgressPercentage()} 
+                        sx={{ mb: 1 }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {getProgressStatus()}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid xs={12} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <TaskIcon color="primary" />
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Tasks Progress
+                        </Typography>
+                      </Box>
+                      <Typography variant="h4" gutterBottom>
+                        {getCompletedTasks()} / {tasks.length}
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={tasks.length > 0 ? (getCompletedTasks() / tasks.length) * 100 : 0}
+                        sx={{ mb: 1 }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {getCompletedTasks()} completed
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid xs={12} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <TimeIcon color="primary" />
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Time Progress
+                        </Typography>
+                      </Box>
+                      <Typography variant="h4" gutterBottom>
+                        {timeStats?.totalHours || 0}h
+                      </Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={getTimeProgressPercentage()}
+                        sx={{ mb: 1 }}
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        of {workOrder?.estimatedHours || 0}h estimated
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid xs={12} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <ClockIcon color="primary" />
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Time Remaining
+                        </Typography>
+                      </Box>
+                      <Typography variant="h4" gutterBottom>
+                        {getTimeRemaining()}
+                      </Typography>
+                      <Typography variant="caption" color={getDueDateColor()}>
+                        {workOrder?.dueDate ? `Due ${formatDueDate()}` : 'No due date'}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              {/* Status Progression */}
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    Status Progression
+                  </Typography>
+                  <Stepper activeStep={getActiveStatusStep()} alternativeLabel>
+                    <Step>
+                      <StepLabel 
+                        StepIconComponent={() => workOrder?.status === 'PENDING' ? <PendingIcon color="primary" /> : <CheckIcon color="success" />}
+                      >
+                        Open/Pending
+                      </StepLabel>
+                    </Step>
+                    <Step>
+                      <StepLabel 
+                        StepIconComponent={() => 
+                          workOrder?.status === 'IN_PROGRESS' ? <InProgressIcon color="primary" /> : 
+                          ['COMPLETED', 'ON_HOLD'].includes(workOrder?.status) ? <CheckIcon color="success" /> :
+                          <PendingIcon color="disabled" />
+                        }
+                      >
+                        In Progress
+                      </StepLabel>
+                    </Step>
+                    <Step>
+                      <StepLabel 
+                        StepIconComponent={() => 
+                          workOrder?.status === 'COMPLETED' ? <CheckIcon color="success" /> :
+                          workOrder?.status === 'ON_HOLD' ? <OnHoldIcon color="warning" /> :
+                          <PendingIcon color="disabled" />
+                        }
+                      >
+                        {workOrder?.status === 'ON_HOLD' ? 'On Hold' : 'Completed'}
+                      </StepLabel>
+                    </Step>
+                  </Stepper>
+                </CardContent>
+              </Card>
+
+              {/* Tasks Breakdown */}
+              {tasks.length > 0 && (
+                <Card sx={{ mb: 3 }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Tasks Breakdown
+                    </Typography>
+                    <List>
+                      {tasks.map((task: any, index: number) => (
+                        <ListItem key={task.id || index} divider>
+                          <ListItemIcon>
+                            {task.status === 'COMPLETED' ? (
+                              <CheckIcon color="success" />
+                            ) : task.status === 'IN_PROGRESS' ? (
+                              <InProgressIcon color="primary" />
+                            ) : (
+                              <PendingIcon color="disabled" />
+                            )}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={task.title || `Task ${index + 1}`}
+                            secondary={
+                              <Box>
+                                <Typography variant="body2">
+                                  {task.description}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                                  <Chip 
+                                    label={task.status || 'NOT_STARTED'} 
+                                    size="small" 
+                                    color={getTaskStatusColor(task.status)} 
+                                  />
+                                  {task.actualMinutes && (
+                                    <Chip 
+                                      label={`${Math.round(task.actualMinutes / 60)}h`} 
+                                      size="small" 
+                                      variant="outlined" 
+                                    />
+                                  )}
+                                </Box>
+                              </Box>
+                            }
+                          />
+                          {task.completedAt && (
+                            <Typography variant="caption" color="text.secondary">
+                              Completed: {new Date(task.completedAt).toLocaleDateString()}
+                            </Typography>
+                          )}
+                        </ListItem>
+                      ))}
+                    </List>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Blockers & Alerts */}
+              {getBlockersAndAlerts().length > 0 && (
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Blockers & Alerts
+                    </Typography>
+                    <List>
+                      {getBlockersAndAlerts().map((alert: any, index: number) => (
+                        <ListItem key={index}>
+                          <ListItemIcon>
+                            {alert.type === 'error' ? (
+                              <ErrorIcon color="error" />
+                            ) : (
+                              <WarningIcon color="warning" />
+                            )}
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={alert.title}
+                            secondary={alert.description}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </CardContent>
+                </Card>
+              )}
             </TabPanel>
 
             <TabPanel value={tabValue} index={3}>
               <Typography variant="h6" gutterBottom>
                 Work Order History
               </Typography>
-              <Alert severity="info">
-                History tracking coming soon.
-              </Alert>
+              
+              <Timeline>
+                {getTimelineEvents().map((event: any, index: number) => (
+                  <TimelineItem key={index}>
+                    <TimelineOppositeContent sx={{ m: 'auto 0' }} variant="body2" color="text.secondary">
+                      {event.time}
+                    </TimelineOppositeContent>
+                    <TimelineSeparator>
+                      <TimelineDot color={event.color} variant={event.variant}>
+                        {event.icon}
+                      </TimelineDot>
+                      {index < getTimelineEvents().length - 1 && <TimelineConnector />}
+                    </TimelineSeparator>
+                    <TimelineContent sx={{ py: '12px', px: 2 }}>
+                      <Typography variant="subtitle2" component="span">
+                        {event.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {event.description}
+                      </Typography>
+                      {event.user && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                          by {event.user}
+                        </Typography>
+                      )}
+                      {event.details && (
+                        <Card sx={{ mt: 1, bgcolor: 'grey.50' }}>
+                          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {event.details}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </TimelineContent>
+                  </TimelineItem>
+                ))}
+              </Timeline>
+              
+              {getTimelineEvents().length === 0 && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  No history events to display. Activity will appear here as work progresses.
+                </Alert>
+              )}
             </TabPanel>
           </Paper>
         </Grid>

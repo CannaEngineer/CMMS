@@ -544,6 +544,38 @@ export const workOrdersService = {
       throw new Error(`Failed to deactivate share ${shareId}`);
     }
   },
+
+  // Tasks methods
+  async getTasks(id: string): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/api/work-orders/${id}/tasks`);
+      return result || [];
+    } catch (error) {
+      console.warn(`Tasks for work order ${id} not available`);
+      return [];
+    }
+  },
+
+  // History and progress methods
+  async getHistory(id: string): Promise<any[]> {
+    try {
+      const result = await apiClient.get<any[]>(`/api/work-orders/${id}/history`);
+      return result || [];
+    } catch (error) {
+      console.warn(`History for work order ${id} not available`);
+      return [];
+    }
+  },
+
+  async getProgress(id: string): Promise<any> {
+    try {
+      const result = await apiClient.get<any>(`/api/work-orders/${id}/progress`);
+      return result || {};
+    } catch (error) {
+      console.warn(`Progress for work order ${id} not available`);
+      return {};
+    }
+  },
 };
 
 // Assets service
