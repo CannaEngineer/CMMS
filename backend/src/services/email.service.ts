@@ -76,6 +76,14 @@ export class EmailService {
     try {
       this.config = this.getEmailConfig();
       if (this.config) {
+        console.log('📧 Initializing email service with config:', {
+          host: this.config.host,
+          port: this.config.port,
+          secure: this.config.secure,
+          user: this.config.auth.user,
+          from: this.config.from
+        });
+
         this.transporter = nodemailer.createTransport({
           host: this.config.host,
           port: this.config.port,
@@ -84,17 +92,37 @@ export class EmailService {
             user: this.config.auth.user,
             pass: this.config.auth.pass,
           },
+          // Add timeout and connection settings for serverless
+          connectionTimeout: 10000, // 10 seconds
+          greetingTimeout: 5000, // 5 seconds
+          socketTimeout: 10000, // 10 seconds
           // Optional: Enable debug logging
           debug: process.env.NODE_ENV === 'development',
           logger: process.env.NODE_ENV === 'development',
         });
 
-        // Verify connection configuration
-        await this.verifyConnection();
-        this.configured = true;
-        console.log('✅ Email service initialized successfully');
+        console.log('🔗 Email transporter created, attempting connection verification...');
+        
+        // For serverless environments, we'll mark as configured without verification
+        // and handle connection errors when actually sending emails
+        if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+          console.log('🚀 Serverless environment detected, skipping connection verification');
+          this.configured = true;
+        } else {
+          // Only verify connection in development
+          try {
+            await this.verifyConnection();
+            this.configured = true;
+            console.log('✅ Email service initialized and verified successfully');
+          } catch (verifyError) {
+            console.warn('⚠️ Email service configured but verification failed:', verifyError);
+            // Still mark as configured since environment variables are present
+            this.configured = true;
+          }
+        }
       } else {
-        console.warn('⚠️ Email service not configured - email notifications will be disabled');
+        console.warn('⚠️ Email service not configured - missing environment variables');
+        this.configured = false;
       }
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error);
