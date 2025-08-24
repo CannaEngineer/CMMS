@@ -1516,34 +1516,6 @@ export default function Dashboard() {
               <Grid size={{ xs: 12, md: 4 }}>
                 <RecentActivitySection />
                 
-                {/* Additional side panel content for desktop */}
-                <Fade in timeout={1400}>
-                  <Card>
-                    <CardContent>
-                      <Typography variant="h6" fontWeight={600} gutterBottom>
-                        Today's Schedule
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            Maintenance Tasks
-                          </Typography>
-                          <Typography variant="h5" fontWeight={700}>
-                            {statsLoading ? '...' : (maintenanceSchedule?.today || 0)}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="body2" color="text.secondary">
-                            This Week
-                          </Typography>
-                          <Typography variant="h5" fontWeight={700}>
-                            {statsLoading ? '...' : (maintenanceSchedule?.thisWeek || 0)}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Fade>
               </Grid>
             </Grid>
           </>

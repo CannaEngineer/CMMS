@@ -362,7 +362,7 @@ export default function Maintenance() {
 
       <Grid container spacing={3}>
         {/* Maintenance Schedule */}
-        <Grid xs={12} md={8}>
+        <Grid xs={12}>
           <Paper sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -634,128 +634,6 @@ export default function Maintenance() {
           </Paper>
         </Grid>
 
-        {/* Maintenance Types & Critical Assets */}
-        <Grid xs={12} md={4}>
-          <Grid container spacing={3}>
-            {/* Maintenance by Type */}
-            <Grid xs={12}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                  Maintenance by Type
-                </Typography>
-                {maintenanceByType.some(item => item.count > 0) ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={maintenanceByType}>
-                    <XAxis dataKey="type" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count">
-                      {maintenanceByType.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                ) : (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No maintenance data available
-                    </Typography>
-                  </Box>
-                )}
-              </Paper>
-            </Grid>
-
-            {/* Critical Assets Alert */}
-            <Grid xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <AlertIcon color="warning" />
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      Critical Assets
-                    </Typography>
-                  </Box>
-                  {criticalAssets.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                      No critical assets found
-                    </Typography>
-                  ) : (
-                    <List dense>
-                    {criticalAssets.map((asset, index) => (
-                      <ListItem key={asset.id || index} disablePadding sx={{ mb: 2 }}>
-                        <ListItemText
-                          primary={asset.name}
-                          secondary={
-                            <Box>
-                              <Typography variant="caption">
-{asset.location && `Location: ${asset.location} • `}Next maintenance: {asset.nextMaintenance}
-                              </Typography>
-                              <LoadingBar
-                                variant="determinate"
-                                progress={asset.health}
-                                color={
-                                  asset.health > 70 ? 'success' :
-                                  asset.health > 50 ? 'warning' :
-                                  'error'
-                                }
-                                sx={{
-                                  mt: 1,
-                                  height: 6,
-                                  borderRadius: 3,
-                                }}
-                              />
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                    </List>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {/* Monthly Trend */}
-        <Grid xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-              Maintenance Completion Trend
-            </Typography>
-            {monthlyTrend.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No trend data available
-                </Typography>
-              </Box>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={monthlyTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="scheduled"
-                  stroke={theme.palette.primary.main}
-                  strokeWidth={2}
-                  name="Scheduled"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="completed"
-                  stroke={theme.palette.success.main}
-                  strokeWidth={2}
-                  name="Completed"
-                />
-              </LineChart>
-              </ResponsiveContainer>
-            )}
-          </Paper>
-        </Grid>
       </Grid>
 
       {/* Context Menu for List Items */}

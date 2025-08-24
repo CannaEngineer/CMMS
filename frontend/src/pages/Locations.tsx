@@ -469,27 +469,6 @@ export default function Locations() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>Top Locations by Assets</Typography>
-              <List dense>
-                {allLocations
-                  .sort((a, b) => b.assetCount - a.assetCount)
-                  .slice(0, 5)
-                  .map((location) => (
-                    <ListItem key={location.id} sx={{ px: 0 }}>
-                      <ListItemIcon>
-                        {getLocationIcon(location.type)}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={location.name}
-                        secondary={`${location.assetCount} assets`}
-                      />
-                    </ListItem>
-                  ))}
-              </List>
-            </CardContent>
-          </Card>
         </Grid>
       </Grid>
 
