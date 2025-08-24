@@ -54,4 +54,11 @@ router.post('/welcome', welcomeEmailValidation, emailController.sendWelcomeEmail
  */
 router.post('/password-reset', passwordResetEmailValidation, emailController.sendPasswordResetEmail.bind(emailController));
 
+/**
+ * @route POST /api/email/test-delivery
+ * @desc Test email delivery with detailed logging
+ * @access Private (Admin only)
+ */
+router.post('/test-delivery', emailController.testEmailDelivery.bind(emailController));
+
 export default router;

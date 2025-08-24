@@ -633,6 +633,13 @@ export class NotificationService {
   }
 
   private async sendWorkOrderEmailNotification(user: any, notification: any): Promise<void> {
+    console.log('🔄 sendWorkOrderEmailNotification called:', {
+      userEmail: user.email,
+      userName: user.name,
+      notificationId: notification.id,
+      workOrderId: notification.relatedEntityId
+    });
+
     try {
       // Get detailed work order information
       const workOrder = await prisma.workOrder.findUnique({

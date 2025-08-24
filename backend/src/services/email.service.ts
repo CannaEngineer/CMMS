@@ -174,9 +174,28 @@ export class EmailService {
   }
 
   public async sendEmail(emailData: EmailData): Promise<boolean> {
+    console.log('🔄 EmailService.sendEmail called with:', {
+      to: emailData.to,
+      subject: emailData.subject,
+      priority: emailData.priority || 'normal'
+    });
+
     await this.ensureInitialized();
+    
+    console.log('🔧 Email service status:', {
+      configured: this.configured,
+      hasTransporter: !!this.transporter,
+      hasConfig: !!this.config,
+      configDetails: this.config ? {
+        host: this.config.host,
+        port: this.config.port,
+        user: this.config.auth.user,
+        from: this.config.from
+      } : null
+    });
+
     if (!this.configured || !this.transporter || !this.config) {
-      console.warn('Email service not configured, skipping email send');
+      console.warn('⚠️ Email service not configured, skipping email send');
       return false;
     }
 
@@ -196,8 +215,25 @@ export class EmailService {
         },
       };
 
+      console.log('📬 Attempting to send email via SMTP:', {
+        from: mailOptions.from,
+        to: mailOptions.to,
+        subject: mailOptions.subject,
+        timestamp: new Date().toISOString()
+      });
+
       const result = await this.transporter.sendMail(mailOptions);
-      console.log('✅ Email sent successfully:', result.messageId);
+      
+      console.log('✅ Email sent successfully:', {
+        messageId: result.messageId,
+        response: result.response,
+        accepted: result.accepted,
+        rejected: result.rejected,
+        to: emailData.to,
+        subject: emailData.subject,
+        timestamp: new Date().toISOString()
+      });
+      
       return true;
     } catch (error) {
       console.error('❌ Failed to send email:', error);

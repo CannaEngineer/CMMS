@@ -286,6 +286,65 @@ elevatedcompliance.tech
       });
     }
   }
+
+  // Debug test endpoint for email delivery
+  async testEmailDelivery(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email address is required' });
+      }
+
+      console.log('🧪 Testing email delivery to:', email);
+
+      const success = await emailService.sendEmail({
+        to: email,
+        subject: '🧪 CMMS Email Delivery Test',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #2196F3;">✅ Email Service Working!</h2>
+            <p>This is a test email from your CMMS application.</p>
+            <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+            <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
+            <p><strong>SMTP Host:</strong> ${process.env.SMTP_HOST || 'Not configured'}</p>
+            <hr>
+            <small style="color: #666;">
+              If you received this email, your email service is configured correctly.
+            </small>
+          </div>
+        `,
+        text: `CMMS Email Service Test
+
+This is a test email from your CMMS application.
+Timestamp: ${new Date().toISOString()}
+Environment: ${process.env.NODE_ENV || 'development'}
+SMTP Host: ${process.env.SMTP_HOST || 'Not configured'}
+
+If you received this email, your email service is configured correctly.`,
+        priority: 'high'
+      });
+
+      if (success) {
+        res.json({ 
+          success: true,
+          message: `Test email sent successfully to ${email}`,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({ 
+          success: false,
+          error: 'Failed to send test email - check server logs for details'
+        });
+      }
+    } catch (error) {
+      console.error('Test email delivery error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error while testing email delivery'
+      });
+    }
+  }
 }
 
 // Validation middleware
