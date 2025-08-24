@@ -1,5 +1,6 @@
 import { PrismaClient, NotificationType, NotificationPriority, NotificationCategory, NotificationChannel, NotificationFrequency } from '@prisma/client';
 import { WebSocketService } from '../../services/websocket.service';
+import { emailService } from '../../services/email.service';
 
 const prisma = new PrismaClient();
 
@@ -91,6 +92,9 @@ export class NotificationService {
 
       // Send real-time notification via WebSocket
       this.webSocketService.sendNotificationToUser(data.userId, notification);
+
+      // Send email notification if enabled for this user and category
+      await this.sendEmailNotificationIfEnabled(data.userId, notification);
 
       return notification;
     } catch (error) {
@@ -536,5 +540,90 @@ export class NotificationService {
     }
 
     return !inQuietHours;
+  }
+
+  private async sendEmailNotificationIfEnabled(userId: number, notification: any): Promise<void> {
+    try {
+      // Check if email service is configured
+      if (!emailService.isConfigured()) {
+        console.log('Email service not configured, skipping email notification');
+        return;
+      }
+
+      // Check if user has email notifications enabled for this category
+      const userPreferences = await this.getUserPreferences(userId);
+      const emailPreference = userPreferences.find((pref: any) => 
+        pref.category === notification.category && 
+        pref.channel === NotificationChannel.EMAIL
+      );
+
+      if (!emailPreference || !emailPreference.enabled) {
+        console.log(`Email notifications disabled for user ${userId}, category ${notification.category}`);
+        return;
+      }
+
+      // Check priority filtering for email
+      if (this.comparePriority(notification.priority, emailPreference.minimumPriority) < 0) {
+        console.log(`Email notification blocked by priority filter: ${notification.priority} < ${emailPreference.minimumPriority}`);
+        return;
+      }
+
+      // Check quiet hours for email
+      if (!this.isWithinActiveHours(emailPreference)) {
+        console.log(`Email notification blocked by quiet hours for user ${userId}`);
+        return;
+      }
+
+      // Get user details
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { 
+          name: true, 
+          email: true,
+          organization: {
+            select: { name: true }
+          }
+        }
+      });
+
+      if (!user || !user.email) {
+        console.log(`No email found for user ${userId}`);
+        return;
+      }
+
+      // Prepare email data
+      const emailData = {
+        user: {
+          name: user.name,
+          email: user.email,
+        },
+        notification: {
+          title: notification.title,
+          message: notification.message,
+          category: notification.category,
+          priority: notification.priority,
+          actionUrl: notification.actionUrl,
+          actionLabel: notification.actionLabel,
+          createdAt: notification.createdAt,
+          relatedEntityType: notification.relatedEntityType,
+          relatedEntityId: notification.relatedEntityId,
+        },
+        organizationName: user.organization?.name || 'CMMS',
+        unsubscribeUrl: `${process.env.FRONTEND_URL}/settings/notifications`,
+      };
+
+      // Handle frequency - for now, send immediately for IMMEDIATE, queue for DIGEST
+      if (emailPreference.frequency === NotificationFrequency.IMMEDIATE) {
+        await emailService.sendNotificationEmail(emailData);
+        console.log(`✅ Email notification sent to ${user.email} for ${notification.category}`);
+      } else {
+        // TODO: Implement digest queuing system
+        console.log(`📧 Email notification queued for digest to ${user.email} for ${notification.category}`);
+      }
+
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+      // Don't throw - email failure shouldn't break notification creation
+    }
   }
 }
