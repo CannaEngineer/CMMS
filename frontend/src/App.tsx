@@ -16,6 +16,7 @@ import TechnicianLayout from './components/Layout/TechnicianLayout';
 // Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import WorkOrders from './pages/WorkOrders';
@@ -98,6 +99,7 @@ function App() {
             {/* Authentication Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/auth/verify-email" element={<VerifyEmail />} />
             
             {/* Technician-only routes with strict access control */}
             <Route path="/tech/*" element={

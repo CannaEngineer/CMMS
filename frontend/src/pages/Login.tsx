@@ -32,6 +32,8 @@ export default function Login() {
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const {
     control,
@@ -49,6 +51,7 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFormData) => {
     setError('');
+    setEmailVerificationRequired(false);
     clearErrors();
 
     try {
@@ -78,7 +81,15 @@ export default function Login() {
         return; // Prevent further execution
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Invalid email or password');
+        
+        // Handle email verification requirement
+        if (errorData.error === 'EMAIL_NOT_VERIFIED' || errorData.requiresEmailVerification) {
+          setEmailVerificationRequired(true);
+          setUserEmail(data.email);
+          setError(''); // Clear the error since we're showing verification UI
+        } else {
+          setError(errorData.error || 'Invalid email or password');
+        }
       }
     } catch (err: any) {
       setError('Network error. Please check your connection and try again.');
@@ -135,6 +146,49 @@ export default function Login() {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
+            </Alert>
+          )}
+
+          {emailVerificationRequired && (
+            <Alert 
+              severity="warning" 
+              sx={{ 
+                mb: 3,
+                '& .MuiAlert-message': { width: '100%' }
+              }}
+            >
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                  📧 Email Verification Required
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Please check your inbox at <strong>{userEmail}</strong> and click the verification link to activate your account.
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                  We've sent a new verification email to your inbox. The link will expire in 24 hours.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button 
+                    size="small" 
+                    variant="outlined"
+                    onClick={() => {
+                      setEmailVerificationRequired(false);
+                      setError('');
+                    }}
+                    sx={{ minWidth: 'auto' }}
+                  >
+                    Try Login Again
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant="text"
+                    onClick={() => window.open('https://gmail.com', '_blank')}
+                    sx={{ minWidth: 'auto' }}
+                  >
+                    Open Gmail
+                  </Button>
+                </Box>
+              </Box>
             </Alert>
           )}
           
