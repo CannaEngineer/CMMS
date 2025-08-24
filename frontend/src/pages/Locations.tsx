@@ -411,39 +411,8 @@ export default function Locations() {
           </Paper>
         </Grid>
 
-        {/* Location Stats and Quick Actions */}
+        {/* Location Stats */}
         <Grid xs={12} md={4}>
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Typography variant="h6" sx={{ mb: 2 }}>Quick Actions</Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  fullWidth
-                  onClick={handleCreateLocation}
-                >
-                  Add Location
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<MapIcon />}
-                  fullWidth
-                  onClick={() => setSiteMapOpen(true)}
-                >
-                  View Site Map
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<AssessmentIcon />}
-                  fullWidth
-                  onClick={() => setAssetDistributionOpen(true)}
-                >
-                  Asset Distribution
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
 
           <Card sx={{ mb: 2 }}>
             <CardContent>

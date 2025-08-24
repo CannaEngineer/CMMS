@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -15,7 +15,6 @@ import {
   Tooltip,
   Switch,
   FormControlLabel,
-  Slider,
   Select,
   MenuItem,
   FormControl,
@@ -30,8 +29,6 @@ import {
 } from '@mui/material';
 import {
   Map as MapIcon,
-  ZoomIn as ZoomInIcon,
-  ZoomOut as ZoomOutIcon,
   CenterFocusStrong as CenterIcon,
   Layers as LayersIcon,
   LocationOn as LocationIcon,
@@ -41,7 +38,12 @@ import {
   Factory as FactoryIcon,
   Fullscreen as FullscreenIcon,
   Download as DownloadIcon,
+  Satellite as SatelliteIcon,
+  Terrain as TerrainIcon,
 } from '@mui/icons-material';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface Location {
   id: number;
@@ -68,6 +70,44 @@ const LOCATION_COLORS = {
   ROOM: '#4caf50',
 };
 
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Create custom icons for different location types
+const createLocationIcon = (type: string, assetCount?: number) => {
+  const color = LOCATION_COLORS[type as keyof typeof LOCATION_COLORS] || '#666';
+  const size = Math.max(25, Math.min(40, (assetCount || 0) / 5 + 25));
+  
+  return new L.DivIcon({
+    html: `
+      <div style="
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        width: ${size}px;
+        height: ${size}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      ">
+        ${assetCount || 0}
+      </div>
+    `,
+    className: 'custom-location-marker',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+};
+
 const getLocationIcon = (type: string) => {
   switch (type) {
     case 'BUILDING':
@@ -90,34 +130,26 @@ export default function SiteMapDialog({
   onClose,
   locations,
 }: SiteMapDialogProps) {
-  const [zoom, setZoom] = useState(50);
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [showAssetCount, setShowAssetCount] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
-  // Filter locations with coordinates (top-level locations)
+  // Filter locations with coordinates (mappable locations)
   const mappableLocations = useMemo(() => {
     return locations.filter(loc => loc.coordinates);
   }, [locations]);
 
-  // Calculate map bounds
-  const mapBounds = useMemo(() => {
-    if (mappableLocations.length === 0) return null;
+  // Calculate map center and zoom
+  const mapCenter = useMemo((): [number, number] => {
+    if (mappableLocations.length === 0) return [40.7128, -74.0060]; // Default to New York
     
     const lats = mappableLocations.map(loc => loc.coordinates!.lat);
     const lngs = mappableLocations.map(loc => loc.coordinates!.lng);
     
-    return {
-      north: Math.max(...lats),
-      south: Math.min(...lats),
-      east: Math.max(...lngs),
-      west: Math.min(...lngs),
-      center: {
-        lat: (Math.max(...lats) + Math.min(...lats)) / 2,
-        lng: (Math.max(...lngs) + Math.min(...lngs)) / 2,
-      }
-    };
+    const centerLat = lats.reduce((sum, lat) => sum + lat, 0) / lats.length;
+    const centerLng = lngs.reduce((sum, lng) => sum + lng, 0) / lngs.length;
+    
+    return [centerLat, centerLng];
   }, [mappableLocations]);
 
   // Filter locations by layer
@@ -126,127 +158,91 @@ export default function SiteMapDialog({
     return mappableLocations.filter(loc => loc.type === selectedLayer);
   }, [mappableLocations, selectedLayer]);
 
-  // SVG Map Component
-  const SiteMapSVG = () => {
-    if (!mapBounds) return null;
-
-    const width = 800;
-    const height = 600;
-    const padding = 50;
-
-    // Convert coordinates to SVG coordinates
-    const coordToSVG = (lat: number, lng: number) => {
-      const x = ((lng - mapBounds.west) / (mapBounds.east - mapBounds.west)) * (width - 2 * padding) + padding;
-      const y = height - (((lat - mapBounds.south) / (mapBounds.north - mapBounds.south)) * (height - 2 * padding) + padding);
-      return { x, y };
-    };
+  // Real Map Component using Leaflet
+  const RealSiteMap = () => {
+    if (mappableLocations.length === 0) return null;
 
     return (
-      <svg 
-        width="100%" 
-        height="100%" 
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ border: '1px solid #ddd', borderRadius: 8, background: '#f5f5f5' }}
+      <MapContainer
+        center={mapCenter}
+        zoom={13}
+        style={{ height: '500px', width: '100%', borderRadius: '8px' }}
+        whenReady={() => {
+          // Map is ready
+        }}
       >
-        {/* Grid lines */}
-        <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e0e0e0" strokeWidth="1"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-        
-        {/* Location markers */}
-        {filteredLocations.map((location) => {
-          const { x, y } = coordToSVG(location.coordinates!.lat, location.coordinates!.lng);
-          const color = LOCATION_COLORS[location.type] || '#666';
-          const size = Math.max(8, Math.min(30, (location.assetCount / 10) + 10));
-          
-          return (
-            <g key={location.id}>
-              {/* Location marker */}
-              <circle
-                cx={x}
-                cy={y}
-                r={size}
-                fill={color}
-                fillOpacity={0.7}
-                stroke="#fff"
-                strokeWidth={2}
-                style={{ 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-                onClick={() => setSelectedLocation(location)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.setAttribute('fill-opacity', '1');
-                  e.currentTarget.setAttribute('r', (size + 3).toString());
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.setAttribute('fill-opacity', '0.7');
-                  e.currentTarget.setAttribute('r', size.toString());
-                }}
-              />
-              
-              {/* Asset count bubble */}
-              {showAssetCount && (
-                <g>
-                  <circle
-                    cx={x + size - 5}
-                    cy={y - size + 5}
-                    r="12"
-                    fill="#fff"
-                    stroke={color}
-                    strokeWidth={2}
-                    style={{ pointerEvents: 'none' }}
-                  />
-                  <text
-                    x={x + size - 5}
-                    y={y - size + 9}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight="bold"
-                    fill={color}
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {location.assetCount}
-                  </text>
-                </g>
-              )}
-              
-              {/* Location label */}
-              {showLabels && (
-                <text
-                  x={x}
-                  y={y + size + 15}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fontWeight="500"
-                  fill="#333"
-                  style={{ pointerEvents: 'none' }}
-                >
+        <LayersControl position="topright">
+          {/* Base Layers */}
+          <LayersControl.BaseLayer checked name="Streets">
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name="Satellite">
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution='&copy; <a href="https://www.esri.com/">Esri</a>, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community'
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name="Terrain">
+            <TileLayer
+              url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://opentopomap.org/">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+            />
+          </LayersControl.BaseLayer>
+
+          <LayersControl.BaseLayer name="Dark">
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
+
+        {/* Location Markers */}
+        {filteredLocations.map((location) => (
+          <Marker
+            key={location.id}
+            position={[location.coordinates!.lat, location.coordinates!.lng]}
+            icon={createLocationIcon(location.type, location.assetCount)}
+            eventHandlers={{
+              click: () => setSelectedLocation(location),
+            }}
+          >
+            <Popup>
+              <Box sx={{ minWidth: 200 }}>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                   {location.name}
-                </text>
-              )}
-            </g>
-          );
-        })}
-        
-        {/* Compass */}
-        <g transform="translate(50, 50)">
-          <circle cx="0" cy="0" r="25" fill="#fff" fillOpacity="0.9" stroke="#333" strokeWidth="2"/>
-          <path d="M 0,-20 L 5,0 L 0,20 L -5,0 Z" fill="#e53e3e"/>
-          <text x="0" y="-30" textAnchor="middle" fontSize="12" fontWeight="bold">N</text>
-        </g>
-        
-        {/* Scale */}
-        <g transform="translate(50, 550)">
-          <line x1="0" y1="0" x2="100" y2="0" stroke="#333" strokeWidth="2"/>
-          <line x1="0" y1="-5" x2="0" y2="5" stroke="#333" strokeWidth="2"/>
-          <line x1="100" y1="-5" x2="100" y2="5" stroke="#333" strokeWidth="2"/>
-          <text x="50" y="20" textAnchor="middle" fontSize="10">Approximate Scale</text>
-        </g>
-      </svg>
+                </Typography>
+                <Stack spacing={1}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {getLocationIcon(location.type)}
+                    <Chip 
+                      label={location.type} 
+                      size="small" 
+                      color="primary" 
+                    />
+                  </Box>
+                  {location.description && (
+                    <Typography variant="body2" color="text.secondary">
+                      {location.description}
+                    </Typography>
+                  )}
+                  <Typography variant="body2">
+                    <strong>Assets:</strong> {location.assetCount}
+                  </Typography>
+                  <Typography variant="body2">
+                    <strong>Coordinates:</strong> {location.coordinates!.lat.toFixed(4)}, {location.coordinates!.lng.toFixed(4)}
+                  </Typography>
+                </Stack>
+              </Box>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     );
   };
 
@@ -288,11 +284,11 @@ export default function SiteMapDialog({
                 <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
                   {/* Layer Selection */}
                   <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Layer</InputLabel>
+                    <InputLabel>Filter</InputLabel>
                     <Select
                       value={selectedLayer}
                       onChange={(e) => setSelectedLayer(e.target.value)}
-                      label="Layer"
+                      label="Filter"
                     >
                       {layerOptions.map(option => (
                         <MenuItem key={option.value} value={option.value}>
@@ -302,57 +298,10 @@ export default function SiteMapDialog({
                     </Select>
                   </FormControl>
 
-                  {/* Zoom Control */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 200 }}>
-                    <ZoomOutIcon />
-                    <Slider
-                      value={zoom}
-                      onChange={(_, value) => setZoom(value as number)}
-                      min={10}
-                      max={200}
-                      size="small"
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(value) => `${value}%`}
-                    />
-                    <ZoomInIcon />
-                  </Box>
-
-                  {/* Toggle Controls */}
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={showAssetCount}
-                        onChange={(e) => setShowAssetCount(e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label="Asset counts"
-                  />
-                  
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={showLabels}
-                        onChange={(e) => setShowLabels(e.target.checked)}
-                        size="small"
-                      />
-                    }
-                    label="Labels"
-                  />
-
-                  {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
-                    <Tooltip title="Center view">
-                      <IconButton size="small">
-                        <CenterIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Fullscreen">
-                      <IconButton size="small">
-                        <FullscreenIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                  {/* Info */}
+                  <Typography variant="body2" color="text.secondary">
+                    📍 {filteredLocations.length} locations • 🗺️ Use layer control on map for different views
+                  </Typography>
                 </Stack>
               </CardContent>
             </Card>
@@ -369,19 +318,7 @@ export default function SiteMapDialog({
             ) : (
               <Card>
                 <CardContent sx={{ p: 1 }}>
-                  <Box 
-                    sx={{ 
-                      height: 500, 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      transform: `scale(${zoom / 100})`,
-                      transformOrigin: 'center center',
-                      transition: 'transform 0.2s ease',
-                    }}
-                  >
-                    <SiteMapSVG />
-                  </Box>
+                  <RealSiteMap />
                 </CardContent>
               </Card>
             )}
