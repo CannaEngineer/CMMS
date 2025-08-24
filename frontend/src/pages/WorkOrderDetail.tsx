@@ -100,6 +100,7 @@ import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import { FileUploadManager, FileAttachment } from '../components/Common';
 import { useComments, useCreateComment, useCommentCount } from '../hooks/useComments';
+import { useToast } from '../components/Toast/ToastProvider';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -121,6 +122,7 @@ export default function WorkOrderDetail() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const queryClient = useQueryClient();
+  const { showSuccess, showError, showWarning } = useToast();
   
   const [tabValue, setTabValue] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -409,7 +411,7 @@ export default function WorkOrderDetail() {
         assignWorkOrderMutation.mutate({ assignedToId: parseInt(userByEmail.id) });
       } else {
         // User not found in list, show error
-        alert('User not found. Please select a user from the dropdown list.');
+        showWarning('User not found. Please select a user from the dropdown list.');
       }
     }
   };
@@ -558,16 +560,20 @@ export default function WorkOrderDetail() {
             button.innerHTML = originalText;
           }, 3000);
         } else {
-          alert(`Public share link copied to clipboard!\n\n${publicShareUrl}`);
+          showSuccess('Public share link copied to clipboard!', {
+            details: publicShareUrl
+          });
         }
       } catch (clipboardError) {
-        // Fallback: show the URL in an alert
-        alert(`Public share link created:\n\n${publicShareUrl}\n\nCopy this link to share with others.`);
+        // Fallback: show the URL
+        showSuccess('Public share link created! URL copied to clipboard.', {
+          details: 'Copy this link to share with others: ' + publicShareUrl
+        });
       }
     },
     onError: (error) => {
       console.error('Error creating share:', error);
-      alert('Failed to create public share link. Please try again.');
+      showError('Failed to create public share link. Please try again.');
     }
   });
 
@@ -593,17 +599,17 @@ export default function WorkOrderDetail() {
       return response.json();
     },
     onSuccess: (data) => {
-      alert(`✅ Notification sent successfully to ${data.recipient}!`);
+      showSuccess(`Notification sent successfully to ${data.recipient}!`);
     },
     onError: (error: Error) => {
       console.error('Error sending notification:', error);
-      alert(`❌ Failed to send notification: ${error.message}`);
+      showError(`Failed to send notification: ${error.message}`);
     },
   });
 
   const handleSendNotification = () => {
     if (!workOrder?.assignedTo) {
-      alert('Work order must have an assignee to send notification');
+      showWarning('Work order must have an assignee to send notification');
       return;
     }
     
