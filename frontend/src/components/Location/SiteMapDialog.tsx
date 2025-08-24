@@ -45,6 +45,22 @@ import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// Ensure leaflet tiles are visible
+const leafletOverrides = `
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    z-index: 0;
+  }
+  .leaflet-tile-pane {
+    opacity: 1 !important;
+  }
+  .leaflet-tile {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+`;
+
 interface Location {
   id: number;
   name: string;
@@ -134,6 +150,19 @@ export default function SiteMapDialog({
   const [showAssetCount, setShowAssetCount] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
+  // Inject leaflet override styles
+  useEffect(() => {
+    if (open) {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = leafletOverrides;
+      document.head.appendChild(styleElement);
+      
+      return () => {
+        document.head.removeChild(styleElement);
+      };
+    }
+  }, [open]);
+
   console.log('🗺️ SiteMapDialog render:', { open, locationsCount: locations.length, locations });
 
   // Filter locations with coordinates (mappable locations)
@@ -187,15 +216,36 @@ export default function SiteMapDialog({
       <MapContainer
         center={mapCenter}
         zoom={13}
-        style={{ height: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
+        style={{ height: '100%', minHeight: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
         whenReady={(event) => {
           const map = event.target;
           console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
+          
+          // Debug container size
+          const container = map.getContainer();
+          console.log('🗺️ Map container:', {
+            element: container,
+            offsetWidth: container.offsetWidth,
+            offsetHeight: container.offsetHeight,
+            clientWidth: container.clientWidth,
+            clientHeight: container.clientHeight,
+            display: window.getComputedStyle(container).display,
+            visibility: window.getComputedStyle(container).visibility,
+            position: window.getComputedStyle(container).position
+          });
+          
           // Force a resize event to ensure proper rendering
           setTimeout(() => {
             map.invalidateSize();
             console.log('🗺️ Map size invalidated for proper rendering');
-          }, 100);
+            
+            // Check size after invalidation
+            const afterContainer = map.getContainer();
+            console.log('🗺️ After invalidateSize:', {
+              offsetWidth: afterContainer.offsetWidth,
+              offsetHeight: afterContainer.offsetHeight
+            });
+          }, 250);
         }}
       >
         <LayersControl position="topright">
@@ -305,7 +355,7 @@ export default function SiteMapDialog({
       <DialogContent>
         <Grid container spacing={3}>
           {/* Map Controls */}
-          <Grid xs={12}>
+          <Grid item xs={12}>
             <Card variant="outlined" sx={{ mb: 2 }}>
               <CardContent sx={{ py: 2 }}>
                 <Stack direction="row" spacing={3} alignItems="center" flexWrap="wrap">
@@ -335,7 +385,7 @@ export default function SiteMapDialog({
           </Grid>
 
           {/* Map View */}
-          <Grid xs={12} md={8}>
+          <Grid item xs={12} md={8}>
             {mappableLocations.length === 0 ? (
               <Alert severity="info" sx={{ height: 400, display: 'flex', alignItems: 'center' }}>
                 <Typography>
@@ -343,16 +393,18 @@ export default function SiteMapDialog({
                 </Typography>
               </Alert>
             ) : (
-              <Card>
-                <CardContent sx={{ p: 1 }}>
-                  <RealSiteMap />
+              <Card sx={{ height: '540px' }}>
+                <CardContent sx={{ p: 1, height: '100%' }}>
+                  <Box sx={{ height: '100%', width: '100%' }}>
+                    <RealSiteMap />
+                  </Box>
                 </CardContent>
               </Card>
             )}
           </Grid>
 
           {/* Location Details & Legend */}
-          <Grid xs={12} md={4}>
+          <Grid item xs={12} md={4}>
             {/* Selected Location Details */}
             {selectedLocation && (
               <Card sx={{ mb: 2 }}>
@@ -473,8 +525,8 @@ export default function SiteMapDialog({
             // Export map data
             const mapData = {
               locations: filteredLocations,
-              bounds: mapBounds,
-              settings: { zoom, selectedLayer, showAssetCount, showLabels },
+              center: mapCenter,
+              settings: { selectedLayer, showAssetCount },
               exportedAt: new Date().toISOString(),
             };
             const blob = new Blob([JSON.stringify(mapData, null, 2)], { type: 'application/json' });
