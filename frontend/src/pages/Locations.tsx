@@ -137,6 +137,14 @@ export default function Locations() {
     },
     onError: (error: any) => {
       console.error('❌ Failed to create location:', error);
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Failed to create location';
+      console.error('❌ Location creation error details:', {
+        status: error?.response?.status,
+        message: errorMessage,
+        data: error?.response?.data,
+        fullError: error
+      });
+      alert(`Failed to create location: ${errorMessage}`);
     },
   });
 
@@ -193,9 +201,12 @@ export default function Locations() {
   };
 
   const handleSubmitLocation = (data: any) => {
+    console.log('📍 Location form submitted:', data);
     if (selectedLocation) {
+      console.log('📍 Updating location:', selectedLocation.id, data);
       updateLocationMutation.mutate({ id: selectedLocation.id.toString(), data });
     } else {
+      console.log('📍 Creating new location:', data);
       createLocationMutation.mutate(data);
     }
   };
