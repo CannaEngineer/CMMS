@@ -143,10 +143,21 @@ export class PartService {
       throw new Error('Part not found or access denied');
     }
     
+    // Filter out non-updatable fields to prevent Prisma validation errors
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      organizationId: _organizationId,
+      supplier: _supplier,
+      qrCode: _qrCode,
+      ...updateData
+    } = data as any;
+    
     return prisma.part.update({
       where: { id },
       data: {
-        ...data,
+        ...updateData,
         updatedAt: new Date(),
       },
       include: {
