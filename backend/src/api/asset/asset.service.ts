@@ -89,25 +89,48 @@ export const createAsset = async (data: any, organizationId: number) => {
 };
 
 export const updateAsset = async (id: number, data: any, organizationId: number, updatedById?: number) => {
-  // Get current asset to check for status changes
-  const currentAsset = await prisma.asset.findUnique({
-    where: { id },
-    select: { status: true }
+  // First verify the asset belongs to the organization for security
+  const existingAsset = await prisma.asset.findFirst({
+    where: { id, organizationId }
   });
+  
+  if (!existingAsset) {
+    throw new Error('Asset not found or access denied');
+  }
 
-  const result = await prisma.asset.updateMany({
-    where: { 
-      id,
-      organizationId,
+  // Filter out non-updatable fields to prevent Prisma validation errors
+  const {
+    id: _id,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    organizationId: _organizationId,
+    location: _location,
+    workOrders: _workOrders,
+    pmSchedules: _pmSchedules,
+    ...updateData
+  } = data as any;
+
+  const result = await prisma.asset.update({
+    where: { id },
+    data: {
+      ...updateData,
+      updatedAt: new Date(),
     },
-    data,
+    include: {
+      location: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
   });
 
   // Trigger notifications for status changes
-  if (currentAsset && data.status && currentAsset.status !== data.status) {
+  if (data.status && existingAsset.status !== data.status) {
     await notificationTriggersService.onAssetStatusChanged(
       id,
-      currentAsset.status as AssetStatus,
+      existingAsset.status as AssetStatus,
       data.status as AssetStatus,
       updatedById
     );

@@ -34,6 +34,19 @@ const AssetForm = ({ asset, onClose, onSubmit, locations }: AssetFormProps) => {
       setBarcode(asset.barcode || '');
       setImageUrl(asset.imageUrl || '');
       setLocationId(asset.locationId || '');
+    } else {
+      // Reset form when switching to create mode
+      setName('');
+      setDescription('');
+      setSerialNumber('');
+      setModelNumber('');
+      setManufacturer('');
+      setYear('');
+      setStatus('ONLINE');
+      setCriticality('MEDIUM');
+      setBarcode('');
+      setImageUrl('');
+      setLocationId('');
     }
   }, [asset]);
 

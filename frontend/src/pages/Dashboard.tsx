@@ -929,7 +929,7 @@ export default function Dashboard() {
               <LineChart data={workOrderTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="period" 
                   tick={{ fontSize: 12 }}
                   stroke={theme.palette.text.secondary}
                 />

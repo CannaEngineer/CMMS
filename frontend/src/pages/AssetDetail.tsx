@@ -42,7 +42,7 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { assetsService, workOrdersService } from '../services/api';
+import { assetsService, workOrdersService, pmService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 import AssetForm from '../components/Forms/AssetForm';
@@ -92,6 +92,40 @@ export default function AssetDetail() {
       return workOrdersService.getByAssetId(id);
     },
     enabled: !!id,
+  });
+
+  // Fetch PM schedules for this asset
+  const { data: pmSchedules = [] } = useQuery({
+    queryKey: ['asset-pm-schedules', id],
+    queryFn: async () => {
+      if (!id) return [];
+      const allSchedules = await pmService.getSchedules();
+      return allSchedules.filter((schedule: any) => schedule.assetId === parseInt(id));
+    },
+    enabled: !!id,
+  });
+
+  // Fetch maintenance history for this asset
+  const { data: maintenanceHistory = [] } = useQuery({
+    queryKey: ['asset-maintenance-history', id],
+    queryFn: async () => {
+      if (!id) return [];
+      // For now, use work orders as maintenance history
+      // TODO: Replace with actual maintenance history service when available
+      return workOrders.map((wo: any) => ({
+        id: wo.id,
+        type: 'Work Order',
+        title: wo.title,
+        description: wo.description,
+        date: wo.createdAt,
+        completedDate: wo.completedAt,
+        status: wo.status,
+        technician: wo.assignedTo?.name || 'Unassigned',
+        duration: wo.actualHours || wo.estimatedHours,
+        cost: wo.totalCost || 0
+      }));
+    },
+    enabled: !!id && workOrders.length > 0,
   });
 
   // Delete mutation
@@ -459,22 +493,404 @@ export default function AssetDetail() {
 
             <TabPanel value={tabValue} index={2}>
               {/* Maintenance Schedules */}
-              <Typography variant="h6" gutterBottom>
-                Maintenance Schedules
-              </Typography>
-              <Alert severity="info">
-                Maintenance scheduling coming soon.
-              </Alert>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Preventive Maintenance Schedules</Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    // TODO: Implement PM schedule creation
+                    console.log('Create PM schedule for asset', id);
+                  }}
+                >
+                  Create PM Schedule
+                </Button>
+              </Box>
+
+              {pmSchedules.length === 0 ? (
+                <Alert severity="info">
+                  No preventive maintenance schedules found for this asset.
+                  <br />
+                  <Button 
+                    color="primary" 
+                    onClick={() => console.log('Create first PM schedule')}
+                    sx={{ mt: 1 }}
+                  >
+                    Create your first PM schedule
+                  </Button>
+                </Alert>
+              ) : (
+                <Grid container spacing={2}>
+                  {pmSchedules.map((schedule: any) => (
+                    <Grid item xs={12} md={6} key={schedule.id}>
+                      <Card sx={{ mb: 2 }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Typography variant="h6" component="div">
+                              {schedule.title || 'Maintenance Schedule'}
+                            </Typography>
+                            <Chip 
+                              label={schedule.status || 'Active'} 
+                              size="small"
+                              color={schedule.status === 'ACTIVE' ? 'success' : 'default'}
+                            />
+                          </Box>
+                          
+                          {schedule.description && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {schedule.description}
+                            </Typography>
+                          )}
+
+                          <List dense>
+                            <ListItem>
+                              <ListItemIcon>
+                                <ScheduleIcon />
+                              </ListItemIcon>
+                              <ListItemText
+                                primary="Frequency"
+                                secondary={schedule.frequency || 'Not specified'}
+                              />
+                            </ListItem>
+                            
+                            {schedule.nextDue && (
+                              <ListItem>
+                                <ListItemIcon>
+                                  <DateIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary="Next Due"
+                                  secondary={new Date(schedule.nextDue).toLocaleDateString()}
+                                />
+                              </ListItem>
+                            )}
+
+                            {schedule.lastPerformed && (
+                              <ListItem>
+                                <ListItemIcon>
+                                  <HistoryIcon />
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary="Last Performed"
+                                  secondary={new Date(schedule.lastPerformed).toLocaleDateString()}
+                                />
+                              </ListItem>
+                            )}
+                          </List>
+
+                          <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                            <Button 
+                              size="small" 
+                              onClick={() => console.log('Edit schedule', schedule.id)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              size="small" 
+                              variant="outlined"
+                              onClick={() => {
+                                // Create work order from PM schedule
+                                const workOrderData = {
+                                  title: `PM: ${schedule.title || 'Scheduled Maintenance'}`,
+                                  description: `Preventive maintenance based on schedule: ${schedule.description || ''}`,
+                                  assetId: asset?.id,
+                                  priority: 'MEDIUM',
+                                  status: 'OPEN',
+                                  type: 'PREVENTIVE'
+                                };
+                                createWorkOrderMutation.mutate(workOrderData);
+                              }}
+                            >
+                              Create Work Order
+                            </Button>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+
+              {/* Quick Stats */}
+              {pmSchedules.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Maintenance Summary
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={4}>
+                      <Paper sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="h4" color="primary">
+                          {pmSchedules.length}
+                        </Typography>
+                        <Typography variant="body2">
+                          Total Schedules
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Paper sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="h4" color="success.main">
+                          {pmSchedules.filter((s: any) => s.status === 'ACTIVE').length}
+                        </Typography>
+                        <Typography variant="body2">
+                          Active Schedules
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Paper sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography variant="h4" color="warning.main">
+                          {pmSchedules.filter((s: any) => {
+                            if (!s.nextDue) return false;
+                            const nextDue = new Date(s.nextDue);
+                            const now = new Date();
+                            const daysDiff = (nextDue.getTime() - now.getTime()) / (1000 * 3600 * 24);
+                            return daysDiff <= 7;
+                          }).length}
+                        </Typography>
+                        <Typography variant="body2">
+                          Due Soon
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
             </TabPanel>
 
             <TabPanel value={tabValue} index={3}>
               {/* History */}
-              <Typography variant="h6" gutterBottom>
-                Asset History
-              </Typography>
-              <Alert severity="info">
-                Asset history tracking coming soon.
-              </Alert>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6">Asset Maintenance History</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      // TODO: Implement export functionality
+                      console.log('Export history for asset', id);
+                    }}
+                  >
+                    Export History
+                  </Button>
+                </Box>
+              </Box>
+
+              {maintenanceHistory.length === 0 ? (
+                <Alert severity="info">
+                  No maintenance history available for this asset.
+                  <br />
+                  History will be populated as work orders are completed.
+                </Alert>
+              ) : (
+                <Box>
+                  {/* History Timeline */}
+                  <List>
+                    {maintenanceHistory
+                      .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .map((historyItem: any, index: number) => (
+                        <React.Fragment key={historyItem.id}>
+                          <ListItem
+                            alignItems="flex-start"
+                            sx={{
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              mb: 2,
+                              bgcolor: 'background.paper',
+                            }}
+                          >
+                            <ListItemIcon sx={{ mt: 1 }}>
+                              {historyItem.type === 'Work Order' ? (
+                                <WorkOrderIcon 
+                                  color={
+                                    historyItem.status === 'COMPLETED' ? 'success' : 
+                                    historyItem.status === 'IN_PROGRESS' ? 'primary' : 
+                                    'action'
+                                  }
+                                />
+                              ) : (
+                                <HistoryIcon color="action" />
+                              )}
+                            </ListItemIcon>
+                            
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                  <Typography variant="subtitle1" fontWeight="medium">
+                                    {historyItem.title}
+                                  </Typography>
+                                  <Chip
+                                    label={historyItem.status}
+                                    size="small"
+                                    color={
+                                      historyItem.status === 'COMPLETED' ? 'success' :
+                                      historyItem.status === 'IN_PROGRESS' ? 'primary' :
+                                      historyItem.status === 'ON_HOLD' ? 'warning' : 
+                                      'default'
+                                    }
+                                  />
+                                </Box>
+                              }
+                              secondary={
+                                <Box>
+                                  {historyItem.description && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                      {historyItem.description}
+                                    </Typography>
+                                  )}
+                                  
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+                                    <Typography variant="caption" color="text.secondary">
+                                      <strong>Created:</strong> {new Date(historyItem.date).toLocaleDateString()}
+                                    </Typography>
+                                    
+                                    {historyItem.completedDate && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        <strong>Completed:</strong> {new Date(historyItem.completedDate).toLocaleDateString()}
+                                      </Typography>
+                                    )}
+                                    
+                                    <Typography variant="caption" color="text.secondary">
+                                      <strong>Technician:</strong> {historyItem.technician}
+                                    </Typography>
+                                    
+                                    {historyItem.duration && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        <strong>Duration:</strong> {historyItem.duration}h
+                                      </Typography>
+                                    )}
+                                    
+                                    {historyItem.cost > 0 && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        <strong>Cost:</strong> ${historyItem.cost.toFixed(2)}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Box>
+                              }
+                            />
+                            
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, ml: 2 }}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => navigate(`/work-orders/${historyItem.id}`)}
+                              >
+                                View Details
+                              </Button>
+                            </Box>
+                          </ListItem>
+                        </React.Fragment>
+                      ))}
+                  </List>
+
+                  {/* History Statistics */}
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Maintenance Statistics
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={3}>
+                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="h4" color="primary">
+                            {maintenanceHistory.length}
+                          </Typography>
+                          <Typography variant="body2">
+                            Total Activities
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={3}>
+                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="h4" color="success.main">
+                            {maintenanceHistory.filter((h: any) => h.status === 'COMPLETED').length}
+                          </Typography>
+                          <Typography variant="body2">
+                            Completed
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={3}>
+                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="h4" color="info.main">
+                            {maintenanceHistory.reduce((total: number, h: any) => total + (h.duration || 0), 0).toFixed(1)}h
+                          </Typography>
+                          <Typography variant="body2">
+                            Total Hours
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={3}>
+                        <Paper sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="h4" color="warning.main">
+                            ${maintenanceHistory.reduce((total: number, h: any) => total + (h.cost || 0), 0).toFixed(2)}
+                          </Typography>
+                          <Typography variant="body2">
+                            Total Cost
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  </Box>
+
+                  {/* Recent Trend Analysis */}
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Recent Trends
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={{ p: 2 }}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Maintenance Frequency
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {(() => {
+                              const now = new Date();
+                              const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                              const recentWork = maintenanceHistory.filter((h: any) => 
+                                new Date(h.date) >= thirtyDaysAgo
+                              );
+                              return recentWork.length > 0 
+                                ? `${recentWork.length} maintenance activities in the last 30 days`
+                                : 'No maintenance activities in the last 30 days';
+                            })()}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <Paper sx={{ p: 2 }}>
+                          <Typography variant="subtitle1" gutterBottom>
+                            Average Resolution Time
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {(() => {
+                              const completedWork = maintenanceHistory.filter((h: any) => 
+                                h.status === 'COMPLETED' && h.completedDate
+                              );
+                              if (completedWork.length === 0) return 'No completed work orders yet';
+                              
+                              const avgDuration = completedWork.reduce((sum: number, h: any) => {
+                                const created = new Date(h.date).getTime();
+                                const completed = new Date(h.completedDate).getTime();
+                                return sum + (completed - created) / (1000 * 60 * 60 * 24);
+                              }, 0) / completedWork.length;
+                              
+                              return `${avgDuration.toFixed(1)} days average`;
+                            })()}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Box>
+              )}
             </TabPanel>
           </Paper>
         </Grid>
