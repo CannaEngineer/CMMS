@@ -107,4 +107,34 @@ export class DashboardController {
       res.status(500).json({ error: 'Failed to fetch maintenance schedule' });
     }
   }
+
+  async getKPIMetrics(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization ID required' });
+      }
+
+      const kpis = await dashboardService.getKPIMetrics(organizationId);
+      res.json(kpis);
+    } catch (error) {
+      console.error('Error fetching KPI metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch KPI metrics' });
+    }
+  }
+
+  async getInventoryMetrics(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: 'Organization ID required' });
+      }
+
+      const inventory = await dashboardService.getInventoryMetrics(organizationId);
+      res.json(inventory);
+    } catch (error) {
+      console.error('Error fetching inventory metrics:', error);
+      res.status(500).json({ error: 'Failed to fetch inventory metrics' });
+    }
+  }
 }

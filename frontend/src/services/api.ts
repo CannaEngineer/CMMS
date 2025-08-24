@@ -354,14 +354,45 @@ export const dashboardService = {
     }
   },
 
-  async getAssetHealth(): Promise<any[]> {
+  async getAssetHealth(): Promise<any> {
     try {
-      const result = await apiClient.get<any[]>('/api/dashboard/asset-health');
-      return result || [];
+      const result = await apiClient.get<any>('/api/dashboard/asset-health');
+      return result || { byCriticality: [], recentMaintenance: 0, total: 0, healthScore: 0 };
     } catch (error) {
       // Return empty asset health when API is unavailable
       console.warn('Asset health API not available');
-      return [];
+      return { byCriticality: [], recentMaintenance: 0, total: 0, healthScore: 0 };
+    }
+  },
+
+  async getKPIMetrics(): Promise<any> {
+    try {
+      return await apiClient.get<any>('/api/dashboard/kpi-metrics');
+    } catch (error) {
+      console.warn('KPI metrics API not available');
+      return {
+        mttr: 0,
+        plannedWorkRatio: 0,
+        technicianUtilization: 0,
+        assetUptime: 0,
+        totalWorkOrders: 0,
+        completedWorkOrders: 0,
+      };
+    }
+  },
+
+  async getInventoryMetrics(): Promise<any> {
+    try {
+      return await apiClient.get<any>('/api/dashboard/inventory-metrics');
+    } catch (error) {
+      console.warn('Inventory metrics API not available');
+      return {
+        lowStockCount: 0,
+        outOfStockCount: 0,
+        totalInventoryValue: 0,
+        criticalParts: [],
+        lowStockParts: [],
+      };
     }
   },
 

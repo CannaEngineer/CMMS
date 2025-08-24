@@ -290,11 +290,147 @@ export class DashboardService {
       byCriticality: assetsByCriticality.map(item => ({
         name: item.criticality,
         value: item._count.criticality,
+        color: this.getCriticalityColor(item.criticality),
       })),
       recentMaintenance: assetsWithRecentWorkOrders,
       total: totalAssets,
       healthScore: Math.round(((totalAssets - assetsWithRecentWorkOrders) / totalAssets) * 100),
     };
+  }
+
+  async getKPIMetrics(organizationId: number) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // Calculate MTTR (Mean Time to Repair) in hours
+    const completedWorkOrders = await prisma.workOrder.findMany({
+      where: {
+        organizationId,
+        status: 'COMPLETED',
+        updatedAt: { gte: thirtyDaysAgo },
+      },
+      select: {
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const mttrHours = completedWorkOrders.length > 0 
+      ? completedWorkOrders.reduce((sum, wo) => {
+          const repairTime = wo.updatedAt!.getTime() - wo.createdAt.getTime();
+          return sum + (repairTime / (1000 * 60 * 60)); // Convert to hours
+        }, 0) / completedWorkOrders.length
+      : 0;
+
+    // Calculate planned vs unplanned work ratio
+    const plannedWorkOrders = await prisma.workOrder.count({
+      where: {
+        organizationId,
+        createdAt: { gte: thirtyDaysAgo },
+        pmScheduleId: { not: null }, // Work orders created from PM schedules are planned
+      },
+    });
+
+    const totalWorkOrders = await prisma.workOrder.count({
+      where: {
+        organizationId,
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    });
+
+    const plannedWorkRatio = totalWorkOrders > 0 
+      ? Math.round((plannedWorkOrders / totalWorkOrders) * 100)
+      : 0;
+
+    // Calculate technician utilization (simplified version)
+    const technicians = await prisma.user.findMany({
+      where: {
+        organizationId,
+        role: 'TECHNICIAN',
+      },
+      select: { id: true },
+    });
+
+    const totalTechnicianHours = technicians.length * 40; // Assume 40 hours per week
+    
+    const workOrderTimeLogged = await prisma.workOrderTimeLog.aggregate({
+      where: {
+        workOrder: { organizationId },
+        loggedAt: { gte: sevenDaysAgo },
+      },
+      _sum: { hours: true },
+    });
+
+    const utilizationRate = totalTechnicianHours > 0 
+      ? Math.round(((workOrderTimeLogged._sum.hours || 0) / totalTechnicianHours) * 100)
+      : 0;
+
+    // Calculate asset uptime percentage
+    const onlineAssets = await prisma.asset.count({
+      where: { organizationId, status: 'ONLINE' },
+    });
+    
+    const totalAssets = await prisma.asset.count({
+      where: { organizationId },
+    });
+
+    const uptimePercentage = totalAssets > 0 
+      ? Math.round((onlineAssets / totalAssets) * 100)
+      : 0;
+
+    return {
+      mttr: Math.round(mttrHours * 10) / 10, // Round to 1 decimal place
+      plannedWorkRatio,
+      technicianUtilization: utilizationRate,
+      assetUptime: uptimePercentage,
+      totalWorkOrders: totalWorkOrders,
+      completedWorkOrders: completedWorkOrders.length,
+    };
+  }
+
+  async getInventoryMetrics(organizationId: number) {
+    // Get parts with low stock (at or below reorder point)
+    const lowStockParts = await prisma.part.findMany({
+      where: {
+        organizationId,
+        stockLevel: { lte: prisma.raw('reorderPoint') },
+      },
+      select: {
+        id: true,
+        name: true,
+        stockLevel: true,
+        reorderPoint: true,
+        unitCost: true,
+      },
+    });
+
+    // Calculate inventory turnover (simplified)
+    const totalInventoryValue = await prisma.part.aggregate({
+      where: { organizationId },
+      _sum: {
+        unitCost: true,
+      },
+    });
+
+    const criticalParts = lowStockParts.filter(part => part.stockLevel === 0);
+
+    return {
+      lowStockCount: lowStockParts.length,
+      outOfStockCount: criticalParts.length,
+      totalInventoryValue: totalInventoryValue._sum.unitCost || 0,
+      criticalParts: criticalParts.slice(0, 5), // Top 5 critical parts
+      lowStockParts: lowStockParts.filter(part => part.stockLevel > 0).slice(0, 5),
+    };
+  }
+
+  private getCriticalityColor(criticality: string) {
+    switch (criticality) {
+      case 'CRITICAL': return '#f44336'; // Red
+      case 'HIGH': return '#ff9800'; // Orange  
+      case 'MEDIUM': return '#ffc107'; // Yellow
+      case 'LOW': return '#4caf50'; // Green
+      default: return '#9e9e9e'; // Grey
+    }
   }
 
   async getRecentWorkOrders(organizationId: number, limit: number = 10) {

@@ -145,6 +145,33 @@ export default function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch new KPI metrics
+  const { data: kpiMetrics, isLoading: kpiLoading, refetch: refetchKPI } = useQuery({
+    queryKey: ['dashboard', 'kpi-metrics'],
+    queryFn: dashboardService.getKPIMetrics,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch inventory metrics
+  const { data: inventoryMetrics, isLoading: inventoryLoading, refetch: refetchInventory } = useQuery({
+    queryKey: ['dashboard', 'inventory-metrics'],
+    queryFn: dashboardService.getInventoryMetrics,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch asset health metrics
+  const { data: assetHealthData, isLoading: assetHealthLoading, refetch: refetchAssetHealth } = useQuery({
+    queryKey: ['dashboard', 'asset-health'],
+    queryFn: dashboardService.getAssetHealth,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
   // Fetch unified calendar data for calendar modal
   const { data: calendarItems, isLoading: calendarItemsLoading } = useQuery({
     queryKey: ['calendar-items'],
@@ -985,13 +1012,65 @@ export default function Dashboard() {
     <Card sx={{ mb: 3 }}>
       <CardContent>
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Assets by Criticality
+          Asset Health Overview
         </Typography>
-        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Assets criticality chart coming soon
-          </Typography>
-        </Box>
+        {assetHealthLoading ? (
+          <LoadingSpinner size="medium" message="Loading asset health data..." />
+        ) : !assetHealthData?.byCriticality || assetHealthData.byCriticality.length === 0 ? (
+          <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No asset health data available
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ height: 320 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">Health Score</Typography>
+                <Typography variant="h4" fontWeight={700} color={
+                  (assetHealthData.healthScore || 0) >= 80 ? 'success.main' :
+                  (assetHealthData.healthScore || 0) >= 60 ? 'warning.main' : 'error.main'
+                }>
+                  {assetHealthData.healthScore || 0}%
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">Total Assets</Typography>
+                <Typography variant="h4" fontWeight={700} color="primary.main">
+                  {assetHealthData.total || 0}
+                </Typography>
+              </Box>
+            </Box>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={assetHealthData.byCriticality}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  label={({name, value, percent}) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
+                  fontSize={12}
+                >
+                  {assetHealthData.byCriticality.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color || theme.palette.primary.main} />
+                  ))}
+                </Pie>
+                <RechartsTooltip 
+                  contentStyle={{
+                    backgroundColor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 8,
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
@@ -1000,13 +1079,221 @@ export default function Dashboard() {
     <Card sx={{ mb: 3 }}>
       <CardContent>
         <Typography variant="h6" fontWeight={600} gutterBottom>
-          Inventory Status
+          Inventory & Parts Status
         </Typography>
-        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-            Inventory status chart coming soon
-          </Typography>
-        </Box>
+        {inventoryLoading ? (
+          <LoadingSpinner size="medium" message="Loading inventory data..." />
+        ) : !inventoryMetrics ? (
+          <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No inventory data available
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ height: 320 }}>
+            {/* Inventory Summary Cards */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid size={4}>
+                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'error.main', color: 'white', borderRadius: 2 }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    {inventoryMetrics.outOfStockCount || 0}
+                  </Typography>
+                  <Typography variant="body2">Out of Stock</Typography>
+                </Box>
+              </Grid>
+              <Grid size={4}>
+                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.main', color: 'white', borderRadius: 2 }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    {inventoryMetrics.lowStockCount || 0}
+                  </Typography>
+                  <Typography variant="body2">Low Stock</Typography>
+                </Box>
+              </Grid>
+              <Grid size={4}>
+                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.main', color: 'white', borderRadius: 2 }}>
+                  <Typography variant="h5" fontWeight={700}>
+                    ${(inventoryMetrics.totalInventoryValue || 0).toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2">Total Value</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+
+            {/* Critical Parts List */}
+            {inventoryMetrics.criticalParts && inventoryMetrics.criticalParts.length > 0 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'error.main' }}>
+                  Critical Parts (Out of Stock)
+                </Typography>
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'error.main' }}>
+                  {inventoryMetrics.criticalParts.slice(0, 3).map((part: any, index: number) => (
+                    <ListItem key={part.id || index} sx={{ py: 1 }}>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" fontWeight={600}>
+                            {part.name}
+                          </Typography>
+                        }
+                        secondary={
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Chip 
+                              label="OUT OF STOCK" 
+                              size="small" 
+                              color="error" 
+                              sx={{ fontSize: '0.65rem' }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              Reorder at: {part.reorderPoint || 0}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <Typography variant="body2" color="error.main" fontWeight={600}>
+                          ${(part.unitCost || 0).toFixed(2)}
+                        </Typography>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+
+            {/* Low Stock Parts List */}
+            {inventoryMetrics.lowStockParts && inventoryMetrics.lowStockParts.length > 0 && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'warning.main' }}>
+                  Low Stock Parts
+                </Typography>
+                <List sx={{ bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'warning.main' }}>
+                  {inventoryMetrics.lowStockParts.slice(0, 2).map((part: any, index: number) => (
+                    <ListItem key={part.id || index} sx={{ py: 1 }}>
+                      <ListItemText
+                        primary={
+                          <Typography variant="body2" fontWeight={600}>
+                            {part.name}
+                          </Typography>
+                        }
+                        secondary={
+                          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                            <Chip 
+                              label={`${part.stockLevel || 0} LEFT`} 
+                              size="small" 
+                              color="warning" 
+                              sx={{ fontSize: '0.65rem' }}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              Reorder at: {part.reorderPoint || 0}
+                            </Typography>
+                          </Box>
+                        }
+                      />
+                      <ListItemSecondaryAction>
+                        <Typography variant="body2" color="warning.main" fontWeight={600}>
+                          ${(part.unitCost || 0).toFixed(2)}
+                        </Typography>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const KPIMetricsChart = () => (
+    <Card sx={{ mb: 3 }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Key Performance Indicators
+        </Typography>
+        {kpiLoading ? (
+          <LoadingSpinner size="medium" message="Loading KPI data..." />
+        ) : !kpiMetrics ? (
+          <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              No KPI data available
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ height: 320 }}>
+            {/* KPI Cards Grid */}
+            <Grid container spacing={3}>
+              <Grid size={6}>
+                <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.main', color: 'white' }}>
+                  <Typography variant="h4" fontWeight={700}>
+                    {kpiMetrics.mttr?.toFixed(1) || 0}h
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Mean Time to Repair (MTTR)
+                  </Typography>
+                </Card>
+              </Grid>
+              <Grid size={6}>
+                <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'success.main', color: 'white' }}>
+                  <Typography variant="h4" fontWeight={700}>
+                    {kpiMetrics.plannedWorkRatio || 0}%
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Planned Work Ratio
+                  </Typography>
+                </Card>
+              </Grid>
+              <Grid size={6}>
+                <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'info.main', color: 'white' }}>
+                  <Typography variant="h4" fontWeight={700}>
+                    {kpiMetrics.technicianUtilization || 0}%
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Technician Utilization
+                  </Typography>
+                </Card>
+              </Grid>
+              <Grid size={6}>
+                <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.main', color: 'white' }}>
+                  <Typography variant="h4" fontWeight={700}>
+                    {kpiMetrics.assetUptime || 0}%
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    Asset Uptime
+                  </Typography>
+                </Card>
+              </Grid>
+            </Grid>
+
+            {/* Additional KPI Details */}
+            <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Work Order Statistics (Last 30 Days)
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid size={6}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Work Orders
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {kpiMetrics.totalWorkOrders || 0}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid size={6}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Completed Work Orders
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {kpiMetrics.completedWorkOrders || 0}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );
@@ -1213,14 +1500,16 @@ export default function Dashboard() {
                   >
                     <Tab label="Work Order Trends" />
                     <Tab label="Work Orders by Status" />
-                    <Tab label="Assets by Criticality" />
+                    <Tab label="Asset Health" />
                     <Tab label="Inventory Status" />
+                    <Tab label="KPI Metrics" />
                   </Tabs>
                 </Box>
                 {selectedTab === 0 && <TrendsChartSection />}
                 {selectedTab === 1 && <WorkOrdersByStatusChart />}
                 {selectedTab === 2 && <AssetsByCriticalityChart />}
                 {selectedTab === 3 && <InventoryStatusChart />}
+                {selectedTab === 4 && <KPIMetricsChart />}
               </Grid>
               
               {/* Right Column */}

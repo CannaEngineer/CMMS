@@ -10,5 +10,7 @@ router.get('/trends', (req, res) => dashboardController.getWorkOrderTrends(req, 
 router.get('/asset-health', (req, res) => dashboardController.getAssetHealth(req, res));
 router.get('/recent-work-orders', (req, res) => dashboardController.getRecentWorkOrders(req, res));
 router.get('/maintenance-schedule', (req, res) => dashboardController.getMaintenanceSchedule(req, res));
+router.get('/kpi-metrics', (req, res) => dashboardController.getKPIMetrics(req, res));
+router.get('/inventory-metrics', (req, res) => dashboardController.getInventoryMetrics(req, res));
 
 export default router;
