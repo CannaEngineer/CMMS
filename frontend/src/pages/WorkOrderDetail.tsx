@@ -264,7 +264,10 @@ export default function WorkOrderDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
-      setEditDialogOpen(false);
+      // Only close dialog if it's open (attachments update shouldn't close dialog)
+      if (editDialogOpen) {
+        setEditDialogOpen(false);
+      }
     },
     onError: (error) => {
       console.error('Failed to update work order:', error);
@@ -406,7 +409,10 @@ export default function WorkOrderDetail() {
   };
 
   const handleAttachmentsChange = (attachments: FileAttachment[]) => {
-    updateWorkOrderMutation.mutate({ attachments });
+    updateWorkOrderMutation.mutate({ 
+      id: workOrder?.id,
+      attachments 
+    });
   };
 
   const handlePrint = () => {

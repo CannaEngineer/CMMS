@@ -453,9 +453,9 @@ export const workOrdersService = {
     }
   },
 
-  async updateStatus(id: string, status: string): Promise<any> {
+  async updateStatus(id: string, status: string, notes?: string): Promise<any> {
     try {
-      return await apiClient.put<any>(`/api/work-orders/${id}/status`, { status });
+      return await apiClient.put<any>(`/api/work-orders/${id}/status`, { status, notes });
     } catch (error) {
       throw new Error(`Failed to update work order status ${id}`);
     }
