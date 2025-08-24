@@ -37,6 +37,7 @@ import {
   Settings as GeneralIcon,
   Notifications as NotificationIcon,
   Security as SecurityIcon,
+  Email as EmailIcon,
   Save as SaveIcon,
   Language as LanguageIcon,
   ColorLens as ThemeIcon,
@@ -226,10 +227,16 @@ const SettingsPage: React.FC = () => {
               aria-controls="settings-tabpanel-3"
             />
             <Tab 
-              icon={<SecurityIcon />} 
-              label="Security" 
+              icon={<EmailIcon />} 
+              label="Email" 
               id="settings-tab-4"
               aria-controls="settings-tabpanel-4"
+            />
+            <Tab 
+              icon={<SecurityIcon />} 
+              label="Security" 
+              id="settings-tab-5"
+              aria-controls="settings-tabpanel-5"
             />
           </Tabs>
         </Box>
@@ -512,6 +519,44 @@ const SettingsPage: React.FC = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={4}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <EmailIcon sx={{ mr: 1 }} />
+              Email System Test
+            </Typography>
+            
+            <Alert severity="info" sx={{ mb: 3 }}>
+              <Typography variant="body2">
+                Use this section to test your email configuration and send test emails. 
+                The email system uses MXroute SMTP integration with your domain.
+              </Typography>
+            </Alert>
+            
+            <Box sx={{ 
+              p: 2, 
+              border: '1px solid', 
+              borderColor: 'primary.main', 
+              borderRadius: 1,
+              backgroundColor: 'primary.light',
+              opacity: 0.1
+            }}>
+              <Typography variant="body1" sx={{ mb: 2, color: 'primary.dark' }}>
+                For complete email testing functionality, visit the dedicated email test page:
+              </Typography>
+              
+              <Button
+                variant="contained"
+                startIcon={<EmailIcon />}
+                onClick={() => window.open('/settings/email-test', '_blank')}
+                size="large"
+              >
+                Open Email Test Center
+              </Button>
+            </Box>
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={5}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
               <SecurityIcon sx={{ mr: 1 }} />

@@ -29,6 +29,7 @@ import Locations from './pages/Locations';
 import Users from './pages/Users';
 import Profile from './pages/Profile';
 import SettingsPage from './pages/SettingsPage';
+import EmailTest from './pages/EmailTest';
 import PartDetail from './pages/PartDetail';
 import ExportCenter from './components/Export/ExportCenter';
 import Portals from './pages/Portals';
@@ -155,6 +156,7 @@ function App() {
               <Route path="users" element={<Users />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="settings/email-test" element={<EmailTest />} />
             </Route>
           </Routes>
                 </Router>
