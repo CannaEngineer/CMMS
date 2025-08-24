@@ -255,6 +255,18 @@ export class EmailService {
     });
   }
 
+  public async sendEmailVerificationEmail(userEmail: string, userName: string, verificationUrl: string): Promise<boolean> {
+    const template = this.getEmailVerificationTemplate(userName, verificationUrl);
+    
+    return await this.sendEmail({
+      to: userEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      priority: 'high',
+    });
+  }
+
   public async sendPasswordResetEmail(userEmail: string, userName: string, resetUrl: string): Promise<boolean> {
     const template = this.getPasswordResetTemplate(userName, resetUrl);
     
@@ -509,6 +521,104 @@ Need help getting started? Contact our support team or check out the user guide 
 ---
 Welcome to Elevated Compliance CMMS
 elevatedcompliance.tech
+`;
+
+    return { subject, html, text };
+  }
+
+  private getEmailVerificationTemplate(userName: string, verificationUrl: string): EmailTemplate {
+    const subject = 'Verify Your Email Address - Elevated Compliance CMMS';
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${subject}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; padding: 32px 24px; text-align: center;">
+      <h1 style="margin: 0; font-size: 28px; font-weight: 600;">
+        ✉️ Verify Your Email
+      </h1>
+      <p style="margin: 8px 0 0; font-size: 16px; opacity: 0.9;">
+        Elevated Compliance CMMS
+      </p>
+    </div>
+
+    <!-- Content -->
+    <div style="padding: 32px 24px;">
+      <h2 style="color: #1976d2; margin-top: 0; font-size: 24px;">Welcome ${userName}!</h2>
+      
+      <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+        Thank you for signing up for Elevated Compliance CMMS. To complete your registration and secure your account, please verify your email address by clicking the button below.
+      </p>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${verificationUrl}" style="display: inline-block; padding: 16px 32px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);">
+          Verify Email Address
+        </a>
+      </div>
+
+      <div style="background-color: #e3f2fd; border-left: 4px solid #1976d2; padding: 16px; margin: 24px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px;">
+          <strong>Security Notice:</strong> This verification link will expire in 24 hours for your security. If you didn't create this account, you can safely ignore this email.
+        </p>
+      </div>
+
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
+        <p style="font-size: 14px; color: #666; margin-bottom: 16px;">
+          If the button above doesn't work, you can also verify your email by copying and pasting this link into your browser:
+        </p>
+        <p style="word-break: break-all; font-family: monospace; font-size: 12px; color: #666; background-color: #f8f9fa; padding: 8px; border-radius: 4px;">
+          ${verificationUrl}
+        </p>
+      </div>
+
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e0e0e0;">
+        <h3 style="color: #1976d2; font-size: 16px; margin-bottom: 12px;">What's Next?</h3>
+        <ul style="font-size: 14px; line-height: 1.6; color: #666;">
+          <li>Complete your account setup</li>
+          <li>Explore our maintenance management features</li>
+          <li>Set up your first assets and work orders</li>
+          <li>Invite your team members</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f8f9fa; padding: 24px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #e0e0e0;">
+      <p style="margin: 0;">This email was sent to verify your account registration</p>
+      <p style="margin: 8px 0 0;">Elevated Compliance CMMS • elevatedcompliance.tech</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+    const text = `
+Email Verification - Elevated Compliance CMMS
+
+Welcome ${userName}!
+
+Thank you for signing up for Elevated Compliance CMMS. To complete your registration and secure your account, please verify your email address by visiting this link:
+
+${verificationUrl}
+
+Security Notice: This verification link will expire in 24 hours for your security. If you didn't create this account, you can safely ignore this email.
+
+What's Next?
+- Complete your account setup
+- Explore our maintenance management features  
+- Set up your first assets and work orders
+- Invite your team members
+
+---
+This email was sent to verify your account registration
+Elevated Compliance CMMS • elevatedcompliance.tech
 `;
 
     return { subject, html, text };

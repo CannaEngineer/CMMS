@@ -11,4 +11,12 @@ router.post('/login', authController.login);
 router.get('/check-email/:email', authController.checkEmail);
 router.get('/check-organization/:name', authController.checkOrganization);
 
+// Email verification endpoints
+router.post('/send-verification/:userId', authController.sendEmailVerification);
+router.post('/verify-email', authController.verifyEmail);
+
+// Password reset endpoints
+router.post('/forgot-password', authController.requestPasswordReset);
+router.post('/reset-password', authController.resetPassword);
+
 export default router;

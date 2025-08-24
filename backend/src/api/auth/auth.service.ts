@@ -91,9 +91,21 @@ export const register = async (data: any) => {
       }
     });
     
+    // Send email verification
+    try {
+      await sendEmailVerification(user.id);
+      console.log(`✅ Email verification sent to ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail registration if email fails
+    }
+    
     // Return user without password
     const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return { 
+      ...userWithoutPassword, 
+      requiresEmailVerification: !user.emailVerified 
+    };
   } catch (error) {
     // Re-throw the error with clean message
     if (error instanceof Error) {
@@ -157,5 +169,203 @@ export const checkOrganizationExists = async (name: string) => {
     console.error('Error checking organization existence:', error);
     // Return false on error (assume available) rather than throwing
     return false;
+  }
+};
+
+// Token utility functions
+const generateSecureToken = (): string => {
+  return require('crypto').randomBytes(32).toString('hex');
+};
+
+const getTokenExpiry = (hours: number = 24): Date => {
+  const expiry = new Date();
+  expiry.setHours(expiry.getHours() + hours);
+  return expiry;
+};
+
+// Email verification functions
+export const sendEmailVerification = async (userId: number): Promise<boolean> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, emailVerified: true }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.emailVerified) {
+      throw new Error('Email is already verified');
+    }
+
+    // Generate verification token
+    const verificationToken = generateSecureToken();
+    const verificationExpires = getTokenExpiry(24); // 24 hours
+
+    // Update user with verification token
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      },
+    });
+
+    // Send verification email
+    const { emailService } = await import('../../services/email.service');
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const verificationUrl = `${baseUrl}/auth/verify-email?token=${verificationToken}`;
+
+    const success = await emailService.sendEmailVerificationEmail(
+      user.email,
+      user.name,
+      verificationUrl
+    );
+
+    return success;
+  } catch (error) {
+    console.error('Error sending email verification:', error);
+    throw error;
+  }
+};
+
+export const verifyEmail = async (token: string): Promise<{ user: any }> => {
+  try {
+    // Find user with valid verification token
+    const user = await prisma.user.findFirst({
+      where: {
+        emailVerificationToken: token,
+        emailVerificationExpires: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error('Invalid or expired verification token');
+    }
+
+    // Mark email as verified and clear verification token
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return { user: userWithoutPassword };
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    throw error;
+  }
+};
+
+// Password reset functions
+export const initiatePasswordReset = async (email: string): Promise<boolean> => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true }
+    });
+
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      return true;
+    }
+
+    // Generate reset token
+    const resetToken = generateSecureToken();
+    const resetExpires = getTokenExpiry(1); // 1 hour
+
+    // Update user with reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpires: resetExpires,
+      },
+    });
+
+    // Send reset email
+    const { emailService } = await import('../../services/email.service');
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+
+    const success = await emailService.sendPasswordResetEmail(
+      user.email,
+      user.name,
+      resetUrl
+    );
+
+    return success;
+  } catch (error) {
+    console.error('Error initiating password reset:', error);
+    // Don't throw error to prevent email enumeration
+    return false;
+  }
+};
+
+export const resetPassword = async (token: string, newPassword: string): Promise<{ user: any }> => {
+  try {
+    // Find user with valid reset token
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetExpires: {
+          gt: new Date(),
+        },
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    if (!user) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and clear reset token
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        passwordResetToken: null,
+        passwordResetExpires: null,
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true }
+        }
+      }
+    });
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return { user: userWithoutPassword };
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    throw error;
   }
 };

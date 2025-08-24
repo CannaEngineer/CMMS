@@ -17,6 +17,19 @@ const loginSchema = z.object({
   password: z.string(),
 });
 
+const emailVerificationSchema = z.object({
+  token: z.string().min(1),
+});
+
+const passwordResetRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+const passwordResetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6),
+});
+
 export const register = async (req: Request, res: Response) => {
   try {
     const data = registerSchema.parse(req.body);
@@ -77,5 +90,87 @@ export const checkOrganization = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('checkOrganization controller error:', error);
     res.status(500).json({ error: 'Failed to check organization availability' });
+  }
+};
+
+// Email verification endpoints
+export const sendEmailVerification = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    
+    if (!userId || isNaN(Number(userId))) {
+      return res.status(400).json({ error: 'Valid user ID is required' });
+    }
+
+    const success = await authService.sendEmailVerification(Number(userId));
+    
+    if (success) {
+      res.status(200).json({ message: 'Verification email sent successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to send verification email' });
+    }
+  } catch (error) {
+    console.error('sendEmailVerification controller error:', error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to send verification email' });
+    }
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const data = emailVerificationSchema.parse(req.body);
+    const result = await authService.verifyEmail(data.token);
+    
+    res.status(200).json({
+      message: 'Email verified successfully',
+      user: result.user
+    });
+  } catch (error) {
+    console.error('verifyEmail controller error:', error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: 'Email verification failed' });
+    }
+  }
+};
+
+// Password reset endpoints
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  try {
+    const data = passwordResetRequestSchema.parse(req.body);
+    const success = await authService.initiatePasswordReset(data.email);
+    
+    // Always return success for security (don't reveal if email exists)
+    res.status(200).json({ 
+      message: 'If an account with that email exists, a password reset link has been sent.' 
+    });
+  } catch (error) {
+    console.error('requestPasswordReset controller error:', error);
+    res.status(200).json({ 
+      message: 'If an account with that email exists, a password reset link has been sent.' 
+    });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const data = passwordResetSchema.parse(req.body);
+    const result = await authService.resetPassword(data.token, data.password);
+    
+    res.status(200).json({
+      message: 'Password reset successfully',
+      user: result.user
+    });
+  } catch (error) {
+    console.error('resetPassword controller error:', error);
+    if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(400).json({ error: 'Password reset failed' });
+    }
   }
 };

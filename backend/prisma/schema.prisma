@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -15,6 +15,16 @@ model User {
   password                  String
   role                      UserRole                 @default(TECHNICIAN)
   organizationId            Int
+  
+  // Email verification fields
+  emailVerified             Boolean                  @default(false)
+  emailVerificationToken    String?                  @unique
+  emailVerificationExpires  DateTime?
+  
+  // Password reset fields
+  passwordResetToken        String?                  @unique
+  passwordResetExpires      DateTime?
+  
   isOnline                  Boolean                  @default(false)
   lastSeen                  DateTime?
   lastActivity              DateTime?
