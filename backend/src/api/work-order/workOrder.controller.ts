@@ -4,6 +4,7 @@ import * as workOrderService from './workOrder.service';
 import { TimeLogService } from './timeLog.service';
 import { WorkOrderNotesService } from './workOrderNotes.service';
 import { WorkOrderShareService } from './workOrderShare.service';
+import { WorkOrderTaskService } from './workOrderTask.service';
 
 const workOrderSchema = z.object({
   title: z.string(),
@@ -26,6 +27,7 @@ const timeLogSchema = z.object({
 const timeLogService = new TimeLogService();
 const notesService = new WorkOrderNotesService();
 const shareService = new WorkOrderShareService();
+const taskService = new WorkOrderTaskService();
 
 export const getAllWorkOrders = async (req: Request, res: Response) => {
   const { organizationId } = req.user;
@@ -48,6 +50,40 @@ export const getWorkOrderById = async (req: Request, res: Response) => {
     res.status(200).json(workOrder);
   } else {
     res.status(404).json({ error: 'Work Order not found' });
+  }
+};
+
+export const getWorkOrderProgress = async (req: Request, res: Response) => {
+  try {
+    const { organizationId } = req.user;
+    const workOrderId = Number(req.params.id);
+    
+    // Verify work order exists and belongs to user's organization
+    const workOrder = await workOrderService.getWorkOrderById(workOrderId, organizationId);
+    if (!workOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    // Get task completion statistics
+    const taskStats = await taskService.getTaskCompletionStats(workOrderId);
+    
+    // Return progress data in the format expected by frontend
+    const progressData = {
+      completionPercentage: Math.round(taskStats.completionRate),
+      totalTasks: taskStats.total,
+      completedTasks: taskStats.completed,
+      inProgressTasks: taskStats.inProgress,
+      notStartedTasks: taskStats.notStarted,
+      skippedTasks: taskStats.skipped,
+      failedTasks: taskStats.failed,
+      estimatedTotalMinutes: taskStats.estimatedTotalMinutes,
+      actualTotalMinutes: taskStats.actualTotalMinutes
+    };
+    
+    res.status(200).json(progressData);
+  } catch (error) {
+    console.error('Error fetching work order progress:', error);
+    res.status(500).json({ error: 'Failed to fetch work order progress' });
   }
 };
 
