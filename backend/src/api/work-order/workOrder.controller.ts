@@ -472,6 +472,86 @@ export const sendNotification = async (req: Request, res: Response) => {
       
       await notificationService.createNotification(notificationData);
       
+      // Also send email with work order link
+      try {
+        const { emailService } = require('../../services/email.service');
+        
+        if (workOrder.assignedTo.email) {
+          // Create a public share link for the work order
+          let workOrderUrl = '';
+          try {
+            const share = await shareService.createShare({
+              workOrderId: workOrder.id,
+              organizationId: organizationId,
+              createdById: userId,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              maxViews: 50,
+              allowComments: false,
+              allowDownload: false,
+              viewerCanSeeAssignee: true,
+              sanitizationLevel: 'STANDARD'
+            });
+            
+            // Build the public share URL
+            const frontendUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
+            workOrderUrl = `${frontendUrl}/public/share/${share.shareToken}`;
+          } catch (shareError) {
+            console.log('Could not create public share, using login link:', shareError.message);
+            const frontendUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
+            workOrderUrl = `${frontendUrl}/work-orders/${workOrder.id}`;
+          }
+          
+          const emailContent = {
+            to: workOrder.assignedTo.email,
+            subject: `Work Order Update: ${workOrder.title}`,
+            html: `
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="background-color: #1976d2; color: white; padding: 20px; text-align: center;">
+                  <h1 style="margin: 0; font-size: 24px;">Work Order Notification</h1>
+                </div>
+                
+                <div style="padding: 30px 20px;">
+                  <p style="font-size: 16px;">Hello ${workOrder.assignedTo.name},</p>
+                  <p style="font-size: 16px;">${message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`}</p>
+                  
+                  <div style="margin: 25px 0; padding: 20px; background-color: #f8f9fa; border-left: 4px solid #1976d2; border-radius: 4px;">
+                    <h3 style="margin-top: 0; color: #1976d2;">Work Order Details:</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr><td style="padding: 8px 0; font-weight: bold; width: 120px;">ID:</td><td style="padding: 8px 0;">#${workOrder.id}</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Title:</td><td style="padding: 8px 0;">${workOrder.title}</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td style="padding: 8px 0;"><span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${workOrder.status}</span></td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Priority:</td><td style="padding: 8px 0;"><span style="background-color: ${workOrder.priority === 'URGENT' ? '#ffebee' : workOrder.priority === 'HIGH' ? '#fff3e0' : '#e8f5e8'}; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: ${workOrder.priority === 'URGENT' ? '#c62828' : workOrder.priority === 'HIGH' ? '#ef6c00' : '#2e7d32'};">${workOrder.priority}</span></td></tr>
+                      ${workOrder.description ? `<tr><td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Description:</td><td style="padding: 8px 0;">${workOrder.description}</td></tr>` : ''}
+                    </table>
+                  </div>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${workOrderUrl}" style="display: inline-block; background-color: #1976d2; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Work Order</a>
+                  </div>
+                  
+                  <p style="font-size: 14px; color: #666;">
+                    Click the button above to view the full work order details. If you're not logged in, you'll be able to view a public version of this work order.
+                  </p>
+                </div>
+                
+                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+                  <p style="margin: 0; font-size: 12px; color: #666;">
+                    This email was sent from the <strong>Elevated Compliance CMMS</strong> system.<br>
+                    If you have any questions, please contact your system administrator.
+                  </p>
+                </div>
+              </div>
+            `
+          };
+          
+          await emailService.sendEmail(emailContent);
+          console.log('Notification email sent successfully to:', workOrder.assignedTo.email);
+        }
+      } catch (emailError) {
+        console.log('Email notification failed but database notification succeeded:', emailError.message);
+        // Don't throw error here since database notification worked
+      }
+      
     } catch (notificationError) {
       console.log('Database notification failed, sending email directly:', notificationError.message);
       
@@ -480,29 +560,70 @@ export const sendNotification = async (req: Request, res: Response) => {
         const { emailService } = require('../../services/email.service');
         
         if (workOrder.assignedTo.email) {
+          // Create a public share link for the work order
+          let workOrderUrl = '';
+          try {
+            const share = await shareService.createShare({
+              workOrderId: workOrder.id,
+              organizationId: organizationId,
+              createdById: userId,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              maxViews: 50,
+              allowComments: false,
+              allowDownload: false,
+              viewerCanSeeAssignee: true,
+              sanitizationLevel: 'STANDARD'
+            });
+            
+            // Build the public share URL
+            const frontendUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
+            workOrderUrl = `${frontendUrl}/public/share/${share.shareToken}`;
+          } catch (shareError) {
+            console.log('Could not create public share, using login link:', shareError.message);
+            const frontendUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
+            workOrderUrl = `${frontendUrl}/work-orders/${workOrder.id}`;
+          }
+          
           const emailContent = {
             to: workOrder.assignedTo.email,
             subject: `Work Order Update: ${workOrder.title}`,
             html: `
-              <h2>Work Order Notification</h2>
-              <p>Hello ${workOrder.assignedTo.name},</p>
-              <p>${message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`}</p>
-              
-              <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
-                <h3>Work Order Details:</h3>
-                <p><strong>ID:</strong> #${workOrder.id}</p>
-                <p><strong>Title:</strong> ${workOrder.title}</p>
-                <p><strong>Status:</strong> ${workOrder.status}</p>
-                <p><strong>Priority:</strong> ${workOrder.priority}</p>
-                ${workOrder.description ? `<p><strong>Description:</strong> ${workOrder.description}</p>` : ''}
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="background-color: #1976d2; color: white; padding: 20px; text-align: center;">
+                  <h1 style="margin: 0; font-size: 24px;">Work Order Notification</h1>
+                </div>
+                
+                <div style="padding: 30px 20px;">
+                  <p style="font-size: 16px;">Hello ${workOrder.assignedTo.name},</p>
+                  <p style="font-size: 16px;">${message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`}</p>
+                  
+                  <div style="margin: 25px 0; padding: 20px; background-color: #f8f9fa; border-left: 4px solid #1976d2; border-radius: 4px;">
+                    <h3 style="margin-top: 0; color: #1976d2;">Work Order Details:</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr><td style="padding: 8px 0; font-weight: bold; width: 120px;">ID:</td><td style="padding: 8px 0;">#${workOrder.id}</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Title:</td><td style="padding: 8px 0;">${workOrder.title}</td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Status:</td><td style="padding: 8px 0;"><span style="background-color: #e3f2fd; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${workOrder.status}</span></td></tr>
+                      <tr><td style="padding: 8px 0; font-weight: bold;">Priority:</td><td style="padding: 8px 0;"><span style="background-color: ${workOrder.priority === 'URGENT' ? '#ffebee' : workOrder.priority === 'HIGH' ? '#fff3e0' : '#e8f5e8'}; padding: 4px 8px; border-radius: 4px; font-size: 12px; color: ${workOrder.priority === 'URGENT' ? '#c62828' : workOrder.priority === 'HIGH' ? '#ef6c00' : '#2e7d32'};">${workOrder.priority}</span></td></tr>
+                      ${workOrder.description ? `<tr><td style="padding: 8px 0; font-weight: bold; vertical-align: top;">Description:</td><td style="padding: 8px 0;">${workOrder.description}</td></tr>` : ''}
+                    </table>
+                  </div>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${workOrderUrl}" style="display: inline-block; background-color: #1976d2; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">View Work Order</a>
+                  </div>
+                  
+                  <p style="font-size: 14px; color: #666;">
+                    Click the button above to view the full work order details. If you're not logged in, you'll be able to view a public version of this work order.
+                  </p>
+                </div>
+                
+                <div style="background-color: #f5f5f5; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+                  <p style="margin: 0; font-size: 12px; color: #666;">
+                    This email was sent from the <strong>Elevated Compliance CMMS</strong> system.<br>
+                    If you have any questions, please contact your system administrator.
+                  </p>
+                </div>
               </div>
-              
-              <p>Please log in to the system to view full details and take any necessary action.</p>
-              
-              <hr style="margin: 20px 0;">
-              <p style="font-size: 12px; color: #666;">
-                This email was sent from the Elevated Compliance CMMS system.
-              </p>
             `
           };
           
