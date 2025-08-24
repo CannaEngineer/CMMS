@@ -51,7 +51,6 @@ import {
   AdminPanelSettings as AdminIcon,
   Engineering as TechnicianIcon,
   Visibility as ViewIcon,
-  Message as MessageIcon,
   Share as ShareIcon,
   Close as CloseIcon,
   SwapVert as SwapVertIcon,
@@ -202,10 +201,6 @@ export default function Users() {
     window.open(`mailto:${email}`, '_self');
   };
 
-  const handleMessage = (user: User) => {
-    // Placeholder for messaging integration
-    console.log('Message user:', user.name);
-  };
 
   const handleShare = (user: User) => {
     if (navigator.share) {
@@ -481,24 +476,6 @@ export default function Users() {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Message">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMessage(user);
-              }}
-              color="primary"
-              sx={{ 
-                flex: 1,
-                minHeight: { xs: 48, sm: 40 },
-                border: '1px solid',
-                borderColor: 'primary.main',
-                borderRadius: 2
-              }}
-            >
-              <MessageIcon />
-            </IconButton>
-          </Tooltip>
 
           {navigator.share && (
             <Tooltip title="Share">
@@ -1066,21 +1043,6 @@ export default function Users() {
                 />
               </MenuItem>
 
-              <MenuItem
-                onClick={() => {
-                  handleMessage(user);
-                  handleMenuClose();
-                }}
-                sx={{ py: 1.5 }}
-              >
-                <ListItemIcon>
-                  <MessageIcon fontSize="small" color="primary" />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Message"
-                  secondary="Send a message"
-                />
-              </MenuItem>
 
               <Divider />
             </>

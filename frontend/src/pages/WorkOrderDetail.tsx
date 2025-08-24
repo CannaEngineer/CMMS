@@ -571,6 +571,52 @@ export default function WorkOrderDetail() {
     }
   });
 
+  // Send notification mutation
+  const sendNotificationMutation = useMutation({
+    mutationFn: async ({ message }: { message?: string }) => {
+      if (!id) throw new Error('Work order ID is required');
+      
+      const response = await fetch(`/api/work-orders/${id}/notify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ message }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to send notification');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      alert(`✅ Notification sent successfully to ${data.recipient}!`);
+    },
+    onError: (error: Error) => {
+      console.error('Error sending notification:', error);
+      alert(`❌ Failed to send notification: ${error.message}`);
+    },
+  });
+
+  const handleSendNotification = () => {
+    if (!workOrder?.assignedTo) {
+      alert('Work order must have an assignee to send notification');
+      return;
+    }
+    
+    const message = prompt(
+      `Send notification to ${workOrder.assignedTo.name}?\n\nOptional custom message:`,
+      `Please review work order #${workOrder.id}: "${workOrder.title}"`
+    );
+    
+    if (message !== null) { // User didn't cancel
+      sendNotificationMutation.mutate({ message: message.trim() || undefined });
+    }
+  };
+
   const handleShare = () => {
     createShareMutation.mutate();
   };
@@ -1179,14 +1225,11 @@ export default function WorkOrderDetail() {
             <Button
               variant="outlined"
               startIcon={<NotifyIcon />}
-              onClick={() => {
-                // Implement notification functionality
-                alert('Notification sent to assignee');
-              }}
+              onClick={handleSendNotification}
               size="small"
-              disabled={!workOrder.assignedTo}
+              disabled={!workOrder.assignedTo || sendNotificationMutation.isPending}
             >
-              Notify
+              {sendNotificationMutation.isPending ? 'Sending...' : 'Notify'}
             </Button>
           </Tooltip>
 

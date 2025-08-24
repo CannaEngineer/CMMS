@@ -395,3 +395,53 @@ export const deactivateShare = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const sendNotification = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { organizationId, id: userId } = req.user;
+    const { message } = req.body;
+    
+    // Get the work order details
+    const workOrder = await workOrderService.getWorkOrderById(Number(id), organizationId);
+    if (!workOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    // Check if work order has an assignee
+    if (!workOrder.assignedTo || !workOrder.assignedTo.id) {
+      return res.status(400).json({ error: 'Work order must have an assignee to send notification' });
+    }
+    
+    // Import notification service
+    const { NotificationService } = await import('../notification/notification.service');
+    const notificationService = new NotificationService();
+    
+    // Create notification data
+    const notificationData = {
+      userId: workOrder.assignedTo.id,
+      organizationId: organizationId,
+      title: `Work Order Update: ${workOrder.title}`,
+      message: message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`,
+      category: 'WORK_ORDER' as any,
+      priority: workOrder.priority === 'URGENT' ? 'HIGH' as any : 'MEDIUM' as any,
+      relatedEntityType: 'WorkOrder',
+      relatedEntityId: workOrder.id,
+      actionUrl: `/work-orders/${workOrder.id}`,
+      actionLabel: 'View Work Order',
+      createdById: userId,
+    };
+    
+    // Send notification (this will also trigger email if user has email notifications enabled)
+    await notificationService.createNotification(notificationData);
+    
+    res.json({ 
+      message: 'Notification sent successfully',
+      recipient: workOrder.assignedTo.name,
+      workOrderId: workOrder.id
+    });
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    res.status(500).json({ error: 'Failed to send notification' });
+  }
+};

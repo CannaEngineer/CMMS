@@ -614,7 +614,12 @@ export class NotificationService {
 
       // Handle frequency - for now, send immediately for IMMEDIATE, queue for DIGEST
       if (emailPreference.frequency === NotificationFrequency.IMMEDIATE) {
-        await emailService.sendNotificationEmail(emailData);
+        // Use specialized work order email template if this is a work order notification
+        if (notification.category === 'WORK_ORDER' && notification.relatedEntityType === 'WorkOrder') {
+          await this.sendWorkOrderEmailNotification(user, notification);
+        } else {
+          await emailService.sendNotificationEmail(emailData);
+        }
         console.log(`✅ Email notification sent to ${user.email} for ${notification.category}`);
       } else {
         // TODO: Implement digest queuing system
@@ -624,6 +629,74 @@ export class NotificationService {
     } catch (error) {
       console.error('Error sending email notification:', error);
       // Don't throw - email failure shouldn't break notification creation
+    }
+  }
+
+  private async sendWorkOrderEmailNotification(user: any, notification: any): Promise<void> {
+    try {
+      // Get detailed work order information
+      const workOrder = await prisma.workOrder.findUnique({
+        where: { id: notification.relatedEntityId },
+        include: {
+          asset: { select: { name: true } },
+          assignedTo: { select: { name: true } },
+        }
+      });
+
+      if (!workOrder) {
+        console.error(`Work order ${notification.relatedEntityId} not found for email notification`);
+        return;
+      }
+
+      // Prepare work order details for email template
+      const workOrderDetails = {
+        id: workOrder.id,
+        title: workOrder.title,
+        description: workOrder.description || undefined,
+        priority: workOrder.priority,
+        status: workOrder.status,
+        assetName: workOrder.asset?.name || undefined,
+        assignedToName: workOrder.assignedTo?.name || undefined,
+        dueDate: workOrder.dueDate ? new Date(workOrder.dueDate) : undefined,
+        workOrderUrl: `${process.env.FRONTEND_URL}/work-orders/${workOrder.id}`,
+      };
+
+      // Send specialized work order notification email
+      await emailService.sendWorkOrderNotificationEmail(
+        user.email,
+        user.name,
+        workOrderDetails
+      );
+
+      console.log(`📧 Work order notification email sent to ${user.email} for WO #${workOrder.id}`);
+    } catch (error) {
+      console.error('Error sending work order email notification:', error);
+      // Fallback to generic notification email if work order email fails
+      try {
+        const emailData = {
+          user: {
+            name: user.name,
+            email: user.email,
+          },
+          notification: {
+            title: notification.title,
+            message: notification.message,
+            category: notification.category,
+            priority: notification.priority,
+            actionUrl: notification.actionUrl,
+            actionLabel: notification.actionLabel,
+            createdAt: notification.createdAt,
+            relatedEntityType: notification.relatedEntityType,
+            relatedEntityId: notification.relatedEntityId,
+          },
+          organizationName: user.organization?.name || 'CMMS',
+          unsubscribeUrl: `${process.env.FRONTEND_URL}/settings/notifications`,
+        };
+        await emailService.sendNotificationEmail(emailData);
+        console.log(`📧 Fallback notification email sent to ${user.email}`);
+      } catch (fallbackError) {
+        console.error('Error sending fallback email notification:', fallbackError);
+      }
     }
   }
 }

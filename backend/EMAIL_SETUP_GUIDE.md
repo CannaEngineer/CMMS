@@ -34,8 +34,13 @@ The CMMS application now includes comprehensive email functionality:
      - **Password**: Create a strong password (save this for later)
      - **Mailbox Quota**: Set appropriate quota (2GB+ recommended)
 
+Username:	cmms@elevatedcompliance.tech
+Password:	//////
+POP/IMAP Server:	heracles.mxrouting.net
+SMTP Server:	heracles.mxrouting.net
+
 3. **Note SMTP Settings**:
-   - **SMTP Server**: `heracles.mxrouting.net`
+   - **SMTP Server**: `mail.elevatedcompliance.tech`
    - **Port**: `587` (recommended) or `465` for SSL
    - **Security**: STARTTLS for port 587, SSL/TLS for port 465
 
@@ -90,7 +95,7 @@ You can verify DNS propagation using online tools like `mxtoolbox.com`.
    PORT=5000
    
    # Email Configuration (MXroute SMTP)
-   SMTP_HOST=heracles.mxrouting.net
+   SMTP_HOST=mail.elevatedcompliance.tech
    SMTP_PORT=587
    SMTP_SECURE=false
    SMTP_USER=cmms@elevatedcompliance.tech
@@ -111,7 +116,7 @@ You can verify DNS propagation using online tools like `mxtoolbox.com`.
    - Add each of the following:
 
    ```
-   SMTP_HOST=heracles.mxrouting.net
+   SMTP_HOST=mail.elevatedcompliance.tech
    SMTP_PORT=587
    SMTP_SECURE=false
    SMTP_USER=cmms@elevatedcompliance.tech
@@ -296,10 +301,10 @@ You can test your SMTP credentials using command line tools:
 
 ```bash
 # Using telnet (Linux/Mac)
-telnet heracles.mxrouting.net 587
+telnet mail.elevatedcompliance.tech 587
 
 # Using openssl for encrypted connection
-openssl s_client -connect heracles.mxrouting.net:465 -quiet
+openssl s_client -connect mail.elevatedcompliance.tech:465 -quiet
 ```
 
 ### Log File Locations

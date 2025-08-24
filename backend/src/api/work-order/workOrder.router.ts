@@ -27,4 +27,7 @@ router.post('/:id/share', workOrderController.createShare);
 router.get('/:id/shares', workOrderController.getShares);
 router.patch('/shares/:shareId/deactivate', workOrderController.deactivateShare);
 
+// Work Order Notification routes
+router.post('/:id/notify', workOrderController.sendNotification);
+
 export default router;
