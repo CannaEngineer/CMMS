@@ -309,9 +309,9 @@ export default function WorkOrderDetail() {
 
   // Assignment mutation
   const assignWorkOrderMutation = useMutation({
-    mutationFn: ({ assigneeEmail }: { assigneeEmail: string }) => {
+    mutationFn: ({ assignedToId }: { assignedToId: number }) => {
       if (!id) throw new Error('Work order ID is required');
-      return workOrdersService.assignWorkOrder(id, assigneeEmail);
+      return workOrdersService.assignWorkOrder(id, assignedToId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
@@ -366,10 +366,16 @@ export default function WorkOrderDetail() {
   const handleAssignWorkOrder = () => {
     const userToAssign = users.find(user => user.id === selectedUser);
     if (userToAssign) {
-      assignWorkOrderMutation.mutate({ assigneeEmail: userToAssign.email });
+      assignWorkOrderMutation.mutate({ assignedToId: parseInt(userToAssign.id) });
     } else if (assigneeEmail.trim()) {
-      // Fallback to manual email entry
-      assignWorkOrderMutation.mutate({ assigneeEmail: assigneeEmail.trim() });
+      // Find user by email in the users list
+      const userByEmail = users.find(user => user.email === assigneeEmail.trim());
+      if (userByEmail) {
+        assignWorkOrderMutation.mutate({ assignedToId: parseInt(userByEmail.id) });
+      } else {
+        // User not found in list, show error
+        alert('User not found. Please select a user from the dropdown list.');
+      }
     }
   };
 
@@ -557,7 +563,11 @@ export default function WorkOrderDetail() {
           Math.min((timeStats?.totalHours || 0) / workOrder.estimatedHours * 40, 40) : 0;
         return Math.round(taskProgress + timeProgress);
       case 'ON_HOLD':
-        return Math.max(calculateProgressPercentage() - 10, 0);
+        // Calculate base progress without recursion and reduce by 10%
+        const onHoldTaskProgress = tasks.length > 0 ? (getCompletedTasks() / tasks.length) * 60 : 30;
+        const onHoldTimeProgress = workOrder.estimatedHours ? 
+          Math.min((timeStats?.totalHours || 0) / workOrder.estimatedHours * 40, 40) : 0;
+        return Math.max(Math.round(onHoldTaskProgress + onHoldTimeProgress) - 10, 0);
       case 'PENDING':
       case 'OPEN':
       default:

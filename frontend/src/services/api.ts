@@ -447,9 +447,9 @@ export const workOrdersService = {
     }
   },
 
-  async assignWorkOrder(id: string, assigneeEmail: string): Promise<any> {
+  async assignWorkOrder(id: string, assignedToId: number): Promise<any> {
     try {
-      return await apiClient.put<any>(`/api/work-orders/${id}`, { assigneeEmail });
+      return await apiClient.put<any>(`/api/work-orders/${id}`, { assignedToId });
     } catch (error) {
       throw new Error(`Failed to assign work order ${id}`);
     }
