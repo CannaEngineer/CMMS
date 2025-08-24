@@ -96,7 +96,7 @@ export default function ResetPassword() {
         },
         body: JSON.stringify({
           token,
-          newPassword: data.password,
+          password: data.password,
         }),
       });
 
