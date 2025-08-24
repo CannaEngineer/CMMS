@@ -41,25 +41,7 @@ import {
   Satellite as SatelliteIcon,
   Terrain as TerrainIcon,
 } from '@mui/icons-material';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Ensure leaflet tiles are visible
-const leafletOverrides = `
-  .leaflet-container {
-    height: 100%;
-    width: 100%;
-    z-index: 0;
-  }
-  .leaflet-tile-pane {
-    opacity: 1 !important;
-  }
-  .leaflet-tile {
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-`;
+import SimpleMap from './SimpleMap';
 
 interface Location {
   id: number;
@@ -84,44 +66,6 @@ const LOCATION_COLORS = {
   FLOOR: '#2196f3',
   ZONE: '#ff9800',
   ROOM: '#4caf50',
-};
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Create custom icons for different location types
-const createLocationIcon = (type: string, assetCount?: number) => {
-  const color = LOCATION_COLORS[type as keyof typeof LOCATION_COLORS] || '#666';
-  const size = Math.max(25, Math.min(40, (assetCount || 0) / 5 + 25));
-  
-  return new L.DivIcon({
-    html: `
-      <div style="
-        background-color: ${color};
-        border: 3px solid white;
-        border-radius: 50%;
-        width: ${size}px;
-        height: ${size}px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      ">
-        ${assetCount || 0}
-      </div>
-    `,
-    className: 'custom-location-marker',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
 };
 
 const getLocationIcon = (type: string) => {
@@ -149,35 +93,8 @@ export default function SiteMapDialog({
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [showAssetCount, setShowAssetCount] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-  const mapRef = React.useRef<any>(null);
 
-  // Inject leaflet override styles when dialog opens
-  useEffect(() => {
-    if (open) {
-      const styleElement = document.createElement('style');
-      styleElement.textContent = leafletOverrides;
-      document.head.appendChild(styleElement);
-      
-      return () => {
-        document.head.removeChild(styleElement);
-      };
-    }
-  }, [open]);
   
-  // Trigger map resize when dialog opens
-  useEffect(() => {
-    if (open && mapRef.current) {
-      // Force resize after dialog animation
-      const resizeTimer = setTimeout(() => {
-        if (mapRef.current) {
-          mapRef.current.invalidateSize();
-          console.log('🗺️ Map resized via useEffect');
-        }
-      }, 500);
-      
-      return () => clearTimeout(resizeTimer);
-    }
-  }, [open]);
 
   console.log('🗺️ SiteMapDialog render:', { open, locationsCount: locations.length, locations });
 
@@ -192,24 +109,6 @@ export default function SiteMapDialog({
     return filtered;
   }, [locations]);
 
-  // Calculate map center and zoom
-  const mapCenter = useMemo((): [number, number] => {
-    if (mappableLocations.length === 0) {
-      console.log('🗺️ No mappable locations, using default center (NYC)');
-      return [40.7128, -74.0060]; // Default to New York
-    }
-    
-    const lats = mappableLocations.map(loc => loc.coordinates!.lat);
-    const lngs = mappableLocations.map(loc => loc.coordinates!.lng);
-    
-    const centerLat = lats.reduce((sum, lat) => sum + lat, 0) / lats.length;
-    const centerLng = lngs.reduce((sum, lng) => sum + lng, 0) / lngs.length;
-    
-    const center: [number, number] = [centerLat, centerLng];
-    console.log('🗺️ Calculated map center:', { center, lats, lngs });
-    
-    return center;
-  }, [mappableLocations]);
 
   // Filter locations by layer
   const filteredLocations = useMemo(() => {
@@ -217,113 +116,6 @@ export default function SiteMapDialog({
     return mappableLocations.filter(loc => loc.type === selectedLayer);
   }, [mappableLocations, selectedLayer]);
 
-  // Real Map Component using Leaflet - memoized to prevent re-renders
-  const RealSiteMap = React.useMemo(() => {
-    console.log('🗺️ Creating RealSiteMap component:', { open, mappableCount: mappableLocations.length });
-    
-    // Don't render if dialog is closed or no locations
-    if (!open || mappableLocations.length === 0) {
-      return null;
-    }
-
-    return (
-      <MapContainer
-        center={mapCenter}
-        zoom={13}
-        style={{ height: '100%', minHeight: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
-        ref={(map) => {
-          if (map && !mapRef.current) {
-            mapRef.current = map;
-            console.log('🗺️ Map instance stored in ref');
-            
-            // Force resize after a delay
-            setTimeout(() => {
-              if (mapRef.current) {
-                mapRef.current.invalidateSize();
-                const container = mapRef.current.getContainer();
-                console.log('🗺️ Map resized after ref set:', {
-                  offsetWidth: container.offsetWidth,
-                  offsetHeight: container.offsetHeight
-                });
-              }
-            }, 100);
-          }
-        }}
-      >
-        <LayersControl position="topright">
-          {/* Base Layers */}
-          <LayersControl.BaseLayer checked name="Streets">
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              attribution='&copy; <a href="https://www.esri.com/">Esri</a>, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community'
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name="Terrain">
-            <TileLayer
-              url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://opentopomap.org/">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
-            />
-          </LayersControl.BaseLayer>
-
-          <LayersControl.BaseLayer name="Dark">
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
-
-        {/* Location Markers */}
-        {filteredLocations.map((location) => (
-          <Marker
-            key={location.id}
-            position={[location.coordinates!.lat, location.coordinates!.lng]}
-            icon={createLocationIcon(location.type, location.assetCount)}
-            eventHandlers={{
-              click: () => setSelectedLocation(location),
-            }}
-          >
-            <Popup>
-              <Box sx={{ minWidth: 200 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  {location.name}
-                </Typography>
-                <Stack spacing={1}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {getLocationIcon(location.type)}
-                    <Chip 
-                      label={location.type} 
-                      size="small" 
-                      color="primary" 
-                    />
-                  </Box>
-                  {location.description && (
-                    <Typography variant="body2" color="text.secondary">
-                      {location.description}
-                    </Typography>
-                  )}
-                  <Typography variant="body2">
-                    <strong>Assets:</strong> {location.assetCount}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Coordinates:</strong> {location.coordinates!.lat.toFixed(4)}, {location.coordinates!.lng.toFixed(4)}
-                  </Typography>
-                </Stack>
-              </Box>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    );
-  }, [open, mappableLocations, mapCenter, filteredLocations]);
 
   const layerOptions = [
     { value: 'all', label: 'All Locations' },
@@ -397,9 +189,10 @@ export default function SiteMapDialog({
             ) : (
               <Card sx={{ height: '540px' }}>
                 <CardContent sx={{ p: 1, height: '100%' }}>
-                  <Box sx={{ height: '100%', width: '100%' }}>
-                    {RealSiteMap}
-                  </Box>
+                  <SimpleMap 
+                    locations={filteredLocations} 
+                    height="100%" 
+                  />
                 </CardContent>
               </Card>
             )}
