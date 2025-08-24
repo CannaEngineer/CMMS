@@ -53,6 +53,13 @@ export const login = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Login error:", error); // Added console.error
     if (error instanceof Error) {
+        if (error.message === 'EMAIL_NOT_VERIFIED') {
+          return res.status(403).json({ 
+            error: 'EMAIL_NOT_VERIFIED',
+            message: 'Please verify your email address before logging in. We\'ve sent a new verification email to your inbox.',
+            requiresEmailVerification: true
+          });
+        }
         res.status(400).json({ error: error.message });
     } else {
         res.status(400).json({ error: 'An unknown error occurred' });

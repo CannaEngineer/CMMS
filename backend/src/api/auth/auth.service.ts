@@ -117,7 +117,10 @@ export const register = async (data: any) => {
 
 export const login = async (data: any) => {
   console.log("Login attempt for email:", data.email);
-  const user = await prisma.user.findUnique({ where: { email: data.email } });
+  const user = await prisma.user.findUnique({ 
+    where: { email: data.email },
+    include: { organization: true }
+  });
 
   if (!user) {
     console.log("User not found for email:", data.email);
@@ -133,6 +136,21 @@ export const login = async (data: any) => {
 
   if (!isPasswordValid) {
     throw new Error('Invalid password');
+  }
+
+  // Check if email is verified
+  if (!user.emailVerified) {
+    console.log("Email not verified for user:", data.email);
+    
+    // Try to resend verification email
+    try {
+      await sendEmailVerification(user.id);
+      console.log("Resent email verification to:", user.email);
+    } catch (emailError) {
+      console.error("Failed to resend verification email:", emailError);
+    }
+
+    throw new Error('EMAIL_NOT_VERIFIED');
   }
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'dev-secret', {
@@ -214,7 +232,7 @@ export const sendEmailVerification = async (userId: number): Promise<boolean> =>
 
     // Send verification email
     const { emailService } = require('../../services/email.service');
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
     const verificationUrl = `${baseUrl}/auth/verify-email?token=${verificationToken}`;
 
     const success = await emailService.sendEmailVerificationEmail(
@@ -304,7 +322,7 @@ export const initiatePasswordReset = async (email: string): Promise<boolean> => 
 
     // Send reset email
     const { emailService } = require('../../services/email.service');
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'https://cmms-orpin.vercel.app';
     const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
 
     const success = await emailService.sendPasswordResetEmail(
