@@ -631,24 +631,6 @@ export default function AssetDetail() {
                             >
                               Edit
                             </Button>
-                            <Button 
-                              size="small" 
-                              variant="outlined"
-                              onClick={() => {
-                                // Create work order from PM schedule
-                                const workOrderData = {
-                                  title: `PM: ${schedule.title || 'Scheduled Maintenance'}`,
-                                  description: `Preventive maintenance based on schedule: ${schedule.description || ''}`,
-                                  assetId: asset?.id,
-                                  priority: 'MEDIUM',
-                                  status: 'OPEN',
-                                  type: 'PREVENTIVE'
-                                };
-                                createWorkOrderMutation.mutate(workOrderData);
-                              }}
-                            >
-                              Create Work Order
-                            </Button>
                           </Box>
                         </CardContent>
                       </Card>

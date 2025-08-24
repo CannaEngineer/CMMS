@@ -264,6 +264,8 @@ export default function WorkOrderDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      // Force refetch of work order data to show updated attachments
+      queryClient.refetchQueries({ queryKey: ['work-order', id] });
       // Only close dialog if it's open (attachments update shouldn't close dialog)
       if (editDialogOpen) {
         setEditDialogOpen(false);
@@ -409,8 +411,10 @@ export default function WorkOrderDetail() {
   };
 
   const handleAttachmentsChange = (attachments: FileAttachment[]) => {
+    if (!workOrder?.id) return;
+    
     updateWorkOrderMutation.mutate({ 
-      id: workOrder?.id,
+      id: workOrder.id,
       attachments 
     });
   };
