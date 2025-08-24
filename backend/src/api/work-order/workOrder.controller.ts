@@ -451,27 +451,69 @@ export const sendNotification = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Work order must have an assignee to send notification' });
     }
     
-    // Import notification service
-    const { NotificationService } = require('../notification/notification.service');
-    const notificationService = new NotificationService();
-    
-    // Create notification data
-    const notificationData = {
-      userId: workOrder.assignedTo.id,
-      organizationId: organizationId,
-      title: `Work Order Update: ${workOrder.title}`,
-      message: message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`,
-      category: 'WORK_ORDER' as any,
-      priority: workOrder.priority === 'URGENT' ? 'HIGH' as any : 'MEDIUM' as any,
-      relatedEntityType: 'WorkOrder',
-      relatedEntityId: workOrder.id,
-      actionUrl: `/work-orders/${workOrder.id}`,
-      actionLabel: 'View Work Order',
-      createdById: userId,
-    };
-    
-    // Send notification (this will also trigger email if user has email notifications enabled)
-    await notificationService.createNotification(notificationData);
+    try {
+      // Try to use the notification service first
+      const { NotificationService } = require('../notification/notification.service');
+      const notificationService = new NotificationService();
+      
+      const notificationData = {
+        userId: workOrder.assignedTo.id,
+        organizationId: organizationId,
+        title: `Work Order Update: ${workOrder.title}`,
+        message: message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`,
+        category: 'WORK_ORDER' as any,
+        priority: workOrder.priority === 'URGENT' ? 'HIGH' as any : 'MEDIUM' as any,
+        relatedEntityType: 'WorkOrder',
+        relatedEntityId: workOrder.id,
+        actionUrl: `/work-orders/${workOrder.id}`,
+        actionLabel: 'View Work Order',
+        createdById: userId,
+      };
+      
+      await notificationService.createNotification(notificationData);
+      
+    } catch (notificationError) {
+      console.log('Database notification failed, sending email directly:', notificationError.message);
+      
+      // Fallback: Send email directly without storing in database
+      try {
+        const { emailService } = require('../../services/email.service');
+        
+        if (workOrder.assignedTo.email) {
+          const emailContent = {
+            to: workOrder.assignedTo.email,
+            subject: `Work Order Update: ${workOrder.title}`,
+            html: `
+              <h2>Work Order Notification</h2>
+              <p>Hello ${workOrder.assignedTo.name},</p>
+              <p>${message || `You have been notified about work order #${workOrder.id}. Please review the details and take appropriate action.`}</p>
+              
+              <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+                <h3>Work Order Details:</h3>
+                <p><strong>ID:</strong> #${workOrder.id}</p>
+                <p><strong>Title:</strong> ${workOrder.title}</p>
+                <p><strong>Status:</strong> ${workOrder.status}</p>
+                <p><strong>Priority:</strong> ${workOrder.priority}</p>
+                ${workOrder.description ? `<p><strong>Description:</strong> ${workOrder.description}</p>` : ''}
+              </div>
+              
+              <p>Please log in to the system to view full details and take any necessary action.</p>
+              
+              <hr style="margin: 20px 0;">
+              <p style="font-size: 12px; color: #666;">
+                This email was sent from the Elevated Compliance CMMS system.
+              </p>
+            `
+          };
+          
+          await emailService.sendEmail(emailContent);
+          console.log('Fallback email sent successfully to:', workOrder.assignedTo.email);
+        }
+      } catch (emailError) {
+        console.error('Fallback email also failed:', emailError);
+        throw new Error('Failed to send notification via database or email');
+      }
+    }
     
     res.json({ 
       message: 'Notification sent successfully',
