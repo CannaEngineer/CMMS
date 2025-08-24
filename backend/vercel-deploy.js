@@ -30,7 +30,7 @@ try {
       execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
     } catch (migrationError) {
       console.log('Migration deployment failed, trying db push instead...');
-      execSync('npx prisma db push', { stdio: 'inherit', env: process.env });
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env: process.env });
     }
   } else {
     console.log('Step 3: Skipping database setup (will be configured in Vercel)');
