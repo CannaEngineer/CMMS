@@ -164,10 +164,24 @@ export default function WorkOrderDetail() {
       };
       
       try {
+        console.log('📎 Fetching work order data for ID:', id);
         const result = await workOrdersService.getById(id);
-        return { ...mockWorkOrder, ...result };
+        const finalResult = { ...mockWorkOrder, ...result };
+        console.log('📎 Work order data received:', { 
+          id: finalResult?.id, 
+          attachments: finalResult?.attachments,
+          attachmentCount: finalResult?.attachments?.length || 0,
+          mockAttachments: mockWorkOrder.attachments,
+          apiAttachments: result?.attachments
+        });
+        return finalResult;
       } catch (error) {
-        console.warn(`Work order ${id} API not available, using mock data`);
+        console.warn(`📎 Work order ${id} API not available, using mock data:`, error);
+        console.log('📎 Mock work order data:', { 
+          id: mockWorkOrder.id, 
+          attachments: mockWorkOrder.attachments,
+          attachmentCount: mockWorkOrder.attachments?.length || 0 
+        });
         return mockWorkOrder;
       }
     },
@@ -258,13 +272,16 @@ export default function WorkOrderDetail() {
   // Update mutation
   const updateWorkOrderMutation = useMutation({
     mutationFn: (updatedData: any) => {
+      console.log('📎 updateWorkOrderMutation mutationFn called:', { id, updatedData });
       if (!id) throw new Error('Work order ID is required');
       return workOrdersService.update(id, updatedData);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('📎 updateWorkOrderMutation SUCCESS:', { result });
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       // Force refetch of work order data to show updated attachments
+      console.log('📎 Triggering refetch of work order data');
       queryClient.refetchQueries({ queryKey: ['work-order', id] });
       // Only close dialog if it's open (attachments update shouldn't close dialog)
       if (editDialogOpen) {
@@ -272,7 +289,7 @@ export default function WorkOrderDetail() {
       }
     },
     onError: (error) => {
-      console.error('Failed to update work order:', error);
+      console.error('📎 updateWorkOrderMutation ERROR:', error);
     },
   });
 
@@ -411,8 +428,19 @@ export default function WorkOrderDetail() {
   };
 
   const handleAttachmentsChange = (attachments: FileAttachment[]) => {
-    if (!workOrder?.id) return;
+    console.log('📎 handleAttachmentsChange called:', { 
+      workOrderId: workOrder?.id, 
+      attachments, 
+      attachmentsCount: attachments.length,
+      currentAttachments: workOrder?.attachments 
+    });
     
+    if (!workOrder?.id) {
+      console.log('📎 ERROR: No work order ID available');
+      return;
+    }
+    
+    console.log('📎 Calling updateWorkOrderMutation with:', { id: workOrder.id, attachments });
     updateWorkOrderMutation.mutate({ 
       id: workOrder.id,
       attachments 

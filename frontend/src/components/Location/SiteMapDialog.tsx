@@ -134,14 +134,25 @@ export default function SiteMapDialog({
   const [showAssetCount, setShowAssetCount] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
+  console.log('🗺️ SiteMapDialog render:', { open, locationsCount: locations.length, locations });
+
   // Filter locations with coordinates (mappable locations)
   const mappableLocations = useMemo(() => {
-    return locations.filter(loc => loc.coordinates);
+    const filtered = locations.filter(loc => loc.coordinates);
+    console.log('🗺️ Mappable locations:', { 
+      totalLocations: locations.length, 
+      mappableCount: filtered.length,
+      mappableLocations: filtered 
+    });
+    return filtered;
   }, [locations]);
 
   // Calculate map center and zoom
   const mapCenter = useMemo((): [number, number] => {
-    if (mappableLocations.length === 0) return [40.7128, -74.0060]; // Default to New York
+    if (mappableLocations.length === 0) {
+      console.log('🗺️ No mappable locations, using default center (NYC)');
+      return [40.7128, -74.0060]; // Default to New York
+    }
     
     const lats = mappableLocations.map(loc => loc.coordinates!.lat);
     const lngs = mappableLocations.map(loc => loc.coordinates!.lng);
@@ -149,7 +160,10 @@ export default function SiteMapDialog({
     const centerLat = lats.reduce((sum, lat) => sum + lat, 0) / lats.length;
     const centerLng = lngs.reduce((sum, lng) => sum + lng, 0) / lngs.length;
     
-    return [centerLat, centerLng];
+    const center: [number, number] = [centerLat, centerLng];
+    console.log('🗺️ Calculated map center:', { center, lats, lngs });
+    
+    return center;
   }, [mappableLocations]);
 
   // Filter locations by layer
@@ -160,15 +174,22 @@ export default function SiteMapDialog({
 
   // Real Map Component using Leaflet
   const RealSiteMap = () => {
-    if (mappableLocations.length === 0) return null;
+    console.log('🗺️ RealSiteMap render:', { mappableCount: mappableLocations.length, mapCenter });
+    
+    if (mappableLocations.length === 0) {
+      console.log('🗺️ RealSiteMap: No mappable locations, returning null');
+      return null;
+    }
+
+    console.log('🗺️ Creating MapContainer with:', { center: mapCenter, zoom: 13 });
 
     return (
       <MapContainer
         center={mapCenter}
         zoom={13}
         style={{ height: '500px', width: '100%', borderRadius: '8px' }}
-        whenReady={() => {
-          // Map is ready
+        whenReady={(map) => {
+          console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
         }}
       >
         <LayersControl position="topright">

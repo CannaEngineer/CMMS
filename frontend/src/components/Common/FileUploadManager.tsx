@@ -81,6 +81,14 @@ export default function FileUploadManager({
         formData.append('entityId', entityId);
         
         try {
+          console.log('📎 Starting upload for file:', { 
+            name: file.name, 
+            size: file.size, 
+            type: file.type,
+            entityType, 
+            entityId 
+          });
+          
           const response = await fetch('/api/upload/blob', {
             method: 'POST',
             headers: {
@@ -89,29 +97,45 @@ export default function FileUploadManager({
             body: formData,
           });
           
+          console.log('📎 Upload response status:', response.status, response.statusText);
+          
           if (response.ok) {
             const uploadResult = await response.json();
+            console.log('📎 Upload result:', uploadResult);
+            
             if (uploadResult.success && uploadResult.url) {
-              newAttachments.push({
+              const newAttachment = {
                 url: uploadResult.url,
                 filename: uploadResult.filename || file.name,
                 size: uploadResult.size || file.size,
                 type: file.type,
                 fileId: uploadResult.fileId,
-              });
+              };
+              console.log('📎 Adding new attachment:', newAttachment);
+              newAttachments.push(newAttachment);
+            } else {
+              console.log('📎 Upload result not successful or missing URL:', uploadResult);
             }
           } else {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.log('📎 Upload failed with error data:', errorData);
             throw new Error(errorData.error || `Upload failed for ${file.name}`);
           }
         } catch (error) {
-          console.error('Upload error for file:', file.name, error);
+          console.error('📎 Upload error for file:', file.name, error);
           throw error;
         }
       }
       
       // Update attachments
       const updatedAttachments = [...attachments, ...newAttachments];
+      console.log('📎 FileUploadManager: Calling onAttachmentsChange with:', {
+        previousAttachments: attachments,
+        newAttachments,
+        updatedAttachments,
+        entityType,
+        entityId
+      });
       onAttachmentsChange(updatedAttachments);
       
       setUploadSuccess(true);
