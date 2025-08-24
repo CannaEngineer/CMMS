@@ -215,9 +215,15 @@ export default function SiteMapDialog({
     return mappableLocations.filter(loc => loc.type === selectedLayer);
   }, [mappableLocations, selectedLayer]);
 
-  // Real Map Component using Leaflet
+  // Real Map Component using Leaflet - only render when dialog is open
   const RealSiteMap = () => {
-    console.log('🗺️ RealSiteMap render:', { mappableCount: mappableLocations.length, mapCenter });
+    console.log('🗺️ RealSiteMap render:', { mappableCount: mappableLocations.length, mapCenter, dialogOpen: open });
+    
+    // Don't render if dialog is closed
+    if (!open) {
+      console.log('🗺️ RealSiteMap: Dialog closed, not rendering map');
+      return null;
+    }
     
     if (mappableLocations.length === 0) {
       console.log('🗺️ RealSiteMap: No mappable locations, returning null');
@@ -249,20 +255,32 @@ export default function SiteMapDialog({
             position: window.getComputedStyle(container).position
           });
           
-          // Force a resize after the dialog and map are fully rendered
-          setTimeout(() => {
+          // Force multiple resize attempts to handle dialog animation
+          const resizeMap = () => {
             map.invalidateSize();
             const container = map.getContainer();
-            console.log('🗺️ Map resized after mount:', {
+            const hasSize = container.offsetWidth > 0 && container.offsetHeight > 0;
+            console.log('🗺️ Map resize attempt:', {
               offsetWidth: container.offsetWidth,
               offsetHeight: container.offsetHeight,
-              hasWidth: container.offsetWidth > 0
+              hasSize
             });
             
-            // Pan to center to ensure tiles load
-            map.setView(mapCenter, 13);
-            console.log('🗺️ Map view set to center');
-          }, 100);
+            if (hasSize) {
+              // Pan to center to ensure tiles load
+              map.setView(mapCenter, 13);
+              console.log('🗺️ Map has size, view set to center');
+            }
+            return hasSize;
+          };
+          
+          // Try immediate resize
+          resizeMap();
+          
+          // Then try after delays to catch dialog animation
+          setTimeout(() => resizeMap(), 300);
+          setTimeout(() => resizeMap(), 600);
+          setTimeout(() => resizeMap(), 1000);
         }}
       >
         <LayersControl position="topright">
@@ -413,7 +431,7 @@ export default function SiteMapDialog({
               <Card sx={{ height: '540px' }}>
                 <CardContent sx={{ p: 1, height: '100%' }}>
                   <Box sx={{ height: '100%', width: '100%' }}>
-                    {open && <RealSiteMap />}
+                    <RealSiteMap />
                   </Box>
                 </CardContent>
               </Card>
