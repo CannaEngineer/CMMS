@@ -27,6 +27,13 @@ router.get('/status', emailController.getEmailStatus.bind(emailController));
 router.get('/test-config', emailController.testEmailConfig.bind(emailController));
 
 /**
+ * @route GET /api/email/diagnostics
+ * @desc Get email environment diagnostics
+ * @access Private (Admin only)
+ */
+router.get('/diagnostics', emailController.getEmailDiagnostics.bind(emailController));
+
+/**
  * @route POST /api/email/test
  * @desc Send test email
  * @access Private (Admin only)

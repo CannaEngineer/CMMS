@@ -151,6 +151,44 @@ elevatedcompliance.tech
     }
   }
 
+  // Diagnostic endpoint to check environment variables (admin only)
+  async getEmailDiagnostics(req: Request, res: Response) {
+    try {
+      const requiredVars = [
+        'SMTP_HOST',
+        'SMTP_PORT', 
+        'SMTP_USER',
+        'SMTP_PASS',
+        'SMTP_FROM',
+        'SMTP_FROM_NAME'
+      ];
+
+      const envStatus = requiredVars.map(varName => ({
+        name: varName,
+        present: !!process.env[varName],
+        value: varName === 'SMTP_PASS' ? '[HIDDEN]' : (process.env[varName] || 'NOT SET')
+      }));
+
+      const missingVars = envStatus.filter(v => !v.present).map(v => v.name);
+
+      res.json({
+        success: true,
+        environmentVariables: envStatus,
+        missingVariables: missingVars,
+        allConfigured: missingVars.length === 0,
+        nodeEnv: process.env.NODE_ENV,
+        platform: process.platform
+      });
+    } catch (error) {
+      console.error('Email diagnostics error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get email diagnostics',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
+
   // Send welcome email to user
   async sendWelcomeEmail(req: Request, res: Response) {
     try {
