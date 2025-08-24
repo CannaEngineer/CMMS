@@ -414,7 +414,7 @@ export const sendNotification = async (req: Request, res: Response) => {
     }
     
     // Import notification service
-    const { NotificationService } = await import('../notification/notification.service');
+    const { NotificationService } = require('../notification/notification.service');
     const notificationService = new NotificationService();
     
     // Create notification data

@@ -213,7 +213,7 @@ export const sendEmailVerification = async (userId: number): Promise<boolean> =>
     });
 
     // Send verification email
-    const { emailService } = await import('../../services/email.service');
+    const { emailService } = require('../../services/email.service');
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const verificationUrl = `${baseUrl}/auth/verify-email?token=${verificationToken}`;
 
@@ -303,7 +303,7 @@ export const initiatePasswordReset = async (email: string): Promise<boolean> => 
     });
 
     // Send reset email
-    const { emailService } = await import('../../services/email.service');
+    const { emailService } = require('../../services/email.service');
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
 
