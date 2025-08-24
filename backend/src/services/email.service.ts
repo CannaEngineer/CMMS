@@ -56,7 +56,7 @@ interface NotificationEmailData {
 export class EmailService {
   private transporter: Transporter | null = null;
   private config: EmailConfig | null = null;
-  private isConfigured: boolean = false;
+  private configured: boolean = false;
 
   constructor() {
     this.initialize();
@@ -81,14 +81,14 @@ export class EmailService {
 
         // Verify connection configuration
         await this.verifyConnection();
-        this.isConfigured = true;
+        this.configured = true;
         console.log('✅ Email service initialized successfully');
       } else {
         console.warn('⚠️ Email service not configured - email notifications will be disabled');
       }
     } catch (error) {
       console.error('❌ Failed to initialize email service:', error);
-      this.isConfigured = false;
+      this.configured = false;
     }
   }
 
@@ -136,7 +136,7 @@ export class EmailService {
   }
 
   public async sendEmail(emailData: EmailData): Promise<boolean> {
-    if (!this.isConfigured || !this.transporter || !this.config) {
+    if (!this.configured || !this.transporter || !this.config) {
       console.warn('Email service not configured, skipping email send');
       return false;
     }
@@ -167,7 +167,7 @@ export class EmailService {
   }
 
   public async sendNotificationEmail(data: NotificationEmailData): Promise<boolean> {
-    if (!this.isConfigured) {
+    if (!this.configured) {
       return false;
     }
 
@@ -770,11 +770,11 @@ elevatedcompliance.tech
 
   // Public utility methods
   public isConfigured(): boolean {
-    return this.isConfigured;
+    return this.configured;
   }
 
   public async testConnection(): Promise<{ success: boolean; error?: string }> {
-    if (!this.isConfigured || !this.transporter) {
+    if (!this.configured || !this.transporter) {
       return { success: false, error: 'Email service not configured' };
     }
 
