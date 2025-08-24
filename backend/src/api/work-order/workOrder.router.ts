@@ -31,4 +31,10 @@ router.patch('/shares/:shareId/deactivate', workOrderController.deactivateShare)
 // Work Order Notification routes
 router.post('/:id/notify', workOrderController.sendNotification);
 
+// Work Order Tasks routes
+router.get('/:id/tasks', workOrderController.getWorkOrderTasks);
+
+// Work Order History routes
+router.get('/:id/history', workOrderController.getWorkOrderHistory);
+
 export default router;

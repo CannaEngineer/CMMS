@@ -5,6 +5,7 @@ import { TimeLogService } from './timeLog.service';
 import { WorkOrderNotesService } from './workOrderNotes.service';
 import { WorkOrderShareService } from './workOrderShare.service';
 import { WorkOrderTaskService } from './workOrderTask.service';
+import { MaintenanceHistoryService } from '../maintenance-history/maintenanceHistory.service';
 
 const workOrderSchema = z.object({
   title: z.string(),
@@ -28,6 +29,7 @@ const timeLogService = new TimeLogService();
 const notesService = new WorkOrderNotesService();
 const shareService = new WorkOrderShareService();
 const taskService = new WorkOrderTaskService();
+const historyService = new MaintenanceHistoryService();
 
 export const getAllWorkOrders = async (req: Request, res: Response) => {
   const { organizationId } = req.user;
@@ -479,5 +481,53 @@ export const sendNotification = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error sending notification:', error);
     res.status(500).json({ error: 'Failed to send notification' });
+  }
+};
+
+// Work Order Tasks Controller
+export const getWorkOrderTasks = async (req: Request, res: Response) => {
+  try {
+    const { organizationId } = req.user;
+    const workOrderId = Number(req.params.id);
+    
+    // Verify work order exists and belongs to user's organization
+    const workOrder = await workOrderService.getWorkOrderById(workOrderId, organizationId);
+    if (!workOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    // Get tasks for this work order
+    const tasks = await taskService.getTasksByWorkOrder(workOrderId);
+    
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error fetching work order tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch work order tasks' });
+  }
+};
+
+// Work Order History Controller
+export const getWorkOrderHistory = async (req: Request, res: Response) => {
+  try {
+    const { organizationId } = req.user;
+    const workOrderId = Number(req.params.id);
+    
+    // Verify work order exists and belongs to user's organization
+    const workOrder = await workOrderService.getWorkOrderById(workOrderId, organizationId);
+    if (!workOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    // Get maintenance history for the work order's asset
+    if (!workOrder.assetId) {
+      return res.status(200).json([]); // Return empty array if no asset associated
+    }
+    
+    const history = await historyService.getMaintenanceHistory(workOrder.assetId);
+    
+    res.status(200).json(history);
+  } catch (error) {
+    console.error('Error fetching work order history:', error);
+    res.status(500).json({ error: 'Failed to fetch work order history' });
   }
 };
