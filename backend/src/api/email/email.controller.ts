@@ -110,6 +110,7 @@ elevatedcompliance.tech
         res.status(500).json({
           success: false,
           message: 'Failed to send test email',
+          error: 'Email service returned false - check server logs for SMTP details'
         });
       }
     } catch (error) {

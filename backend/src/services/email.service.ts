@@ -201,6 +201,18 @@ export class EmailService {
       return true;
     } catch (error) {
       console.error('❌ Failed to send email:', error);
+      
+      // Log specific SMTP error details
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          code: (error as any).code,
+          command: (error as any).command,
+          response: (error as any).response,
+          responseCode: (error as any).responseCode
+        });
+      }
+      
       return false;
     }
   }
