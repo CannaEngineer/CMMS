@@ -688,6 +688,24 @@ export default function WorkOrderDetail() {
     return alerts;
   };
 
+  // Helper function to convert colors to valid MUI TimelineDot colors
+  const getValidMuiColor = (color: string) => {
+    switch (color) {
+      case 'primary':
+        return 'primary';
+      case 'success':
+        return 'success';
+      case 'warning':
+        return 'warning';  
+      case 'error':
+        return 'error';
+      case 'info':
+        return 'info';
+      default:
+        return 'grey'; // Use grey as default instead of 'default'
+    }
+  };
+
   // Helper function for History timeline
   const getTimelineEvents = () => {
     const events = [];
@@ -742,7 +760,7 @@ export default function WorkOrderDetail() {
             details: `Category: ${log.category || 'Labor'} | Billable: ${log.billable ? 'Yes' : 'No'}`,
             user: log.user?.name || log.userId || 'Unknown',
             icon: <TimerIcon />,
-            color: 'default',
+            color: 'grey',
             variant: 'outlined'
           });
         });
@@ -814,7 +832,7 @@ export default function WorkOrderDetail() {
             break;
           case 'COMMENT':
             icon = <NoteIcon />;
-            color = 'default';
+            color = 'grey';
             break;
           default:
             icon = <InfoIcon />;
@@ -1643,7 +1661,7 @@ export default function WorkOrderDetail() {
                       {event.time}
                     </TimelineOppositeContent>
                     <TimelineSeparator>
-                      <TimelineDot color={event.color} variant={event.variant}>
+                      <TimelineDot color={getValidMuiColor(event.color) as any} variant={event.variant}>
                         {event.icon}
                       </TimelineDot>
                       {index < getTimelineEvents().length - 1 && <TimelineConnector />}
