@@ -57,9 +57,19 @@ export class EmailService {
   private transporter: Transporter | null = null;
   private config: EmailConfig | null = null;
   private configured: boolean = false;
+  private initializePromise: Promise<void> | null = null;
 
   constructor() {
-    this.initialize();
+    // Don't initialize immediately in serverless environments
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    if (this.initializePromise) {
+      return this.initializePromise;
+    }
+    
+    this.initializePromise = this.initialize();
+    return this.initializePromise;
   }
 
   private async initialize() {
@@ -136,6 +146,7 @@ export class EmailService {
   }
 
   public async sendEmail(emailData: EmailData): Promise<boolean> {
+    await this.ensureInitialized();
     if (!this.configured || !this.transporter || !this.config) {
       console.warn('Email service not configured, skipping email send');
       return false;
@@ -167,6 +178,7 @@ export class EmailService {
   }
 
   public async sendNotificationEmail(data: NotificationEmailData): Promise<boolean> {
+    await this.ensureInitialized();
     if (!this.configured) {
       return false;
     }
@@ -769,11 +781,13 @@ elevatedcompliance.tech
   }
 
   // Public utility methods
-  public isConfigured(): boolean {
+  public async isConfigured(): Promise<boolean> {
+    await this.ensureInitialized();
     return this.configured;
   }
 
   public async testConnection(): Promise<{ success: boolean; error?: string }> {
+    await this.ensureInitialized();
     if (!this.configured || !this.transporter) {
       return { success: false, error: 'Email service not configured' };
     }

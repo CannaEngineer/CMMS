@@ -4,9 +4,9 @@ import { body, validationResult } from 'express-validator';
 
 export class EmailController {
   // Helper method to safely check if email service is configured
-  private checkEmailServiceConfigured(): boolean {
+  private async checkEmailServiceConfigured(): Promise<boolean> {
     try {
-      return emailService.isConfigured();
+      return await emailService.isConfigured();
     } catch (error) {
       console.error('Error checking email service configuration:', error);
       return false;
@@ -21,14 +21,14 @@ export class EmailController {
         res.json({
           success: true,
           message: 'Email service is configured and working properly',
-          configured: this.checkEmailServiceConfigured()
+          configured: await this.checkEmailServiceConfigured()
         });
       } else {
         res.status(500).json({
           success: false,
           message: 'Email service configuration test failed',
           error: testResult.error,
-          configured: this.checkEmailServiceConfigured()
+          configured: await this.checkEmailServiceConfigured()
         });
       }
     } catch (error) {
@@ -58,7 +58,7 @@ export class EmailController {
       const { to, subject, message } = req.body;
       const user = req.user; // Assuming auth middleware populates this
 
-      if (!this.checkEmailServiceConfigured()) {
+      if (!(await this.checkEmailServiceConfigured())) {
         return res.status(400).json({
           success: false,
           message: 'Email service is not configured'
@@ -127,7 +127,7 @@ elevatedcompliance.tech
     try {
       let isConfigured = false;
       try {
-        isConfigured = emailService.isConfigured();
+        isConfigured = await emailService.isConfigured();
       } catch (err) {
         console.error('Error checking email service configuration:', err);
         isConfigured = false;
@@ -203,7 +203,7 @@ elevatedcompliance.tech
 
       const { userEmail, userName, tempPassword, loginUrl } = req.body;
 
-      if (!this.checkEmailServiceConfigured()) {
+      if (!(await this.checkEmailServiceConfigured())) {
         return res.status(400).json({
           success: false,
           message: 'Email service is not configured'
@@ -252,7 +252,7 @@ elevatedcompliance.tech
 
       const { userEmail, userName, resetUrl } = req.body;
 
-      if (!this.checkEmailServiceConfigured()) {
+      if (!(await this.checkEmailServiceConfigured())) {
         return res.status(400).json({
           success: false,
           message: 'Email service is not configured'
