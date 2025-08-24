@@ -66,7 +66,7 @@ export class EmailService {
     try {
       this.config = this.getEmailConfig();
       if (this.config) {
-        this.transporter = nodemailer.createTransporter({
+        this.transporter = nodemailer.createTransport({
           host: this.config.host,
           port: this.config.port,
           secure: this.config.secure, // true for 465, false for other ports

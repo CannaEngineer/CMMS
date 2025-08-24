@@ -12,12 +12,12 @@ const nodemailer = require('nodemailer');
 
 // Configuration
 const config = {
-  host: process.env.SMTP_HOST || 'mail.elevatedcompliance.tech',
+  host: process.env.SMTP_HOST || 'heracles.mxrouting.net',
   port: parseInt(process.env.SMTP_PORT || '587', 10),
   secure: process.env.SMTP_SECURE === 'true',
   auth: {
     user: process.env.SMTP_USER || 'cmms@elevatedcompliance.tech',
-    pass: process.env.SMTP_PASS || 'your-password-here',
+    pass: process.env.SMTP_PASS || 'Play101!@#$',
   },
   from: process.env.SMTP_FROM || 'cmms@elevatedcompliance.tech',
   fromName: process.env.SMTP_FROM_NAME || 'Elevated Compliance CMMS',
@@ -40,7 +40,7 @@ async function testEmailConfiguration() {
   try {
     console.log('1️⃣ Creating SMTP transporter...');
     
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
       secure: config.secure,
