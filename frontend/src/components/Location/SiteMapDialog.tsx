@@ -151,29 +151,29 @@ export default function SiteMapDialog({
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [mapInstance, setMapInstance] = useState<any>(null);
 
-  // Inject leaflet override styles and trigger map resize when dialog opens
+  // Inject leaflet override styles when dialog opens
   useEffect(() => {
     if (open) {
       const styleElement = document.createElement('style');
       styleElement.textContent = leafletOverrides;
       document.head.appendChild(styleElement);
       
-      // Force all maps to resize after dialog animation completes
-      const resizeTimer = setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-        console.log('🗺️ Triggered window resize event for map rendering');
-        
-        // Also try to resize the map instance directly if available
-        if (mapInstance) {
-          mapInstance.invalidateSize();
-          console.log('🗺️ Direct map instance resize triggered');
-        }
-      }, 500);
-      
       return () => {
         document.head.removeChild(styleElement);
-        clearTimeout(resizeTimer);
       };
+    }
+  }, [open]);
+  
+  // Trigger map resize when map instance is available
+  useEffect(() => {
+    if (open && mapInstance) {
+      // Force resize after a short delay
+      const resizeTimer = setTimeout(() => {
+        mapInstance.invalidateSize();
+        console.log('🗺️ Map instance resized via useEffect');
+      }, 200);
+      
+      return () => clearTimeout(resizeTimer);
     }
   }, [open, mapInstance]);
 
@@ -249,25 +249,20 @@ export default function SiteMapDialog({
             position: window.getComputedStyle(container).position
           });
           
-          // Force multiple resize attempts to ensure proper rendering
-          const resizeAttempts = [100, 300, 600, 1000];
-          resizeAttempts.forEach((delay) => {
-            setTimeout(() => {
-              map.invalidateSize();
-              const container = map.getContainer();
-              console.log(`🗺️ Map resize attempt at ${delay}ms:`, {
-                offsetWidth: container.offsetWidth,
-                offsetHeight: container.offsetHeight,
-                hasWidth: container.offsetWidth > 0
-              });
-              
-              // If we have width, pan to center to ensure tiles load
-              if (container.offsetWidth > 0) {
-                map.setView(mapCenter, 13);
-                console.log('🗺️ Map has width, setting view to center');
-              }
-            }, delay);
-          });
+          // Force a resize after the dialog and map are fully rendered
+          setTimeout(() => {
+            map.invalidateSize();
+            const container = map.getContainer();
+            console.log('🗺️ Map resized after mount:', {
+              offsetWidth: container.offsetWidth,
+              offsetHeight: container.offsetHeight,
+              hasWidth: container.offsetWidth > 0
+            });
+            
+            // Pan to center to ensure tiles load
+            map.setView(mapCenter, 13);
+            console.log('🗺️ Map view set to center');
+          }, 100);
         }}
       >
         <LayersControl position="topright">
@@ -418,7 +413,7 @@ export default function SiteMapDialog({
               <Card sx={{ height: '540px' }}>
                 <CardContent sx={{ p: 1, height: '100%' }}>
                   <Box sx={{ height: '100%', width: '100%' }}>
-                    <RealSiteMap />
+                    {open && <RealSiteMap />}
                   </Box>
                 </CardContent>
               </Card>
