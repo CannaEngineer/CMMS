@@ -92,6 +92,10 @@ interface DataTableProps {
   onRefresh?: () => void | Promise<void>;
   error?: string | null;
   onRetry?: () => void;
+  // Action handlers for row context menus
+  onView?: (row: any) => void;
+  onEdit?: (row: any) => void;
+  onDelete?: (row: any) => void;
 }
 
 const DataTable = memo(function DataTable({
@@ -111,6 +115,9 @@ const DataTable = memo(function DataTable({
   onRefresh,
   error = null,
   onRetry,
+  onView,
+  onEdit,
+  onDelete,
 }: DataTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -122,6 +129,7 @@ const DataTable = memo(function DataTable({
   const [order, setOrder] = useState<'asc' | 'desc'>('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedRow, setSelectedRow] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>(isMobile && mobileCardView ? 'cards' : 'table');
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
@@ -527,6 +535,7 @@ const DataTable = memo(function DataTable({
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
+                setSelectedRow(row);
                 setAnchorEl(event.currentTarget);
               }}
               sx={{ mt: -0.5 }}
@@ -841,6 +850,7 @@ const DataTable = memo(function DataTable({
                       size="small"
                       onClick={(event) => {
                         event.stopPropagation();
+                        setSelectedRow(row);
                         setAnchorEl(event.currentTarget);
                       }}
                       sx={{ 
@@ -894,11 +904,32 @@ const DataTable = memo(function DataTable({
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
+        onClose={() => {
+          setAnchorEl(null);
+          setSelectedRow(null);
+        }}
       >
-        <MenuItem onClick={() => setAnchorEl(null)}>View</MenuItem>
-        <MenuItem onClick={() => setAnchorEl(null)}>Edit</MenuItem>
-        <MenuItem onClick={() => setAnchorEl(null)}>Delete</MenuItem>
+        {onView && (
+          <MenuItem onClick={() => {
+            onView(selectedRow);
+            setAnchorEl(null);
+            setSelectedRow(null);
+          }}>View</MenuItem>
+        )}
+        {onEdit && (
+          <MenuItem onClick={() => {
+            onEdit(selectedRow);
+            setAnchorEl(null);
+            setSelectedRow(null);
+          }}>Edit</MenuItem>
+        )}
+        {onDelete && (
+          <MenuItem onClick={() => {
+            onDelete(selectedRow);
+            setAnchorEl(null);
+            setSelectedRow(null);
+          }}>Delete</MenuItem>
+        )}
       </Menu>
     </Paper>
   );

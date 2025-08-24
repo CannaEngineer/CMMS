@@ -29,15 +29,12 @@ import {
   Add as AddIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  QrCode as QrCodeIcon,
   Download as DownloadIcon,
-  Upload as UploadIcon,
   Warning as WarningIcon,
   Inventory as InventoryIcon,
   ShoppingCart as OrderIcon,
   TrendingDown as LowStockIcon,
   Assessment as ReportIcon,
-  CleaningServices as CleanupIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import StatCard from '../components/Common/StatCard';
@@ -204,27 +201,6 @@ export default function Inventory() {
     },
   });
 
-  // Cleanup duplicates mutation
-  const cleanupDuplicatesMutation = useMutation({
-    mutationFn: partsService.cleanupDuplicates,
-    onSuccess: (data) => {
-      console.log('✅ Duplicates cleanup completed:', data);
-      queryClient.invalidateQueries({ queryKey: ['parts'] });
-      setSnackbar({ 
-        open: true, 
-        message: `Cleanup complete: ${data.results.partsMerged} duplicates merged`, 
-        severity: 'success' 
-      });
-    },
-    onError: (error: any) => {
-      console.error('❌ Failed to cleanup duplicates:', error);
-      setSnackbar({ 
-        open: true, 
-        message: 'Failed to cleanup duplicates', 
-        severity: 'error' 
-      });
-    },
-  });
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -388,18 +364,6 @@ export default function Inventory() {
         <Box sx={{ display: 'flex', gap: 2 }}>
           {!isMobile && (
             <>
-              <Button
-                variant="outlined"
-                startIcon={<QrCodeIcon />}
-              >
-                Scan
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-              >
-                Import
-              </Button>
               <UniversalExportButton
                 dataSource="inventory"
                 entityType="parts"
@@ -516,6 +480,13 @@ export default function Inventory() {
             columns={inventoryColumns}
             data={getFilteredParts()}
             onRowClick={handleViewPart}
+            onView={handleViewPart}
+            onEdit={handleEditPart}
+            onDelete={(part: Part) => {
+              if (confirm(`Are you sure you want to delete "${part.name}"? This action cannot be undone.`)) {
+                deletePartMutation.mutate(part.id.toString());
+              }
+            }}
             searchable={false}
             selectable
             loading={isLoading}
@@ -627,19 +598,6 @@ export default function Inventory() {
                   }}
                 >
                   Inventory Report
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<CleanupIcon />}
-                  fullWidth
-                  onClick={() => {
-                    if (confirm('This will merge duplicate parts based on SKU and name. Stock levels will be combined. Are you sure?')) {
-                      cleanupDuplicatesMutation.mutate();
-                    }
-                  }}
-                  disabled={cleanupDuplicatesMutation.isLoading}
-                >
-                  {cleanupDuplicatesMutation.isLoading ? 'Cleaning...' : 'Cleanup Duplicates'}
                 </Button>
               </Box>
             </CardContent>
