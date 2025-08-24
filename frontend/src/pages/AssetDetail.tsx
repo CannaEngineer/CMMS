@@ -46,6 +46,7 @@ import { assetsService, workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import QRCodeDisplay from '../components/QR/QRCodeDisplay';
 import AssetForm from '../components/Forms/AssetForm';
+import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import { FileUploadManager, FileAttachment } from '../components/Common';
 
 interface TabPanelProps {
@@ -71,6 +72,7 @@ export default function AssetDetail() {
   
   const [tabValue, setTabValue] = useState(0);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [workOrderFormOpen, setWorkOrderFormOpen] = useState(false);
 
   // Fetch asset data
   const { data: asset, isLoading, error } = useQuery({
@@ -111,6 +113,18 @@ export default function AssetDetail() {
     },
   });
 
+  // Create work order mutation
+  const createWorkOrderMutation = useMutation({
+    mutationFn: workOrdersService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['asset-work-orders', id] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      setWorkOrderFormOpen(false);
+      // Optionally navigate to the work order detail
+      // navigate(`/work-orders/${data.id}`);
+    },
+  });
+
   const handleDelete = () => {
     if (asset && window.confirm(`Are you sure you want to delete "${asset.name}"?`)) {
       deleteAssetMutation.mutate(asset.id.toString());
@@ -124,7 +138,16 @@ export default function AssetDetail() {
   };
 
   const handleCreateWorkOrder = () => {
-    navigate(`/work-orders/new?assetId=${id}`);
+    setWorkOrderFormOpen(true);
+  };
+
+  const handleWorkOrderSubmit = (data: any) => {
+    // Include assetId in the work order data
+    const workOrderData = {
+      ...data,
+      assetId: asset?.id,
+    };
+    createWorkOrderMutation.mutate(workOrderData);
   };
 
   const handleAttachmentsChange = (attachments: FileAttachment[]) => {
@@ -549,6 +572,22 @@ export default function AssetDetail() {
         initialData={asset}
         mode="edit"
         loading={updateAssetMutation.isPending}
+      />
+
+      {/* Work Order Form Dialog */}
+      <WorkOrderForm
+        open={workOrderFormOpen}
+        onClose={() => setWorkOrderFormOpen(false)}
+        onSubmit={handleWorkOrderSubmit}
+        initialData={{
+          assetId: asset?.id,
+          title: asset ? `Work Order for ${asset.name}` : '',
+          description: asset ? `Location: ${asset.location?.name || 'Unknown'}\nSerial Number: ${asset.serialNumber || 'N/A'}\nManufacturer: ${asset.manufacturer || 'N/A'}` : '',
+          priority: 'MEDIUM',
+          status: 'OPEN',
+        }}
+        mode="create"
+        loading={createWorkOrderMutation.isPending}
       />
 
     </Container>
