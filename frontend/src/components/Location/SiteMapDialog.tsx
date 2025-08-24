@@ -149,19 +149,33 @@ export default function SiteMapDialog({
   const [selectedLayer, setSelectedLayer] = useState<string>('all');
   const [showAssetCount, setShowAssetCount] = useState(true);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [mapInstance, setMapInstance] = useState<any>(null);
 
-  // Inject leaflet override styles
+  // Inject leaflet override styles and trigger map resize when dialog opens
   useEffect(() => {
     if (open) {
       const styleElement = document.createElement('style');
       styleElement.textContent = leafletOverrides;
       document.head.appendChild(styleElement);
       
+      // Force all maps to resize after dialog animation completes
+      const resizeTimer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        console.log('🗺️ Triggered window resize event for map rendering');
+        
+        // Also try to resize the map instance directly if available
+        if (mapInstance) {
+          mapInstance.invalidateSize();
+          console.log('🗺️ Direct map instance resize triggered');
+        }
+      }, 500);
+      
       return () => {
         document.head.removeChild(styleElement);
+        clearTimeout(resizeTimer);
       };
     }
-  }, [open]);
+  }, [open, mapInstance]);
 
   console.log('🗺️ SiteMapDialog render:', { open, locationsCount: locations.length, locations });
 
@@ -219,6 +233,7 @@ export default function SiteMapDialog({
         style={{ height: '100%', minHeight: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
         whenReady={(event) => {
           const map = event.target;
+          setMapInstance(map); // Store map instance for later use
           console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
           
           // Debug container size
@@ -234,18 +249,25 @@ export default function SiteMapDialog({
             position: window.getComputedStyle(container).position
           });
           
-          // Force a resize event to ensure proper rendering
-          setTimeout(() => {
-            map.invalidateSize();
-            console.log('🗺️ Map size invalidated for proper rendering');
-            
-            // Check size after invalidation
-            const afterContainer = map.getContainer();
-            console.log('🗺️ After invalidateSize:', {
-              offsetWidth: afterContainer.offsetWidth,
-              offsetHeight: afterContainer.offsetHeight
-            });
-          }, 250);
+          // Force multiple resize attempts to ensure proper rendering
+          const resizeAttempts = [100, 300, 600, 1000];
+          resizeAttempts.forEach((delay) => {
+            setTimeout(() => {
+              map.invalidateSize();
+              const container = map.getContainer();
+              console.log(`🗺️ Map resize attempt at ${delay}ms:`, {
+                offsetWidth: container.offsetWidth,
+                offsetHeight: container.offsetHeight,
+                hasWidth: container.offsetWidth > 0
+              });
+              
+              // If we have width, pan to center to ensure tiles load
+              if (container.offsetWidth > 0) {
+                map.setView(mapCenter, 13);
+                console.log('🗺️ Map has width, setting view to center');
+              }
+            }, delay);
+          });
         }}
       >
         <LayersControl position="topright">
