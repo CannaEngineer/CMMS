@@ -389,11 +389,10 @@ export class DashboardService {
   }
 
   async getInventoryMetrics(organizationId: number) {
-    // Get parts with low stock (at or below reorder point)
-    const lowStockParts = await prisma.part.findMany({
+    // Get all parts and filter for low stock in memory
+    const allParts = await prisma.part.findMany({
       where: {
         organizationId,
-        stockLevel: { lte: prisma.raw('reorderPoint') },
       },
       select: {
         id: true,
@@ -403,6 +402,9 @@ export class DashboardService {
         unitCost: true,
       },
     });
+    
+    // Filter for low stock parts (at or below reorder point)
+    const lowStockParts = allParts.filter(part => part.stockLevel <= part.reorderPoint);
 
     // Calculate inventory turnover (simplified)
     const totalInventoryValue = await prisma.part.aggregate({
