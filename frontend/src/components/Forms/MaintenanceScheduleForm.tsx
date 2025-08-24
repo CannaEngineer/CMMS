@@ -20,7 +20,7 @@ import {
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
-import { apiClient as api } from '../../services/api';
+import { assetsService } from '../../services/api';
 
 // Aligned with PMSchedule model from database schema
 interface MaintenanceScheduleFormData {
@@ -130,8 +130,8 @@ export default function MaintenanceScheduleForm({
     const fetchAssets = async () => {
       try {
         setLoadingAssets(true);
-        const response = await api.get('/assets');
-        const assetOptions = response.data.map((asset: any) => ({
+        const assets = await assetsService.getAll();
+        const assetOptions = assets.map((asset: any) => ({
           value: asset.id.toString(),
           label: `${asset.name}${asset.description ? ` - ${asset.description}` : ''}`
         }));
@@ -258,7 +258,7 @@ export default function MaintenanceScheduleForm({
           required
           error={errors.assetId}
           disabled={mode === 'view' || loadingAssets}
-          helperText={loadingAssets ? 'Loading assets...' : undefined}
+          helperText={loadingAssets ? 'Loading assets...' : (formData.assetId && assets.length > 0 && !loadingAssets) ? 'Asset pre-selected from context' : undefined}
         />
       </Grid>
       <Grid xs={12} md={6}>
