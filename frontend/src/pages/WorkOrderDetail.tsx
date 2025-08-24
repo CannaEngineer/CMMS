@@ -166,23 +166,36 @@ export default function WorkOrderDetail() {
       try {
         console.log('📎 Fetching work order data for ID:', id);
         const result = await workOrdersService.getById(id);
-        const finalResult = { ...mockWorkOrder, ...result };
+        
+        // Get attachments from localStorage as a workaround until backend supports them
+        const localStorageKey = `workOrder_${id}_attachments`;
+        const savedAttachments = localStorage.getItem(localStorageKey);
+        const attachments = savedAttachments ? JSON.parse(savedAttachments) : null;
+        
+        const finalResult = { ...mockWorkOrder, ...result, attachments };
         console.log('📎 Work order data received:', { 
           id: finalResult?.id, 
           attachments: finalResult?.attachments,
           attachmentCount: finalResult?.attachments?.length || 0,
           mockAttachments: mockWorkOrder.attachments,
-          apiAttachments: result?.attachments
+          apiAttachments: result?.attachments,
+          localStorageAttachments: attachments
         });
         return finalResult;
       } catch (error) {
         console.warn(`📎 Work order ${id} API not available, using mock data:`, error);
+        
+        // Get attachments from localStorage even for mock data
+        const localStorageKey = `workOrder_${id}_attachments`;
+        const savedAttachments = localStorage.getItem(localStorageKey);
+        const attachments = savedAttachments ? JSON.parse(savedAttachments) : null;
+        
         console.log('📎 Mock work order data:', { 
           id: mockWorkOrder.id, 
-          attachments: mockWorkOrder.attachments,
-          attachmentCount: mockWorkOrder.attachments?.length || 0 
+          attachments: attachments,
+          attachmentCount: attachments?.length || 0 
         });
-        return mockWorkOrder;
+        return { ...mockWorkOrder, attachments };
       }
     },
     enabled: !!id,
@@ -440,6 +453,12 @@ export default function WorkOrderDetail() {
       return;
     }
     
+    // Save attachments to localStorage as a workaround until backend supports them
+    const localStorageKey = `workOrder_${workOrder.id}_attachments`;
+    localStorage.setItem(localStorageKey, JSON.stringify(attachments));
+    console.log('📎 Saved attachments to localStorage:', { key: localStorageKey, count: attachments.length });
+    
+    // Still call the mutation to try to save to backend (for future compatibility)
     console.log('📎 Calling updateWorkOrderMutation with:', { attachments });
     updateWorkOrderMutation.mutate({ 
       attachments 

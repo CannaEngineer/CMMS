@@ -187,10 +187,15 @@ export default function SiteMapDialog({
       <MapContainer
         center={mapCenter}
         zoom={13}
-        style={{ height: '500px', width: '100%', borderRadius: '8px' }}
+        style={{ height: '500px', width: '100%', borderRadius: '8px', position: 'relative', zIndex: 1 }}
         whenReady={(event) => {
           const map = event.target;
           console.log('🗺️ Map ready!', { map, center: map.getCenter(), zoom: map.getZoom() });
+          // Force a resize event to ensure proper rendering
+          setTimeout(() => {
+            map.invalidateSize();
+            console.log('🗺️ Map size invalidated for proper rendering');
+          }, 100);
         }}
       >
         <LayersControl position="topright">
