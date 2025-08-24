@@ -17,6 +17,8 @@ import TechnicianLayout from './components/Layout/TechnicianLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import TechnicianDashboard from './pages/TechnicianDashboard';
 import WorkOrders from './pages/WorkOrders';
@@ -99,6 +101,8 @@ function App() {
             {/* Authentication Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/verify-email" element={<VerifyEmail />} />
             
             {/* Technician-only routes with strict access control */}

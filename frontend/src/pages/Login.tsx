@@ -287,12 +287,9 @@ export default function Login() {
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
             <Link
-              component="button"
+              component={RouterLink}
+              to="/forgot-password"
               variant="body2"
-              onClick={(e) => {
-                e.preventDefault();
-                // Handle forgot password
-              }}
               sx={{ textDecoration: 'none' }}
             >
               Forgot password?
