@@ -35,6 +35,16 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Tabs,
+  Tab,
+  LinearProgress,
+  Tooltip,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  ListItemAvatar,
+  Skeleton,
+  CardHeader,
 } from '@mui/material';
 import {
   PlayArrow as StartIcon,
@@ -54,9 +64,25 @@ import {
   QrCodeScanner as QrIcon,
   Notifications as NotificationIcon,
   FilterList as FilterIcon,
+  Inventory2 as InventoryIcon,
+  Engineering as MaintenanceIcon,
+  Warning as WarningIcon,
+  TrendingUp as TrendingUpIcon,
+  TrendingDown as TrendingDownIcon,
+  Remove as RemoveIcon,
+  Info as InfoIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+  ArrowForward as ArrowForwardIcon,
+  ShoppingCart as CartIcon,
+  CheckBox as CheckBoxIcon,
+  RadioButtonUnchecked as RadioButtonUncheckedIcon,
+  CategoryOutlined as CategoryIcon,
+  LocationOn as LocationIcon,
+  CalendarToday as CalendarIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workOrdersService, authService } from '../services/api';
+import { workOrdersService, authService, assetsService, partsService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import { useComments, useCreateComment } from '../hooks/useComments';
 import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingButton } from '../components/Loading';
@@ -103,10 +129,16 @@ export default function TechnicianDashboard() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [timeDialogOpen, setTimeDialogOpen] = useState(false);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [inventoryDialogOpen, setInventoryDialogOpen] = useState(false);
+  const [assetDialogOpen, setAssetDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const [timeEntry, setTimeEntry] = useState({ hours: '', description: '' });
   const [comment, setComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
   // Get current user
   const userStr = localStorage.getItem('user');
@@ -138,6 +170,59 @@ export default function TechnicianDashboard() {
       }
     },
     refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch inventory/parts data
+  const { data: parts = [], isLoading: partsLoading } = useQuery({
+    queryKey: ['technician-parts'],
+    queryFn: async () => {
+      try {
+        const allParts = await partsService.getAll();
+        return allParts || [];
+      } catch (error) {
+        console.error('Parts API error:', error);
+        return [];
+      }
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Fetch assets data
+  const { data: assets = [], isLoading: assetsLoading } = useQuery({
+    queryKey: ['technician-assets'],
+    queryFn: async () => {
+      try {
+        const allAssets = await assetsService.getAll();
+        return allAssets || [];
+      } catch (error) {
+        console.error('Assets API error:', error);
+        return [];
+      }
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+
+  // Fetch upcoming maintenance tasks
+  const { data: maintenanceTasks = [], isLoading: maintenanceLoading } = useQuery({
+    queryKey: ['technician-maintenance'],
+    queryFn: async () => {
+      try {
+        // Get all maintenance schedules and filter for upcoming tasks
+        const allSchedules = await workOrdersService.getMaintenanceSchedule(50);
+        const now = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(now.getDate() + 7);
+        
+        return allSchedules.filter(schedule => {
+          const dueDate = new Date(schedule.nextDue || schedule.dueDate);
+          return dueDate >= now && dueDate <= nextWeek;
+        }) || [];
+      } catch (error) {
+        console.error('Maintenance API error:', error);
+        return [];
+      }
+    },
+    refetchInterval: 60000,
   });
 
   // Filter work orders based on selected filter
@@ -307,16 +392,72 @@ export default function TechnicianDashboard() {
     return actions;
   };
 
-  // Stats calculation
-  const stats = {
-    total: workOrders.length,
-    pending: workOrders.filter(wo => wo.status === 'PENDING').length,
-    inProgress: workOrders.filter(wo => wo.status === 'IN_PROGRESS').length,
-    completed: workOrders.filter(wo => wo.status === 'COMPLETED').length,
-    overdue: workOrders.filter(wo => wo.dueDate && new Date(wo.dueDate) < new Date()).length,
+  // Utility functions
+  const handleAddToCart = (part: any, quantity: number = 1) => {
+    const existingItem = cartItems.find(item => item.id === part.id);
+    if (existingItem) {
+      setCartItems(cartItems.map(item => 
+        item.id === part.id 
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      ));
+    } else {
+      setCartItems([...cartItems, { ...part, quantity }]);
+    }
   };
 
-  if (isLoading) {
+  const handleRemoveFromCart = (partId: number) => {
+    setCartItems(cartItems.filter(item => item.id !== partId));
+  };
+
+  const handleViewAsset = (asset: any) => {
+    setSelectedAsset(asset);
+    setAssetDialogOpen(true);
+  };
+
+  const filteredParts = parts.filter(part => 
+    part.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.partNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    part.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredAssets = assets.filter(asset =>
+    asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    asset.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    asset.location?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Stats calculation
+  const stats = {
+    workOrders: {
+      total: workOrders.length,
+      pending: workOrders.filter(wo => wo.status === 'PENDING').length,
+      inProgress: workOrders.filter(wo => wo.status === 'IN_PROGRESS').length,
+      completed: workOrders.filter(wo => wo.status === 'COMPLETED').length,
+      overdue: workOrders.filter(wo => wo.dueDate && new Date(wo.dueDate) < new Date()).length,
+    },
+    inventory: {
+      total: parts.length,
+      lowStock: parts.filter(p => p.quantity <= p.reorderPoint).length,
+      outOfStock: parts.filter(p => p.quantity === 0).length,
+    },
+    assets: {
+      total: assets.length,
+      online: assets.filter(a => a.status === 'ONLINE').length,
+      offline: assets.filter(a => a.status === 'OFFLINE').length,
+    },
+    maintenance: {
+      upcoming: maintenanceTasks.length,
+      thisWeek: maintenanceTasks.filter(task => {
+        const dueDate = new Date(task.nextDue || task.dueDate);
+        const endOfWeek = new Date();
+        endOfWeek.setDate(endOfWeek.getDate() + 7);
+        return dueDate <= endOfWeek;
+      }).length,
+    }
+  };
+
+  if (isLoading && partsLoading && assetsLoading && maintenanceLoading) {
     return (
       <TemplatedSkeleton template="dashboard" />
     );
@@ -330,7 +471,7 @@ export default function TechnicianDashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box>
               <Typography variant={isSmallMobile ? "h5" : "h4"} fontWeight="bold" color="primary">
-                My Work Orders
+                Technician Dashboard
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Welcome back, {currentUser?.name || 'Technician'}
@@ -341,92 +482,132 @@ export default function TechnicianDashboard() {
                 <RefreshIcon />
               </IconButton>
               <IconButton color="primary">
-                <Badge badgeContent={stats.pending} color="error">
+                <Badge badgeContent={stats.workOrders.pending} color="error">
                   <NotificationIcon />
                 </Badge>
               </IconButton>
               <IconButton color="primary">
-                <QrIcon />
+                <Badge badgeContent={cartItems.length} color="secondary">
+                  <CartIcon />
+                </Badge>
               </IconButton>
             </Box>
           </Box>
 
-          {/* Quick Stats */}
+          {/* Quick Stats Grid */}
           <Grid container spacing={2}>
             <Grid xs={6} sm={3}>
               <Card>
                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography color="text.secondary" variant="body2">
-                    Total
-                  </Typography>
-                  <Typography variant="h4" color="primary">
-                    {stats.total}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" variant="body2">
+                        Work Orders
+                      </Typography>
+                      <Typography variant="h4" color="primary">
+                        {stats.workOrders.total}
+                      </Typography>
+                    </Box>
+                    <WorkOrderIcon color="primary" />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
               <Card>
                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography color="text.secondary" variant="body2">
-                    In Progress
-                  </Typography>
-                  <Typography variant="h4" color="info.main">
-                    {stats.inProgress}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" variant="body2">
+                        Low Stock
+                      </Typography>
+                      <Typography variant="h4" color="warning.main">
+                        {stats.inventory.lowStock}
+                      </Typography>
+                    </Box>
+                    <WarningIcon color="warning" />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
               <Card>
                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography color="text.secondary" variant="body2">
-                    Pending
-                  </Typography>
-                  <Typography variant="h4" color="warning.main">
-                    {stats.pending}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" variant="body2">
+                        Assets
+                      </Typography>
+                      <Typography variant="h4" color="success.main">
+                        {stats.assets.online}
+                      </Typography>
+                    </Box>
+                    <AssetIcon color="success" />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
               <Card>
                 <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography color="text.secondary" variant="body2">
-                    Completed
-                  </Typography>
-                  <Typography variant="h4" color="success.main">
-                    {stats.completed}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box>
+                      <Typography color="text.secondary" variant="body2">
+                        PM Tasks
+                      </Typography>
+                      <Typography variant="h4" color="info.main">
+                        {stats.maintenance.thisWeek}
+                      </Typography>
+                    </Box>
+                    <MaintenanceIcon color="info" />
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
         </Box>
 
-        {/* Filter Bar */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <FilterIcon color="action" />
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Filter</InputLabel>
-              <Select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                label="Filter"
-              >
-                <MenuItem value="ALL">All Orders</MenuItem>
-                <MenuItem value="PENDING">Pending</MenuItem>
-                <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                <MenuItem value="ON_HOLD">On Hold</MenuItem>
-                <MenuItem value="COMPLETED">Completed</MenuItem>
-              </Select>
-            </FormControl>
-            <Typography variant="body2" color="text.secondary">
-              Showing {filteredWorkOrders.length} of {workOrders.length} work orders
-            </Typography>
-          </Box>
+        {/* Main Tabs */}
+        <Paper sx={{ mb: 3 }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            variant={isMobile ? "scrollable" : "fullWidth"}
+            scrollButtons="auto"
+          >
+            <Tab icon={<WorkOrderIcon />} label="Work Orders" />
+            <Tab icon={<InventoryIcon />} label="Inventory" />
+            <Tab icon={<AssetIcon />} label="Assets" />
+            <Tab icon={<MaintenanceIcon />} label="PM Tasks" />
+          </Tabs>
         </Paper>
+
+        {/* Tab Content */}
+        {activeTab === 0 && (
+          <>
+            {/* Work Orders Filter Bar */}
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <FilterIcon color="action" />
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <InputLabel>Filter</InputLabel>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    label="Filter"
+                  >
+                    <MenuItem value="ALL">All Orders</MenuItem>
+                    <MenuItem value="PENDING">Pending</MenuItem>
+                    <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                    <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                    <MenuItem value="COMPLETED">Completed</MenuItem>
+                  </Select>
+                </FormControl>
+                <Typography variant="body2" color="text.secondary">
+                  Showing {filteredWorkOrders.length} of {workOrders.length} work orders
+                </Typography>
+              </Box>
+            </Paper>
 
         {/* Work Orders List */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -551,22 +732,483 @@ export default function TechnicianDashboard() {
           })}
         </Box>
 
-        {/* Empty State */}
-        {filteredWorkOrders.length === 0 && (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <WorkOrderIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No work orders found
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {filterStatus === 'ALL' 
-                ? "You don't have any assigned work orders yet."
-                : `No work orders with status: ${filterStatus.toLowerCase()}`
-              }
-            </Typography>
-          </Paper>
+            {/* Work Orders Empty State */}
+            {filteredWorkOrders.length === 0 && (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <WorkOrderIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No work orders found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {filterStatus === 'ALL' 
+                    ? "You don't have any assigned work orders yet."
+                    : `No work orders with status: ${filterStatus.toLowerCase()}`
+                  }
+                </Typography>
+              </Paper>
+            )}
+          </>
+        )}
+
+        {/* Inventory Tab */}
+        {activeTab === 1 && (
+          <>
+            {/* Inventory Search */}
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <SearchIcon color="action" />
+                <TextField
+                  size="small"
+                  placeholder="Search parts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{ minWidth: 200, flexGrow: 1 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {filteredParts.length} of {parts.length} parts
+                </Typography>
+                {cartItems.length > 0 && (
+                  <Button
+                    variant="contained"
+                    startIcon={<CartIcon />}
+                    onClick={() => setInventoryDialogOpen(true)}
+                  >
+                    Cart ({cartItems.length})
+                  </Button>
+                )}
+              </Box>
+            </Paper>
+
+            {/* Parts List */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <Card key={index}>
+                    <CardContent>
+                      <Skeleton variant="text" width="60%" />
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="rectangular" height={20} sx={{ mt: 1 }} />
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                filteredParts.map((part) => (
+                  <Card key={part.id}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" fontWeight="600">
+                            {part.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Part #: {part.partNumber}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip 
+                              label={part.category} 
+                              size="small" 
+                              icon={<CategoryIcon />} 
+                            />
+                            <Chip 
+                              label={`${part.quantity} in stock`}
+                              size="small"
+                              color={part.quantity <= part.reorderPoint ? 'error' : 'success'}
+                              icon={part.quantity <= part.reorderPoint ? <WarningIcon /> : <CheckBoxIcon />}
+                            />
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={Math.min((part.quantity / (part.reorderPoint * 2)) * 100, 100)}
+                            color={part.quantity <= part.reorderPoint ? 'error' : 'success'}
+                            sx={{ height: 6, borderRadius: 3 }}
+                          />
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography variant="h6" color="primary">
+                            ${part.cost?.toFixed(2) || '0.00'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            per unit
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Location: {part.location || 'Not specified'}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<AddIcon />}
+                          onClick={() => handleAddToCart(part)}
+                          disabled={part.quantity === 0}
+                        >
+                          Add to Cart
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </Box>
+
+            {/* Inventory Empty State */}
+            {filteredParts.length === 0 && !partsLoading && (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <InventoryIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No parts found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchQuery ? `No parts match "${searchQuery}"` : 'No parts available in inventory'}
+                </Typography>
+              </Paper>
+            )}
+          </>
+        )}
+
+        {/* Assets Tab */}
+        {activeTab === 2 && (
+          <>
+            {/* Asset Search */}
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <SearchIcon color="action" />
+                <TextField
+                  size="small"
+                  placeholder="Search assets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{ minWidth: 200, flexGrow: 1 }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {filteredAssets.length} of {assets.length} assets
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Assets List */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {assetsLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <Card key={index}>
+                    <CardContent>
+                      <Skeleton variant="text" width="60%" />
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="rectangular" height={20} sx={{ mt: 1 }} />
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                filteredAssets.map((asset) => (
+                  <Card 
+                    key={asset.id}
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => handleViewAsset(asset)}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" fontWeight="600">
+                            {asset.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Model: {asset.model} | Serial: {asset.serialNumber}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip
+                              label={asset.status}
+                              color={asset.status === 'ONLINE' ? 'success' : 'error'}
+                              size="small"
+                            />
+                            <Chip
+                              label={asset.location}
+                              size="small"
+                              icon={<LocationIcon />}
+                            />
+                          </Box>
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Last Maintained
+                          </Typography>
+                          <Typography variant="body2" fontWeight="500">
+                            {asset.lastMaintenance ? 
+                              new Date(asset.lastMaintenance).toLocaleDateString() : 
+                              'Never'
+                            }
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Category: {asset.category}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          endIcon={<ArrowForwardIcon />}
+                        >
+                          View Details
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </Box>
+
+            {/* Assets Empty State */}
+            {filteredAssets.length === 0 && !assetsLoading && (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <AssetIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No assets found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchQuery ? `No assets match "${searchQuery}"` : 'No assets available'}
+                </Typography>
+              </Paper>
+            )}
+          </>
+        )}
+
+        {/* PM Tasks Tab */}
+        {activeTab === 3 && (
+          <>
+            {/* PM Tasks Header */}
+            <Paper sx={{ p: 2, mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <CalendarIcon color="action" />
+                <Typography variant="h6">
+                  Upcoming Preventive Maintenance
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {maintenanceTasks.length} tasks in the next 7 days
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Maintenance Tasks List */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {maintenanceLoading ? (
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index}>
+                    <CardContent>
+                      <Skeleton variant="text" width="60%" />
+                      <Skeleton variant="text" width="40%" />
+                      <Skeleton variant="rectangular" height={20} sx={{ mt: 1 }} />
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                maintenanceTasks.map((task) => (
+                  <Card key={task.id}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h6" fontWeight="600">
+                            {task.assetName} - {task.taskType}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {task.description}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Chip
+                              label={`Due ${new Date(task.nextDue || task.dueDate).toLocaleDateString()}`}
+                              color={new Date(task.nextDue || task.dueDate) < new Date() ? 'error' : 'warning'}
+                              size="small"
+                              icon={<CalendarIcon />}
+                            />
+                            <Chip
+                              label={`${task.estimatedHours || 1}h estimated`}
+                              size="small"
+                              icon={<ClockIcon />}
+                            />
+                          </Box>
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Priority
+                          </Typography>
+                          <Typography variant="body2" fontWeight="500" color={
+                            task.priority === 'HIGH' ? 'error.main' : 
+                            task.priority === 'MEDIUM' ? 'warning.main' : 'text.primary'
+                          }>
+                            {task.priority || 'MEDIUM'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="body2" color="text.secondary">
+                          Frequency: {task.frequency}
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          startIcon={<AddIcon />}
+                        >
+                          Create Work Order
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </Box>
+
+            {/* PM Tasks Empty State */}
+            {maintenanceTasks.length === 0 && !maintenanceLoading && (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <MaintenanceIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No upcoming maintenance tasks
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  All maintenance tasks are up to date!
+                </Typography>
+              </Paper>
+            )}
+          </>
         )}
       </Container>
+
+      {/* Inventory Cart Dialog */}
+      <Dialog open={inventoryDialogOpen} onClose={() => setInventoryDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CartIcon />
+            Parts Cart ({cartItems.length} items)
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            {cartItems.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+                Your cart is empty
+              </Typography>
+            ) : (
+              <List>
+                {cartItems.map((item, index) => (
+                  <ListItem key={`${item.id}-${index}`}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <InventoryIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={item.name}
+                      secondary={`Part #: ${item.partNumber} | Quantity: ${item.quantity}`}
+                    />
+                    <IconButton
+                      color="error"
+                      onClick={() => handleRemoveFromCart(item.id)}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setInventoryDialogOpen(false)}>Close</Button>
+          <Button
+            variant="contained"
+            disabled={cartItems.length === 0}
+          >
+            Request Parts
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Asset Details Dialog */}
+      <Dialog open={assetDialogOpen} onClose={() => setAssetDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justify: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <AssetIcon />
+              Asset Details
+            </Box>
+            <IconButton onClick={() => setAssetDialogOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedAsset && (
+            <Box sx={{ pt: 1 }}>
+              <Grid container spacing={3}>
+                <Grid xs={12} md={6}>
+                  <Card>
+                    <CardHeader title="Basic Information" />
+                    <CardContent>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Asset Name</Typography>
+                          <Typography variant="body1" fontWeight="500">{selectedAsset.name}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Model</Typography>
+                          <Typography variant="body1">{selectedAsset.model}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Serial Number</Typography>
+                          <Typography variant="body1">{selectedAsset.serialNumber}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Status</Typography>
+                          <Chip
+                            label={selectedAsset.status}
+                            color={selectedAsset.status === 'ONLINE' ? 'success' : 'error'}
+                            size="small"
+                          />
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid xs={12} md={6}>
+                  <Card>
+                    <CardHeader title="Maintenance Info" />
+                    <CardContent>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Location</Typography>
+                          <Typography variant="body1">{selectedAsset.location}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Category</Typography>
+                          <Typography variant="body1">{selectedAsset.category}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Last Maintenance</Typography>
+                          <Typography variant="body1">
+                            {selectedAsset.lastMaintenance ? 
+                              new Date(selectedAsset.lastMaintenance).toLocaleDateString() : 
+                              'Never'
+                            }
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="body2" color="text.secondary">Purchase Date</Typography>
+                          <Typography variant="body1">
+                            {selectedAsset.purchaseDate ? 
+                              new Date(selectedAsset.purchaseDate).toLocaleDateString() : 
+                              'Not specified'
+                            }
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Status Update Dialog */}
       <Dialog open={statusDialogOpen} onClose={() => setStatusDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -668,19 +1310,44 @@ export default function TechnicianDashboard() {
         </DialogActions>
       </Dialog>
 
-      {/* Floating Action Button for QR Scanner */}
-      <Fab
-        color="primary"
-        aria-label="scan"
+      {/* Speed Dial for Quick Actions */}
+      <SpeedDial
+        ariaLabel="Quick actions"
         sx={{
           position: 'fixed',
-          bottom: 16,
+          bottom: isMobile ? 80 : 16,
           right: 16,
           zIndex: 1000,
         }}
+        icon={<SpeedDialIcon />}
       >
-        <QrIcon />
-      </Fab>
+        <SpeedDialAction
+          key="qr-scanner"
+          icon={<QrIcon />}
+          tooltipTitle="Scan QR Code"
+        />
+        <SpeedDialAction
+          key="add-work-order"
+          icon={<AddIcon />}
+          tooltipTitle="New Work Order"
+        />
+        <SpeedDialAction
+          key="view-cart"
+          icon={
+            <Badge badgeContent={cartItems.length} color="secondary">
+              <CartIcon />
+            </Badge>
+          }
+          tooltipTitle="View Cart"
+          onClick={() => setInventoryDialogOpen(true)}
+        />
+        <SpeedDialAction
+          key="refresh-data"
+          icon={<RefreshIcon />}
+          tooltipTitle="Refresh Data"
+          onClick={() => refetch()}
+        />
+      </SpeedDial>
     </Box>
   );
 }
