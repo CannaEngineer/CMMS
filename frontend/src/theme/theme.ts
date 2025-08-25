@@ -161,6 +161,44 @@ const theme = createTheme({
     '0px 11px 15px -7px rgba(0,0,0,0.06),0px 24px 38px 3px rgba(0,0,0,0.042),0px 9px 46px 8px rgba(0,0,0,0.036)',
   ],
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        '*': {
+          boxSizing: 'border-box',
+        },
+        html: {
+          width: '100%',
+          height: '100%',
+          WebkitOverflowScrolling: 'touch',
+        },
+        body: {
+          width: '100%',
+          height: '100%',
+          margin: 0,
+          padding: 0,
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+        },
+        '#root': {
+          width: '100%',
+          minHeight: '100vh',
+        },
+      },
+    },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          width: '100%',
+          maxWidth: '100% !important',
+          paddingLeft: '16px',
+          paddingRight: '16px',
+          '@media (min-width: 600px)': {
+            paddingLeft: '24px',
+            paddingRight: '24px',
+          },
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
@@ -169,6 +207,10 @@ const theme = createTheme({
           fontWeight: 500,
           padding: '8px 16px',
           minHeight: 48, // Touch-friendly size
+          '@media (max-width: 600px)': {
+            minHeight: 44,
+            fontSize: '0.875rem',
+          },
         },
         contained: {
           boxShadow: 'none',
@@ -192,9 +234,37 @@ const theme = createTheme({
     MuiTextField: {
       styleOverrides: {
         root: {
+          width: '100%',
           '& .MuiInputBase-root': {
             minHeight: 48, // Touch-friendly size
+            '@media (max-width: 600px)': {
+              minHeight: 44,
+            },
           },
+        },
+      },
+    },
+    MuiGrid: {
+      styleOverrides: {
+        item: {
+          width: '100%',
+          maxWidth: '100%',
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          width: '100%',
+          maxWidth: '100%',
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          width: '100%',
+          overflowX: 'auto',
         },
       },
     },
