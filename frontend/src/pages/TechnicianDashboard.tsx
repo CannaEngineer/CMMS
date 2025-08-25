@@ -560,17 +560,27 @@ export default function TechnicianDashboard() {
   };
 
 
-  const filteredParts = parts.filter(part => 
-    part.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.partNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    part.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredParts = parts.filter(part => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      (part.name && typeof part.name === 'string' && part.name.toLowerCase().includes(searchLower)) ||
+      (part.partNumber && typeof part.partNumber === 'string' && part.partNumber.toLowerCase().includes(searchLower)) ||
+      (part.category && typeof part.category === 'string' && part.category.toLowerCase().includes(searchLower))
+    );
+  });
 
-  const filteredAssets = assets.filter(asset =>
-    asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.model?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredAssets = assets.filter(asset => {
+    const searchLower = searchQuery.toLowerCase();
+    const locationStr = typeof asset.location === 'string' 
+      ? asset.location 
+      : asset.location?.name || '';
+    
+    return (
+      (asset.name && typeof asset.name === 'string' && asset.name.toLowerCase().includes(searchLower)) ||
+      (asset.model && typeof asset.model === 'string' && asset.model.toLowerCase().includes(searchLower)) ||
+      (locationStr && locationStr.toLowerCase().includes(searchLower))
+    );
+  });
 
   // Stats calculation
   const stats = {
