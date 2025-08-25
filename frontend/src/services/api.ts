@@ -1020,8 +1020,33 @@ export const partsService = {
         }
       }
 
+      // Get all admin users first
+      let adminEmails: string[] = [];
+      try {
+        const users = await usersService.getAll(); // Get all users
+        const admins = users.filter((user: any) => 
+          user.role === 'ADMIN' || 
+          user.role === 'MANAGER' || 
+          user.role === 'SUPERVISOR' ||
+          user.permissions?.includes('MANAGE_INVENTORY') ||
+          user.permissions?.includes('VIEW_ADMIN_DASHBOARD')
+        );
+        adminEmails = admins.map((admin: any) => admin.email).filter(Boolean);
+        console.log('📧 Found admin emails:', adminEmails);
+      } catch (userError) {
+        console.warn('Failed to fetch admin users, using fallback emails:', userError);
+        // Fallback to common admin emails if user fetch fails
+        adminEmails = ['admin@elevatedcompliance.tech', 'manager@elevatedcompliance.tech'];
+      }
+
+      // If no admin emails found, use a default
+      if (adminEmails.length === 0) {
+        adminEmails = ['admin@elevatedcompliance.tech'];
+        console.warn('No admin emails found, using default admin email');
+      }
+
       const emailData = {
-        to: 'admin@company.com', // This would come from user management
+        to: adminEmails.join(', '), // Send to all admins
         subject: `Parts Checkout Notification - ${checkoutData.requestedBy}`,
         body: this.generateCheckoutEmailBody(checkoutData, inventoryAlerts)
       };

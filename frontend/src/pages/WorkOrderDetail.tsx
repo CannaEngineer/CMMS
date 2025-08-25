@@ -224,6 +224,8 @@ export default function WorkOrderDetail() {
         ];
       }
     },
+    retry: 1, // Only retry once on failure
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   });
 
   // Fetch comments for the work order using the real comment system
@@ -241,9 +243,16 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order-time-logs', id],
     queryFn: async () => {
       if (!id) return [];
-      return workOrdersService.getTimeLogs(id);
+      try {
+        return await workOrdersService.getTimeLogs(id);
+      } catch (error) {
+        console.warn('Time logs API not available:', error);
+        return [];
+      }
     },
     enabled: !!id,
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch time stats for the work order
@@ -251,9 +260,16 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order-time-stats', id],
     queryFn: async () => {
       if (!id) return { totalHours: 0, billableHours: 0 };
-      return workOrdersService.getTimeStats(id);
+      try {
+        return await workOrdersService.getTimeStats(id);
+      } catch (error) {
+        console.warn('Time stats API not available:', error);
+        return { totalHours: 0, billableHours: 0, nonBillableHours: 0 };
+      }
     },
     enabled: !!id,
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch tasks for the work order
@@ -261,9 +277,16 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order-tasks', id],
     queryFn: async () => {
       if (!id) return [];
-      return workOrdersService.getTasks(id);
+      try {
+        return await workOrdersService.getTasks(id);
+      } catch (error) {
+        console.warn('Tasks API not available:', error);
+        return [];
+      }
     },
     enabled: !!id,
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch progress data for the work order
@@ -271,9 +294,16 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order-progress', id],
     queryFn: async () => {
       if (!id) return {};
-      return workOrdersService.getProgress(id);
+      try {
+        return await workOrdersService.getProgress(id);
+      } catch (error) {
+        console.warn('Progress API not available:', error);
+        return {};
+      }
     },
     enabled: !!id,
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Fetch history data for the work order
@@ -281,9 +311,16 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order-history', id],
     queryFn: async () => {
       if (!id) return [];
-      return workOrdersService.getHistory(id);
+      try {
+        return await workOrdersService.getHistory(id);
+      } catch (error) {
+        console.warn('History API not available:', error);
+        return [];
+      }
     },
     enabled: !!id,
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Update mutation
@@ -367,9 +404,12 @@ export default function WorkOrderDetail() {
       return workOrdersService.unassignWorkOrder(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['work-order', id] });
-      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] }); // For technician dashboard
+      // Only invalidate the main work order query and work orders list
+      // Avoid triggering other queries that are failing with 500 errors
+      queryClient.invalidateQueries({ queryKey: ['work-order', id], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'], exact: true }); // For technician dashboard
+      
       setUnassignDialogOpen(false);
       showSuccess('Work order has been unassigned and is now available for technicians to claim.');
     },
