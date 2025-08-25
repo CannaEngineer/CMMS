@@ -94,10 +94,10 @@ export const assetSchema = z.object({
     .optional(),
 });
 
-// Part form validation schema
+// Part form validation schema with flexible input handling
 export const partSchema = z.object({
-  id: z.number().int().optional(),
-  legacyId: z.number().int().optional(),
+  id: z.union([z.number(), z.string()]).optional().transform(val => val ? Number(val) : undefined),
+  legacyId: z.any().optional(),
   name: z
     .string()
     .min(1, 'Part name is required')
@@ -107,63 +107,77 @@ export const partSchema = z.object({
     .string()
     .max(1000, 'Description must be less than 1000 characters')
     .optional()
-    .or(z.literal('')),
-  sku: z
-    .string()
-    .max(50, 'SKU must be less than 50 characters')
-    .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
+  sku: z.any().optional(),
   stockLevel: z
-    .number()
-    .int('Stock level must be a whole number')
-    .min(0, 'Stock level cannot be negative')
-    .max(1000000, 'Stock level cannot exceed 1,000,000'),
+    .union([z.number(), z.string()])
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val), 'Stock level must be a number')
+    .refine(val => val >= 0, 'Stock level cannot be negative')
+    .refine(val => val <= 1000000, 'Stock level cannot exceed 1,000,000')
+    .refine(val => Number.isInteger(val), 'Stock level must be a whole number'),
   reorderPoint: z
-    .number()
-    .int('Reorder point must be a whole number')
-    .min(0, 'Reorder point cannot be negative')
-    .max(100000, 'Reorder point cannot exceed 100,000'),
+    .union([z.number(), z.string()])
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val), 'Reorder point must be a number')
+    .refine(val => val >= 0, 'Reorder point cannot be negative')
+    .refine(val => val <= 100000, 'Reorder point cannot exceed 100,000')
+    .refine(val => Number.isInteger(val), 'Reorder point must be a whole number'),
   unitCost: z
-    .number()
-    .min(0, 'Unit cost cannot be negative')
-    .max(1000000, 'Unit cost cannot exceed $1,000,000')
+    .union([z.number(), z.string(), z.null(), z.undefined()])
     .optional()
-    .nullable(),
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    })
+    .refine(val => val === undefined || val >= 0, 'Unit cost cannot be negative')
+    .refine(val => val === undefined || val <= 1000000, 'Unit cost cannot exceed $1,000,000'),
   unitOfMeasure: z
     .string()
     .max(20, 'Unit of measure must be less than 20 characters')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
   category: z
     .string()
     .max(50, 'Category must be less than 50 characters')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
   manufacturer: z
     .string()
     .max(100, 'Manufacturer must be less than 100 characters')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
   location: z
     .string()
     .max(100, 'Location must be less than 100 characters')
     .optional()
-    .or(z.literal('')),
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
   leadTime: z
-    .number()
-    .int('Lead time must be a whole number')
-    .min(0, 'Lead time cannot be negative')
-    .max(365, 'Lead time cannot exceed 365 days')
+    .union([z.number(), z.string(), z.null(), z.undefined()])
     .optional()
-    .nullable(),
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    })
+    .refine(val => val === undefined || val >= 0, 'Lead time cannot be negative')
+    .refine(val => val === undefined || val <= 365, 'Lead time cannot exceed 365 days')
+    .refine(val => val === undefined || Number.isInteger(val), 'Lead time must be a whole number'),
   organizationId: z
-    .number()
-    .int()
-    .optional(),
-  supplierId: z
-    .number()
-    .int()
-    .optional(),
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }),
+  supplierId: z.any().optional(),
 });
 
 // Work Order form validation schema
@@ -316,3 +330,58 @@ export type WorkOrderFormData = z.infer<typeof workOrderSchema>;
 export type UserFormData = z.infer<typeof userSchema>;
 export type LocationFormData = z.infer<typeof locationSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;
+
+// PM Schedule validation schema
+export const pmScheduleSchema = z.object({
+  id: z.union([z.number(), z.string()]).optional().transform(val => val ? Number(val) : undefined),
+  legacyId: z.any().optional(),
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(200, 'Title must be less than 200 characters')
+    .trim(),
+  description: z
+    .string()
+    .max(2000, 'Description must be less than 2000 characters')
+    .optional()
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val),
+  frequency: z
+    .string()
+    .min(1, 'Frequency is required'),
+  nextDue: z
+    .string()
+    .min(1, 'Next due date is required'),
+  assetId: z
+    .union([z.number(), z.string()])
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val) && val > 0, 'Asset is required'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+  estimatedHours: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    })
+    .refine(val => val === undefined || val >= 0, 'Estimated hours cannot be negative'),
+  assignedToId: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }),
+  organizationId: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform(val => {
+      if (val === null || val === undefined || val === '') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    }),
+});
+
+export type PMScheduleFormData = z.infer<typeof pmScheduleSchema>;

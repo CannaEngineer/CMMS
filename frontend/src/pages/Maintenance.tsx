@@ -141,6 +141,8 @@ export default function Maintenance() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      console.log('Updating PM schedule:', id, 'with data:', data);
+      
       // If the PM schedule doesn't have a QR code, generate one
       if (!data.qrCode) {
         const qrCodeUrl = await generatePMScheduleQRCode({ ...data, id });
@@ -153,6 +155,7 @@ export default function Maintenance() {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       setOpenScheduleDialog(false);
+      setSelectedSchedule(null);
     },
     onError: (error) => {
       console.error("Error updating PM schedule:", error);
@@ -184,10 +187,12 @@ export default function Maintenance() {
   };
 
   const handleSubmitSchedule = (data: any) => {
+    console.log('Submitting PM schedule with mode:', formMode, 'data:', data);
+    
     if (formMode === 'create') {
       createMutation.mutate(data);
     } else if (formMode === 'edit' && selectedSchedule) {
-      updateMutation.mutate({ id: selectedSchedule.id, data });
+      updateMutation.mutate({ id: selectedSchedule.id.toString(), data });
     }
   };
 

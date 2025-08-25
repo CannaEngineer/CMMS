@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
   Grid,
@@ -20,27 +22,16 @@ import {
 } from '@mui/icons-material';
 import FormDialog from './FormDialog';
 import FormField from './FormField';
+import HookFormField from './HookFormField';
+import FormErrorDisplay from '../Common/FormErrorDisplay';
 import { assetsService } from '../../services/api';
-
-// Aligned with PMSchedule model from database schema
-interface MaintenanceScheduleFormData {
-  id?: number;
-  legacyId?: number;
-  title: string;
-  description: string;
-  frequency: string; // matches database string field
-  nextDue: string;
-  assetId: number;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  estimatedHours?: number;
-  assignedToId?: number;
-}
+import { pmScheduleSchema, PMScheduleFormData } from '../../utils/validationSchemas';
 
 interface MaintenanceScheduleFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: MaintenanceScheduleFormData) => void;
-  initialData?: Partial<MaintenanceScheduleFormData>;
+  onSubmit: (data: PMScheduleFormData) => void;
+  initialData?: Partial<PMScheduleFormData>;
   mode: 'create' | 'edit' | 'view';
   loading?: boolean;
 }
@@ -104,26 +95,49 @@ export default function MaintenanceScheduleForm({
   mode,
   loading = false,
 }: MaintenanceScheduleFormProps) {
-  const [formData, setFormData] = useState<MaintenanceScheduleFormData>({
-    title: '',
-    description: '',
-    frequency: 'monthly',
-    nextDue: '',
-    assetId: 0,
-    priority: 'MEDIUM',
-    estimatedHours: 1,
-    assignedToId: undefined,
-    ...initialData,
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+    reset,
+    watch,
+  } = useForm<PMScheduleFormData>({
+    resolver: zodResolver(pmScheduleSchema),
+    mode: 'onChange',
+    defaultValues: {
+      title: '',
+      description: '',
+      frequency: 'monthly',
+      nextDue: '',
+      assetId: 0,
+      priority: 'MEDIUM',
+      estimatedHours: 1,
+      assignedToId: undefined,
+      organizationId: 1,
+      ...initialData,
+    },
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
+  const watchedData = watch();
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      setFormData(prevData => ({ ...prevData, ...initialData }));
+      reset({
+        title: '',
+        description: '',
+        frequency: 'monthly',
+        nextDue: '',
+        assetId: 0,
+        priority: 'MEDIUM',
+        estimatedHours: 1,
+        assignedToId: undefined,
+        organizationId: 1,
+        ...initialData,
+      });
     }
-  }, [initialData]);
+  }, [initialData, reset]);
 
   // Fetch assets when component mounts
   useEffect(() => {
@@ -147,29 +161,35 @@ export default function MaintenanceScheduleForm({
     fetchAssets();
   }, []);
 
-  const handleFieldChange = (name: string, value: any) => {
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.assetId) newErrors.assetId = 'Asset is required';
-    if (!formData.frequency) newErrors.frequency = 'Frequency is required';
-    if (!formData.nextDue) newErrors.nextDue = 'Next due date is required';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit(formData);
-    }
+  const onFormSubmit = (data: PMScheduleFormData) => {
+    console.log('PM Schedule form submitted with data:', data);
+    console.log('Form errors:', errors);
+    console.log('Is form valid:', isValid);
+    
+    // Clean and transform the data before submission
+    const cleanedData = {
+      ...data,
+      // Ensure numeric fields are properly typed
+      assetId: Number(data.assetId) || 0,
+      estimatedHours: data.estimatedHours ? Number(data.estimatedHours) : undefined,
+      assignedToId: data.assignedToId ? Number(data.assignedToId) : undefined,
+      organizationId: data.organizationId ? Number(data.organizationId) : 1,
+      // Clean up empty strings
+      title: data.title?.trim(),
+      description: data.description?.trim() || undefined,
+      frequency: data.frequency?.trim(),
+      nextDue: data.nextDue?.trim(),
+    };
+    
+    // Remove undefined fields to prevent backend issues
+    Object.keys(cleanedData).forEach(key => {
+      if (cleanedData[key as keyof typeof cleanedData] === undefined || cleanedData[key as keyof typeof cleanedData] === null) {
+        delete cleanedData[key as keyof typeof cleanedData];
+      }
+    });
+    
+    console.log('Cleaned PM schedule data for submission:', cleanedData);
+    onSubmit(cleanedData);
   };
 
   const renderViewMode = () => (
@@ -179,11 +199,11 @@ export default function MaintenanceScheduleForm({
           <CardContent>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <ScheduleIcon color="primary" />
-              <Typography variant="h6">{formData.title}</Typography>
+              <Typography variant="h6">{watchedData.title}</Typography>
             </Box>
             
             <Typography variant="body1" sx={{ mb: 2 }}>
-              {formData.description}
+              {watchedData.description}
             </Typography>
 
             <Divider sx={{ my: 2 }} />
@@ -192,28 +212,28 @@ export default function MaintenanceScheduleForm({
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Asset</Typography>
                 <Typography variant="body1">
-                  {assets.find(a => a.value.toString() === formData.assetId.toString())?.label || 'Loading...'}
+                  {assets.find(a => a.value.toString() === watchedData.assetId?.toString())?.label || 'Loading...'}
                 </Typography>
               </Grid>
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Frequency</Typography>
                 <Typography variant="body1">
-                  {frequencyOptions.find(opt => opt.value === formData.frequency)?.label || formData.frequency}
+                  {frequencyOptions.find(opt => opt.value === watchedData.frequency)?.label || watchedData.frequency}
                 </Typography>
               </Grid>
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Next Due</Typography>
-                <Typography variant="body1">{formData.nextDue}</Typography>
+                <Typography variant="body1">{watchedData.nextDue}</Typography>
               </Grid>
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
                 <Typography variant="body1">
-                  {priorityOptions.find(opt => opt.value === formData.priority)?.label || formData.priority}
+                  {priorityOptions.find(opt => opt.value === watchedData.priority)?.label || watchedData.priority}
                 </Typography>
               </Grid>
               <Grid xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">Estimated Hours</Typography>
-                <Typography variant="body1">{formData.estimatedHours || 'Not specified'}</Typography>
+                <Typography variant="body1">{watchedData.estimatedHours || 'Not specified'}</Typography>
               </Grid>
             </Grid>
           </CardContent>
@@ -225,86 +245,75 @@ export default function MaintenanceScheduleForm({
   const renderFormMode = () => (
     <Grid container spacing={3}>
       <Grid xs={12}>
-        <FormField
-          type="text"
+        <HookFormField
           name="title"
+          control={control}
           label="Schedule Title"
-          value={formData.title}
-          onChange={handleFieldChange}
+          type="text"
           required
-          error={errors.title}
           disabled={mode === 'view'}
         />
       </Grid>
       <Grid xs={12}>
-        <FormField
-          type="textarea"
+        <HookFormField
           name="description"
+          control={control}
           label="Description"
-          value={formData.description}
-          onChange={handleFieldChange}
+          type="textarea"
           disabled={mode === 'view'}
           rows={3}
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <FormField
-          type="select"
+        <HookFormField
           name="assetId"
+          control={control}
           label="Asset"
-          value={formData.assetId.toString()}
-          onChange={(name, value) => handleFieldChange(name, parseInt(value) || 0)}
+          type="select"
           options={assets}
           required
-          error={errors.assetId}
           disabled={mode === 'view' || loadingAssets}
-          helperText={loadingAssets ? 'Loading assets...' : (formData.assetId && assets.length > 0 && !loadingAssets) ? 'Asset pre-selected from context' : undefined}
+          helperText={loadingAssets ? 'Loading assets...' : 'Select the asset for this maintenance schedule'}
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <FormField
-          type="select"
+        <HookFormField
           name="frequency"
+          control={control}
           label="Frequency"
-          value={formData.frequency}
-          onChange={handleFieldChange}
+          type="select"
           options={frequencyOptions}
           required
-          error={errors.frequency}
           disabled={mode === 'view'}
-          helperText="Standardized frequencies enable automatic schedule generation"
+          helperText="How often should this maintenance be performed"
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <FormField
-          type="date"
+        <HookFormField
           name="nextDue"
+          control={control}
           label="Next Due Date"
-          value={formData.nextDue}
-          onChange={handleFieldChange}
+          type="date"
           required
-          error={errors.nextDue}
           disabled={mode === 'view'}
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <FormField
-          type="select"
+        <HookFormField
           name="priority"
+          control={control}
           label="Priority"
-          value={formData.priority}
-          onChange={handleFieldChange}
+          type="select"
           options={priorityOptions}
           disabled={mode === 'view'}
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <FormField
-          type="number"
+        <HookFormField
           name="estimatedHours"
+          control={control}
           label="Estimated Hours"
-          value={formData.estimatedHours}
-          onChange={handleFieldChange}
+          type="number"
           disabled={mode === 'view'}
           helperText="Estimated time to complete this maintenance"
         />
@@ -316,23 +325,19 @@ export default function MaintenanceScheduleForm({
     <FormDialog
       open={open}
       onClose={onClose}
-      onSubmit={handleSubmit}
+      onSubmit={handleSubmit(onFormSubmit)}
       title={
         mode === 'create' ? 'Schedule Maintenance' :
         mode === 'edit' ? 'Edit Maintenance Schedule' :
-        `Maintenance Schedule - ${formData.title}`
+        `Maintenance Schedule - ${watchedData.title || 'Schedule'}`
       }
       submitText={mode === 'view' ? undefined : mode === 'edit' ? 'Update Schedule' : 'Create Schedule'}
-      loading={loading}
+      loading={loading || isSubmitting}
       maxWidth="lg"
       hideActions={mode === 'view'}
-      submitDisabled={mode === 'view'}
+      submitDisabled={mode === 'view' || isSubmitting}
     >
-      {Object.keys(errors).length > 0 && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Please fix the errors below before saving.
-        </Alert>
-      )}
+      <FormErrorDisplay errors={errors} />
 
       {mode === 'view' ? renderViewMode() : renderFormMode()}
     </FormDialog>

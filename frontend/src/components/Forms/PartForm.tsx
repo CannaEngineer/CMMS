@@ -143,7 +143,37 @@ export default function PartForm({
     console.log('Form submitted with data:', data);
     console.log('Form errors:', errors);
     console.log('Is form valid:', isValid);
-    onSubmit(data);
+    
+    // Clean and transform the data before submission
+    const cleanedData = {
+      ...data,
+      // Ensure numeric fields are properly typed
+      stockLevel: Number(data.stockLevel) || 0,
+      reorderPoint: Number(data.reorderPoint) || 0,
+      unitCost: data.unitCost ? Number(data.unitCost) : undefined,
+      leadTime: data.leadTime ? Number(data.leadTime) : undefined,
+      // Clean up empty strings
+      sku: data.sku?.trim() || undefined,
+      description: data.description?.trim() || undefined,
+      category: data.category?.trim() || undefined,
+      manufacturer: data.manufacturer?.trim() || undefined,
+      location: data.location?.trim() || undefined,
+      unitOfMeasure: data.unitOfMeasure?.trim() || 'EACH',
+      // Handle supplier ID
+      supplierId: data.supplierId ? Number(data.supplierId) : undefined,
+      organizationId: data.organizationId ? Number(data.organizationId) : 1,
+      // Remove any undefined or null fields to prevent validation issues
+    };
+    
+    // Remove undefined fields to prevent backend issues
+    Object.keys(cleanedData).forEach(key => {
+      if (cleanedData[key as keyof typeof cleanedData] === undefined || cleanedData[key as keyof typeof cleanedData] === null) {
+        delete cleanedData[key as keyof typeof cleanedData];
+      }
+    });
+    
+    console.log('Cleaned data for submission:', cleanedData);
+    onSubmit(cleanedData);
   };
 
   const getStockStatus = () => {
