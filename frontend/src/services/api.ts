@@ -255,6 +255,14 @@ class ApiClient {
   async delete<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
+
+  async patch<T>(endpoint: string, data?: any, options?: RequestInit): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
 }
 
 // Initialize API client
@@ -489,12 +497,16 @@ export const workOrdersService = {
 
   async unassignWorkOrder(id: string): Promise<any> {
     try {
-      return await apiClient.put<any>(`/api/work-orders/${id}`, { 
-        assignedToId: null,
-        assignedTo: null 
+      console.log('Unassigning work order:', id);
+      // Use PATCH method for partial update to set assignedToId to null
+      const response = await apiClient.patch<any>(`/api/work-orders/${id}`, { 
+        assignedToId: null 
       });
+      console.log('Unassign response:', response);
+      return response;
     } catch (error) {
-      throw new Error(`Failed to unassign work order ${id}`);
+      console.error('Failed to unassign work order:', error);
+      throw new Error(`Failed to unassign work order ${id}: ${error.message}`);
     }
   },
 
