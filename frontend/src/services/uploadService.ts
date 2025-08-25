@@ -137,6 +137,27 @@ export class UploadService {
     return this.uploadFiles('locations', images, locationId, options);
   }
 
+  // Get files for a specific entity
+  async getEntityFiles(entityType: string, entityId: string): Promise<UploadedFile[]> {
+    try {
+      const response = await apiClient.get(`/api/uploads/${entityType}/${entityId}`);
+      return response.data.files || [];
+    } catch (error) {
+      console.error(`[UploadService] Error fetching ${entityType} files:`, error);
+      return [];
+    }
+  }
+
+  // Get asset files
+  async getAssetFiles(assetId: string): Promise<UploadedFile[]> {
+    return this.getEntityFiles('assets', assetId);
+  }
+
+  // Get work order files
+  async getWorkOrderFiles(workOrderId: string): Promise<UploadedFile[]> {
+    return this.getEntityFiles('work-orders', workOrderId);
+  }
+
   // Private method to handle upload with progress tracking
   private async uploadWithProgress(
     endpoint: string,

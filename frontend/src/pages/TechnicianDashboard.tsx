@@ -87,6 +87,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService, authService, assetsService, partsService } from '../services/api';
+import { UploadService } from '../services/uploadService';
 import { statusColors } from '../theme/theme';
 import { useComments, useCreateComment } from '../hooks/useComments';
 import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingButton } from '../components/Loading';
@@ -147,7 +148,11 @@ export default function TechnicianDashboard() {
   const [fileDescription, setFileDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const [assetFiles, setAssetFiles] = useState<any[]>([]);
+  const [workOrderFiles, setWorkOrderFiles] = useState<{[key: number]: any[]}>({});
   const [cartItems, setCartItems] = useState<any[]>([]);
+  const [checkoutReason, setCheckoutReason] = useState('');
+  const [checkoutNotes, setCheckoutNotes] = useState('');
 
   // Get current user
   const userStr = localStorage.getItem('user');
@@ -414,9 +419,54 @@ export default function TechnicianDashboard() {
     setCartItems(cartItems.filter(item => item.id !== partId));
   };
 
-  const handleViewAsset = (asset: any) => {
+  // Parts checkout mutation
+  const checkoutPartsMutation = useMutation({
+    mutationFn: async (checkoutData: any) => {
+      return partsService.checkoutParts(checkoutData);
+    },
+    onSuccess: () => {
+      // Clear cart and close dialog
+      setCartItems([]);
+      setInventoryDialogOpen(false);
+      setCheckoutReason('');
+      setCheckoutNotes('');
+      // Refresh parts data
+      queryClient.invalidateQueries({ queryKey: ['technician-parts'] });
+    },
+  });
+
+  const handleCheckoutParts = () => {
+    if (cartItems.length === 0) return;
+    
+    const checkoutData = {
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        partNumber: item.partNumber,
+        quantity: item.quantity,
+        cost: item.cost || 0
+      })),
+      requestedBy: currentUser?.email || 'Unknown User',
+      reason: checkoutReason || 'Work order materials',
+      notes: checkoutNotes
+    };
+    
+    checkoutPartsMutation.mutate(checkoutData);
+  };
+
+  const handleViewAsset = async (asset: any) => {
     setSelectedAsset(asset);
     setAssetDialogOpen(true);
+    
+    // Fetch files for this asset
+    try {
+      const uploadService = new UploadService();
+      const files = await uploadService.getAssetFiles(asset.id.toString());
+      setAssetFiles(files);
+    } catch (error) {
+      console.error('Error fetching asset files:', error);
+      setAssetFiles([]);
+    }
   };
 
   const handleUploadFile = (type: 'asset' | 'workOrder', id: number) => {
@@ -458,18 +508,28 @@ export default function TechnicianDashboard() {
     if (!uploadTarget || selectedFiles.length === 0) return;
     
     try {
-      // Here you would implement the actual file upload logic
-      console.log('Uploading files:', selectedFiles);
-      console.log('Target:', uploadTarget);
-      console.log('Description:', fileDescription);
+      const uploadService = new UploadService();
       
-      // For now, just close the dialog
+      if (uploadTarget.type === 'asset') {
+        await uploadService.uploadAssetImages(uploadTarget.id.toString(), selectedFiles);
+        console.log(`Successfully uploaded ${selectedFiles.length} files to asset ${uploadTarget.id}`);
+      } else {
+        await uploadService.uploadWorkOrderAttachments(uploadTarget.id.toString(), selectedFiles);
+        console.log(`Successfully uploaded ${selectedFiles.length} files to work order ${uploadTarget.id}`);
+      }
+      
+      // Refresh data to show new files
+      queryClient.invalidateQueries({ queryKey: ['technician-assets'] });
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] });
+      
+      // Close dialog and reset state
       setFileUploadDialogOpen(false);
       setSelectedFiles([]);
       setFileDescription('');
       setUploadTarget(null);
     } catch (error) {
       console.error('File upload error:', error);
+      // You could add a toast notification here for error handling
     }
   };
 
@@ -1086,38 +1146,74 @@ export default function TechnicianDashboard() {
                 Your cart is empty
               </Typography>
             ) : (
-              <List>
-                {cartItems.map((item, index) => (
-                  <ListItem key={`${item.id}-${index}`}>
-                    <ListItemAvatar>
-                      <Avatar>
-                        <InventoryIcon />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`Part #: ${item.partNumber} | Quantity: ${item.quantity}`}
-                    />
-                    <IconButton
-                      color="error"
-                      onClick={() => handleRemoveFromCart(item.id)}
-                    >
-                      <RemoveIcon />
-                    </IconButton>
-                  </ListItem>
-                ))}
-              </List>
+              <>
+                <List>
+                  {cartItems.map((item, index) => (
+                    <ListItem key={`${item.id}-${index}`}>
+                      <ListItemAvatar>
+                        <Avatar>
+                          <InventoryIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={item.name}
+                        secondary={`Part #: ${item.partNumber} | Qty: ${item.quantity} | $${(item.cost * item.quantity).toFixed(2)}`}
+                      />
+                      <IconButton
+                        color="error"
+                        onClick={() => handleRemoveFromCart(item.id)}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                    </ListItem>
+                  ))}
+                </List>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Reason for Checkout"
+                    value={checkoutReason}
+                    onChange={(e) => setCheckoutReason(e.target.value)}
+                    placeholder="e.g., Work Order #123, Emergency Repair, etc."
+                  />
+                  
+                  <TextField
+                    fullWidth
+                    label="Notes (optional)"
+                    multiline
+                    rows={2}
+                    value={checkoutNotes}
+                    onChange={(e) => setCheckoutNotes(e.target.value)}
+                    placeholder="Additional notes about this checkout..."
+                  />
+                  
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Typography variant="h6">
+                      Total: ${cartItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0).toFixed(2)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {cartItems.reduce((sum, item) => sum + item.quantity, 0)} items
+                    </Typography>
+                  </Box>
+                </Box>
+              </>
             )}
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setInventoryDialogOpen(false)}>Close</Button>
-          <Button
+          <LoadingButton
             variant="contained"
-            disabled={cartItems.length === 0}
+            disabled={cartItems.length === 0 || !checkoutReason.trim()}
+            onClick={handleCheckoutParts}
+            loading={checkoutPartsMutation.isPending}
+            startIcon={<CartIcon />}
           >
-            Request Parts
-          </Button>
+            {checkoutPartsMutation.isPending ? 'Processing...' : 'Checkout Parts'}
+          </LoadingButton>
         </DialogActions>
       </Dialog>
 
@@ -1208,6 +1304,54 @@ export default function TechnicianDashboard() {
                   </Card>
                 </Grid>
                 
+                {/* Files for this Asset */}
+                <Grid xs={12}>
+                  <Card>
+                    <CardHeader title="Attached Files" />
+                    <CardContent>
+                      {assetFiles.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {assetFiles.map((file, index) => (
+                            <Box key={index} sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              p: 1,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1
+                            }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <DocumentIcon color="primary" />
+                                <Box>
+                                  <Typography variant="body2" fontWeight="500">
+                                    {file.originalname || file.filename}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {(file.size / 1024).toFixed(1)} KB
+                                  </Typography>
+                                </Box>
+                              </Box>
+                              <Button
+                                size="small"
+                                href={file.downloadUrl || file.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                View
+                              </Button>
+                            </Box>
+                          ))}
+                        </Box>
+                      ) : (
+                        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 2 }}>
+                          No files attached to this asset
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+
                 {/* Work Orders for this Asset */}
                 <Grid xs={12}>
                   <Card>
@@ -1238,7 +1382,7 @@ export default function TechnicianDashboard() {
                                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                     {wo.description}
                                   </Typography>
-                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
                                     <Chip
                                       label={wo.status.replace('_', ' ')}
                                       color={getStatusColor(wo.status) as any}
@@ -1250,6 +1394,14 @@ export default function TechnicianDashboard() {
                                       size="small"
                                     />
                                   </Box>
+                                  {workOrderFiles[wo.id] && workOrderFiles[wo.id].length > 0 && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                      <DocumentIcon fontSize="small" color="action" />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {workOrderFiles[wo.id].length} file(s) attached
+                                      </Typography>
+                                    </Box>
+                                  )}
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
                                   {wo.assignedTo ? (
