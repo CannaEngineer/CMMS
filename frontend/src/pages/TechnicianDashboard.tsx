@@ -910,19 +910,19 @@ export default function TechnicianDashboard() {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                         <Box sx={{ flex: 1 }}>
                           <Typography variant="h6" fontWeight="600">
-                            {asset.name}
+                            {asset.name || 'Unnamed Asset'}
                           </Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            Model: {asset.model} | Serial: {asset.serialNumber}
+                            Model: {asset.model || 'Unknown'} | Serial: {asset.serialNumber || 'N/A'}
                           </Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                             <Chip
-                              label={asset.status}
+                              label={asset.status || 'UNKNOWN'}
                               color={asset.status === 'ONLINE' ? 'success' : 'error'}
                               size="small"
                             />
                             <Chip
-                              label={asset.location}
+                              label={typeof asset.location === 'string' ? asset.location : asset.location?.name || 'Unknown Location'}
                               size="small"
                               icon={<LocationIcon />}
                             />
@@ -942,7 +942,7 @@ export default function TechnicianDashboard() {
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="body2" color="text.secondary">
-                          Category: {asset.category}
+                          Category: {asset.category || 'Unknown'}
                         </Typography>
                         <Button
                           variant="outlined"
