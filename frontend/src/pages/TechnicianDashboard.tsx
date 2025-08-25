@@ -472,7 +472,7 @@ export default function TechnicianDashboard() {
   }
 
   return (
-    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: 10 }}>
+    <Box sx={{ bgcolor: 'grey.50', minHeight: '100vh', pb: isMobile ? 10 : 2 }}>
       <Container maxWidth="lg" sx={{ py: 2 }}>
         {/* Header */}
         <Box sx={{ mb: 3 }}>
@@ -1434,7 +1434,7 @@ export default function TechnicianDashboard() {
         ariaLabel="Quick actions"
         sx={{
           position: 'fixed',
-          bottom: isMobile ? 80 : 16,
+          bottom: isMobile ? 88 : 16,
           right: 16,
           zIndex: 1000,
         }}
