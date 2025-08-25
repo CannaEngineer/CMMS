@@ -135,6 +135,56 @@ export class NotificationController {
     }
   }
 
+  // Clear (delete) single notification
+  async clearNotification(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+
+      await this.notificationService.deleteNotification(id, userId);
+      res.json({ success: true, message: 'Notification cleared successfully' });
+    } catch (error) {
+      console.error('Error clearing notification:', error);
+      res.status(500).json({ error: 'Failed to clear notification' });
+    }
+  }
+
+  // Clear all notifications for user
+  async clearAllNotifications(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { category } = req.query;
+
+      const result = await this.notificationService.clearAllNotifications(
+        userId,
+        category as NotificationCategory
+      );
+      res.json(result);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      res.status(500).json({ error: 'Failed to clear all notifications' });
+    }
+  }
+
+  // Acknowledge notification (mark as read and optionally archive)
+  async acknowledgeNotification(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { id } = req.params;
+      const { archive = false } = req.body;
+
+      const notification = await this.notificationService.acknowledgeNotification(
+        id, 
+        userId,
+        archive
+      );
+      res.json(notification);
+    } catch (error) {
+      console.error('Error acknowledging notification:', error);
+      res.status(500).json({ error: 'Failed to acknowledge notification' });
+    }
+  }
+
   // Get user notification preferences
   async getPreferences(req: AuthenticatedRequest, res: Response) {
     try {

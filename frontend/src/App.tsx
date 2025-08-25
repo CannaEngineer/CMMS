@@ -40,6 +40,7 @@ import PublicPortal from './pages/PublicPortal';
 import PortalDetailView from './components/Portal/PortalDetailView';
 import PublicWorkOrderShare from './pages/PublicWorkOrderShare';
 import TimeTracking from './pages/TimeTracking';
+import Notifications from './pages/Notifications';
 
 // Create a client with enhanced error handling
 const queryClient = new QueryClient({
@@ -127,6 +128,7 @@ function App() {
               <Route path="assets/:id" element={<AssetDetail />} />
               <Route path="inventory" element={<Inventory />} />
               <Route path="inventory/parts/:id" element={<PartDetail />} />
+              <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
@@ -160,6 +162,7 @@ function App() {
               <Route path="portals/:id" element={<PortalDetailView />} />
               <Route path="exports" element={<ExportCenter />} />
               <Route path="users" element={<Users />} />
+              <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="settings/email-test" element={<EmailTest />} />

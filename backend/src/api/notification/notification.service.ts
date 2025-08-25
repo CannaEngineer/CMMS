@@ -443,6 +443,52 @@ export class NotificationService {
     }
   }
 
+  async clearAllNotifications(userId: number, category?: NotificationCategory) {
+    try {
+      const where: any = { userId };
+      if (category) {
+        where.category = category;
+      }
+
+      const result = await prisma.notification.deleteMany({ where });
+
+      return { 
+        success: true, 
+        deleted: result.count,
+        message: `Cleared ${result.count} notification${result.count !== 1 ? 's' : ''}`
+      };
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      throw new Error('Failed to clear all notifications');
+    }
+  }
+
+  async acknowledgeNotification(notificationId: string, userId: number, archive: boolean = false) {
+    try {
+      const notification = await prisma.notification.findFirst({
+        where: { id: notificationId, userId }
+      });
+
+      if (!notification) {
+        throw new Error('Notification not found');
+      }
+
+      const updatedNotification = await prisma.notification.update({
+        where: { id: notificationId },
+        data: { 
+          isRead: true,
+          readAt: new Date(),
+          isArchived: archive
+        }
+      });
+
+      return updatedNotification;
+    } catch (error) {
+      console.error('Error acknowledging notification:', error);
+      throw new Error('Failed to acknowledge notification');
+    }
+  }
+
   private async createDefaultPreferences(userId: number): Promise<any[]> {
     const user = await prisma.user.findUnique({
       where: { id: userId },

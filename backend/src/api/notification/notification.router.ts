@@ -32,11 +32,20 @@ router.put('/:id/archive', notificationController.archiveNotification.bind(notif
 // Delete notification
 router.delete('/:id', notificationController.deleteNotification.bind(notificationController));
 
+// Clear (delete) notification
+router.delete('/:id/clear', notificationController.clearNotification.bind(notificationController));
+
+// Acknowledge notification (mark as read and optionally archive)
+router.put('/:id/acknowledge', notificationController.acknowledgeNotification.bind(notificationController));
+
 // Mark multiple notifications as read
 router.put('/bulk/read', notificationController.markMultipleAsRead.bind(notificationController));
 
 // Mark all notifications as read
 router.put('/all/read', notificationController.markAllAsRead.bind(notificationController));
+
+// Clear all notifications
+router.delete('/all/clear', notificationController.clearAllNotifications.bind(notificationController));
 
 // Admin endpoints
 router.post('/test', notificationController.sendTestNotification.bind(notificationController));

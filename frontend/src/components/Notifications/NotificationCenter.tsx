@@ -24,6 +24,8 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
   Close as CloseIcon,
+  Clear as ClearIcon,
+  DeleteSweep as ClearAllIcon,
   MarkEmailRead as MarkReadIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
@@ -115,6 +117,47 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   };
 
+  const handleClearNotification = async (notificationId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(`/api/notifications/${notificationId}/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        loadStats();
+      }
+    } catch (err) {
+      console.error('Failed to clear notification:', err);
+    }
+  };
+
+  const handleClearAll = async () => {
+    if (!confirm('Are you sure you want to clear all notifications? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/notifications/all/clear', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setNotifications([]);
+        loadStats();
+      }
+    } catch (err) {
+      console.error('Failed to clear all notifications:', err);
+    }
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'ALERT':
@@ -198,6 +241,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 </IconButton>
               </Tooltip>
             )}
+            {notifications.length > 0 && (
+              <Tooltip title="Clear all notifications">
+                <IconButton size="small" onClick={handleClearAll}>
+                  <ClearAllIcon />
+                </IconButton>
+              </Tooltip>
+            )}
             {onSettingsClick && (
               <Tooltip title="Notification settings">
                 <IconButton size="small" onClick={onSettingsClick}>
@@ -263,6 +313,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         >
                           {notification.title}
                         </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleClearNotification(notification.id, e)}
+                          sx={{ 
+                            opacity: 0.6,
+                            '&:hover': { opacity: 1 }
+                          }}
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
                         {!notification.isRead && (
                           <CircleIcon sx={{ fontSize: 8, color: 'primary.main' }} />
                         )}
