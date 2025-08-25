@@ -1043,18 +1043,48 @@ export default function TechnicianDashboard() {
                   <Card key={part.id}>
                     <CardContent>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" fontWeight="600">
+                        <Box sx={{ flex: 1, minWidth: 0, mr: 2 }}>
+                          <Typography 
+                            variant="h6" 
+                            fontWeight="600"
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100%'
+                            }}
+                            title={part.name} // Show full name on hover
+                          >
                             {part.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ 
+                              mb: 1,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              maxWidth: '100%'
+                            }}
+                            title={`Part #: ${part.partNumber}`}
+                          >
                             Part #: {part.partNumber}
                           </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                             <Chip 
                               label={part.category} 
                               size="small" 
-                              icon={<CategoryIcon />} 
+                              icon={<CategoryIcon />}
+                              sx={{
+                                maxWidth: '150px',
+                                '& .MuiChip-label': {
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }
+                              }}
+                              title={part.category}
                             />
                             <Chip 
                               label={`${part.quantity} in stock`}
@@ -1080,7 +1110,19 @@ export default function TechnicianDashboard() {
                         </Box>
                       </Box>
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '200px',
+                            flex: 1,
+                            mr: 1
+                          }}
+                          title={`Location: ${part.location || 'Not specified'}`}
+                        >
                           Location: {part.location || 'Not specified'}
                         </Typography>
                         <Button

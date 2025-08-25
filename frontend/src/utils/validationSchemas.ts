@@ -127,7 +127,8 @@ export const partSchema = z.object({
     .number()
     .min(0, 'Unit cost cannot be negative')
     .max(1000000, 'Unit cost cannot exceed $1,000,000')
-    .optional(),
+    .optional()
+    .nullable(),
   unitOfMeasure: z
     .string()
     .max(20, 'Unit of measure must be less than 20 characters')
@@ -153,7 +154,8 @@ export const partSchema = z.object({
     .int('Lead time must be a whole number')
     .min(0, 'Lead time cannot be negative')
     .max(365, 'Lead time cannot exceed 365 days')
-    .optional(),
+    .optional()
+    .nullable(),
   organizationId: z
     .number()
     .int()

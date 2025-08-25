@@ -104,12 +104,12 @@ export default function PartForm({
       sku: '',
       stockLevel: 0,
       reorderPoint: 5,
-      unitCost: 0,
+      unitCost: undefined,
       unitOfMeasure: 'EACH',
       category: '',
       manufacturer: '',
       location: '',
-      leadTime: 0,
+      leadTime: undefined,
       organizationId: 1,
       supplierId: undefined,
       ...initialData,
@@ -126,12 +126,12 @@ export default function PartForm({
         sku: '',
         stockLevel: 0,
         reorderPoint: 5,
-        unitCost: 0,
+        unitCost: undefined,
         unitOfMeasure: 'EACH',
         category: '',
         manufacturer: '',
         location: '',
-        leadTime: 0,
+        leadTime: undefined,
         organizationId: 1,
         supplierId: undefined,
         ...initialData,
@@ -140,6 +140,9 @@ export default function PartForm({
   }, [initialData, reset]);
 
   const onFormSubmit = (data: PartFormData) => {
+    console.log('Form submitted with data:', data);
+    console.log('Form errors:', errors);
+    console.log('Is form valid:', isValid);
     onSubmit(data);
   };
 
@@ -452,7 +455,7 @@ export default function PartForm({
       loading={loading || isSubmitting}
       maxWidth="lg"
       hideActions={mode === 'view'}
-      submitDisabled={mode === 'view' || !isValid || isSubmitting}
+      submitDisabled={mode === 'view' || isSubmitting}
     >
       <FormErrorDisplay errors={errors} />
 
