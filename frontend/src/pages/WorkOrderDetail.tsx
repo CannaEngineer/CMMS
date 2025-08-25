@@ -132,6 +132,7 @@ export default function WorkOrderDetail() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [priorityDialogOpen, setPriorityDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [unassignDialogOpen, setUnassignDialogOpen] = useState(false);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   const [timeDialogOpen, setTimeDialogOpen] = useState(false);
   
@@ -368,6 +369,13 @@ export default function WorkOrderDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['work-order', id] });
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] }); // For technician dashboard
+      setUnassignDialogOpen(false);
+      showSuccess('Work order has been unassigned and is now available for technicians to claim.');
+    },
+    onError: (error: any) => {
+      console.error('Unassign work order error:', error);
+      showError('Failed to unassign work order. Please try again.');
     },
   });
 
@@ -429,9 +437,11 @@ export default function WorkOrderDetail() {
   };
 
   const handleUnassignWorkOrder = () => {
-    if (window.confirm('Are you sure you want to unassign this work order? It will become available for technicians to claim.')) {
-      unassignWorkOrderMutation.mutate();
-    }
+    setUnassignDialogOpen(true);
+  };
+
+  const confirmUnassignWorkOrder = () => {
+    unassignWorkOrderMutation.mutate();
   };
 
   const handleAddComment = () => {
@@ -2341,6 +2351,51 @@ export default function WorkOrderDetail() {
             size="large"
           >
             {createCommentMutation.isPending ? 'Adding Comment...' : 'Add Comment'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Unassign Confirmation Dialog */}
+      <Dialog
+        open={unassignDialogOpen}
+        onClose={() => setUnassignDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PersonRemoveIcon color="warning" />
+            Confirm Work Order Unassignment
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              This will remove the current assignment and make the work order available for technicians to claim.
+            </Typography>
+          </Alert>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to unassign this work order from <strong>{typeof workOrder?.assignedTo === 'string' ? workOrder?.assignedTo : workOrder?.assignedTo?.name}</strong>?
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            The work order will immediately appear in the "Available Work" tab for all technicians.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setUnassignDialogOpen(false)}
+            disabled={unassignWorkOrderMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={confirmUnassignWorkOrder}
+            disabled={unassignWorkOrderMutation.isPending}
+            startIcon={unassignWorkOrderMutation.isPending ? <CircularProgress size={16} /> : <PersonRemoveIcon />}
+          >
+            {unassignWorkOrderMutation.isPending ? 'Unassigning...' : 'Unassign Work Order'}
           </Button>
         </DialogActions>
       </Dialog>
