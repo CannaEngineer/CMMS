@@ -63,48 +63,154 @@ interface Part {
 }
 
 const inventoryColumns = [
-  { key: 'sku', label: 'SKU', width: 120, sortable: true, priority: 'high' },
-  { key: 'name', label: 'Part Name', sortable: true, priority: 'high' },
-  { key: 'description', label: 'Description', hideOnMobile: true, priority: 'low' },
+  { 
+    key: 'sku', 
+    label: 'SKU', 
+    width: 120, 
+    sortable: true, 
+    priority: 'high',
+    render: (value: string) => (
+      <Typography 
+        variant="body2" 
+        fontWeight="600" 
+        sx={{ 
+          color: 'primary.main',
+          fontFamily: 'monospace',
+          fontSize: '0.875rem'
+        }}
+      >
+        {value || 'N/A'}
+      </Typography>
+    )
+  },
+  { 
+    key: 'name', 
+    label: 'Part Name', 
+    sortable: true, 
+    priority: 'high',
+    width: 200,
+    render: (value: string, row: Part) => (
+      <Box>
+        <Typography 
+          variant="body2" 
+          fontWeight="600"
+          sx={{ 
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '180px'
+          }}
+          title={value}
+        >
+          {value}
+        </Typography>
+        {row.description && (
+          <Typography 
+            variant="caption" 
+            color="text.secondary"
+            sx={{ 
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '180px',
+              display: 'block'
+            }}
+            title={row.description}
+          >
+            {row.description}
+          </Typography>
+        )}
+      </Box>
+    )
+  },
   {
     key: 'stockLevel',
-    label: 'Stock',
+    label: 'Current Stock',
     align: 'center' as const,
     sortable: true,
     priority: 'medium',
+    width: 140,
     render: (value: number, row: Part) => (
-      <Chip
-        label={value}
-        size="small"
-        color={
-          value === 0 ? 'error' :
-          value <= row.reorderPoint ? 'warning' :
-          'success'
-        }
-      />
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+        <Chip
+          label={`${value} units`}
+          size="small"
+          variant="filled"
+          color={
+            value === 0 ? 'error' :
+            value <= row.reorderPoint ? 'warning' :
+            'success'
+          }
+          sx={{ 
+            fontWeight: '600',
+            minWidth: '80px'
+          }}
+        />
+        {value <= row.reorderPoint && value > 0 && (
+          <Typography variant="caption" color="warning.main" sx={{ fontWeight: 600 }}>
+            LOW STOCK
+          </Typography>
+        )}
+        {value === 0 && (
+          <Typography variant="caption" color="error.main" sx={{ fontWeight: 600 }}>
+            OUT OF STOCK
+          </Typography>
+        )}
+      </Box>
     ),
   },
   {
     key: 'reorderPoint',
-    label: 'Reorder Point',
+    label: 'Reorder Level',
     align: 'center' as const,
     sortable: true,
     hideOnMobile: true,
     priority: 'low',
+    width: 120,
+    render: (value: number) => (
+      <Typography variant="body2" color="text.secondary">
+        {value} units
+      </Typography>
+    )
   },
   { 
     key: 'supplier', 
     label: 'Supplier',
     hideOnMobile: true,
     priority: 'medium',
-    render: (value: any, row: Part) => row.supplier?.name || 'N/A'
+    width: 150,
+    render: (value: any, row: Part) => (
+      <Typography 
+        variant="body2"
+        sx={{ 
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: '130px'
+        }}
+        title={row.supplier?.name || 'No supplier assigned'}
+      >
+        {row.supplier?.name || (
+          <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>No supplier</span>
+        )}
+      </Typography>
+    )
   },
   { 
     key: 'createdAt', 
-    label: 'Created',
+    label: 'Added',
     hideOnMobile: true,
     priority: 'low',
-    render: (value: string) => new Date(value).toLocaleDateString()
+    width: 100,
+    render: (value: string) => (
+      <Typography variant="body2" color="text.secondary">
+        {new Date(value).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: '2-digit'
+        })}
+      </Typography>
+    )
   },
 ];
 
@@ -356,125 +462,301 @@ export default function Inventory() {
   }
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
-          Inventory Management
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {!isMobile && (
-            <>
-              <UniversalExportButton
-                dataSource="inventory"
-                entityType="parts"
-                buttonText="Export"
-              />
-            </>
-          )}
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreatePart}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
-            Add Part
-          </Button>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      {/* Header Section */}
+      <Paper 
+        elevation={0} 
+        sx={{ 
+          p: 3, 
+          mb: 4, 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          borderRadius: 2
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+              Inventory Management
+            </Typography>
+            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+              Monitor stock levels, track parts, and manage inventory efficiently
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            {!isMobile && (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => setPurchaseOrderOpen(true)}
+                  sx={{ 
+                    borderColor: 'rgba(255,255,255,0.3)', 
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'rgba(255,255,255,0.5)',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                >
+                  Purchase Order
+                </Button>
+                <UniversalExportButton
+                  dataSource="inventory"
+                  entityType="parts"
+                  buttonText="Export"
+                  variant="outlined"
+                  sx={{ 
+                    borderColor: 'rgba(255,255,255,0.3)', 
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'rgba(255,255,255,0.5)',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                />
+              </>
+            )}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreatePart}
+              sx={{ 
+                display: { xs: 'none', sm: 'flex' },
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.3)',
+                }
+              }}
+            >
+              Add Part
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {/* KPI Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid xs={12} sm={6} md={3}>
-          <StatCard
-            title="Total Parts"
-            value={totalParts}
-            subtitle="In inventory"
-            icon={<InventoryIcon />}
-            color="primary"
-          />
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontWeight: 600 }}>
+          Inventory Overview
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid xs={12} sm={6} md={3}>
+            <StatCard
+              title="Total Parts"
+              value={totalParts.toLocaleString()}
+              subtitle="Unique parts in system"
+              icon={<InventoryIcon />}
+              color="primary"
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={3}>
+            <StatCard
+              title="Low Stock Items"
+              value={(lowStockParts || []).length}
+              subtitle="Need reordering soon"
+              icon={<LowStockIcon />}
+              color="warning"
+              trend={
+                (lowStockParts || []).length > 0 ? {
+                  value: (lowStockParts || []).length,
+                  label: "items below reorder point"
+                } : undefined
+              }
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={3}>
+            <StatCard
+              title="Out of Stock"
+              value={outOfStockParts.length}
+              subtitle="Require immediate action"
+              icon={<WarningIcon />}
+              color="error"
+              trend={
+                outOfStockParts.length > 0 ? {
+                  value: outOfStockParts.length,
+                  label: "critical items"
+                } : undefined
+              }
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={3}>
+            <StatCard
+              title="Total Units"
+              value={(parts || []).reduce((sum, part) => sum + part.stockLevel, 0).toLocaleString()}
+              subtitle="Items in stock"
+              icon={<ReportIcon />}
+              color="success"
+              trend={{
+                value: Math.round((parts || []).reduce((sum, part) => sum + part.stockLevel, 0) / Math.max(totalParts, 1)),
+                label: "avg per part"
+              }}
+            />
+          </Grid>
         </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          <StatCard
-            title="Low Stock Items"
-            value={(lowStockParts || []).length}
-            subtitle="Need reordering"
-            icon={<LowStockIcon />}
-            color="warning"
-          />
-        </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          <StatCard
-            title="Out of Stock"
-            value={outOfStockParts.length}
-            subtitle="Urgent attention needed"
-            icon={<WarningIcon />}
-            color="error"
-          />
-        </Grid>
-        <Grid xs={12} sm={6} md={3}>
-          <StatCard
-            title="Total Items"
-            value={(parts || []).reduce((sum, part) => sum + part.stockLevel, 0)}
-            subtitle="Current stock count"
-            icon={<ReportIcon />}
-            color="success"
-          />
-        </Grid>
-      </Grid>
+      </Box>
 
-      {/* Alerts for low/out of stock */}
-      {outOfStockParts.length > 0 && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <strong>{outOfStockParts.length} parts are out of stock:</strong>{' '}
-          {outOfStockParts.map(p => p.name).join(', ')}
-        </Alert>
-      )}
-
-      {(lowStockParts || []).length > (outOfStockParts || []).length && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          <strong>{(lowStockParts || []).length - (outOfStockParts || []).length} parts are low on stock</strong>{' '}
-          and need reordering soon.
-        </Alert>
-      )}
-
-      <Grid container spacing={3}>
-        {/* Main Inventory Table */}
-        <Grid xs={12}>
-          <Paper sx={{ mb: 2 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-              <Tab label={`All Parts (${totalParts})`} />
-              <Tab label={`Low Stock (${(lowStockParts || []).length})`} />
-              <Tab label={`Out of Stock (${outOfStockParts.length})`} />
-              <Tab label="By Category" />
-              <Tab label="Recent Orders" />
-            </Tabs>
-          </Paper>
-
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <TextField
-                placeholder="Search parts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{ flexGrow: 1 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
+      {/* Smart Alerts Section */}
+      {(outOfStockParts.length > 0 || (lowStockParts || []).length > outOfStockParts.length) && (
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary', fontWeight: 600 }}>
+            Inventory Alerts
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {outOfStockParts.length > 0 && (
+              <Alert 
+                severity="error" 
+                variant="filled"
+                sx={{ 
+                  borderRadius: 2,
+                  '& .MuiAlert-message': { fontWeight: 500 }
                 }}
-              />
-              <Button
-                variant="outlined"
-                startIcon={<FilterIcon />}
-                onClick={handleFilterClick}
+                action={
+                  <Button 
+                    color="inherit" 
+                    size="small"
+                    onClick={() => setPurchaseOrderOpen(true)}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Create Purchase Order
+                  </Button>
+                }
               >
-                Filter
-              </Button>
-            </Box>
-          </Paper>
+                <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                  {outOfStockParts.length} parts are completely out of stock
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {outOfStockParts.slice(0, 3).map(p => p.name).join(', ')}
+                  {outOfStockParts.length > 3 && ` and ${outOfStockParts.length - 3} more...`}
+                </Typography>
+              </Alert>
+            )}
 
+            {(lowStockParts || []).length > outOfStockParts.length && (
+              <Alert 
+                severity="warning" 
+                variant="filled"
+                sx={{ 
+                  borderRadius: 2,
+                  '& .MuiAlert-message': { fontWeight: 500 }
+                }}
+                action={
+                  <Button 
+                    color="inherit" 
+                    size="small"
+                    onClick={() => setTabValue(1)}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    View Low Stock
+                  </Button>
+                }
+              >
+                <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                  {(lowStockParts || []).length - outOfStockParts.length} parts are running low
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  Consider reordering soon to avoid stockouts
+                </Typography>
+              </Alert>
+            )}
+          </Box>
+        </Box>
+      )}
+
+      {/* Main Inventory Management Section */}
+      <Paper sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        {/* Enhanced Tab Navigation */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', backgroundColor: 'grey.50' }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange} 
+            variant="scrollable" 
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': {
+                fontWeight: 600,
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                minHeight: 56
+              },
+              '& .Mui-selected': {
+                fontWeight: 700
+              }
+            }}
+          >
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InventoryIcon fontSize="small" />
+                  All Parts ({totalParts})
+                </Box>
+              } 
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <LowStockIcon fontSize="small" />
+                  Low Stock ({(lowStockParts || []).length})
+                </Box>
+              }
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <WarningIcon fontSize="small" />
+                  Out of Stock ({outOfStockParts.length})
+                </Box>
+              }
+            />
+            <Tab label="By Category" />
+            <Tab label="Purchase History" />
+          </Tabs>
+        </Box>
+
+        {/* Enhanced Search and Filter Section */}
+        <Box sx={{ p: 3, backgroundColor: 'background.paper' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <TextField
+              placeholder="Search by name, SKU, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ 
+                flexGrow: 1, 
+                minWidth: 300,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<FilterIcon />}
+              onClick={handleFilterClick}
+              sx={{ 
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                minWidth: 100
+              }}
+            >
+              Filters
+            </Button>
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              {getFilteredParts().length} of {totalParts} parts
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Enhanced Data Table */}
+        <Box sx={{ px: 0 }}>
           <DataTable
             title=""
             columns={inventoryColumns}
@@ -490,10 +772,29 @@ export default function Inventory() {
             searchable={false}
             selectable
             loading={isLoading}
+            sx={{
+              '& .MuiTableHead-root': {
+                backgroundColor: 'grey.100',
+              },
+              '& .MuiTableHead-root .MuiTableCell-root': {
+                fontWeight: 700,
+                color: 'text.primary',
+                borderBottom: '2px solid',
+                borderBottomColor: 'divider',
+              },
+              '& .MuiTableBody-root .MuiTableRow-root': {
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                },
+                '& .MuiTableCell-root': {
+                  borderBottom: '1px solid',
+                  borderBottomColor: 'grey.200',
+                }
+              }
+            }}
           />
-        </Grid>
-
-      </Grid>
+        </Box>
+      </Paper>
 
       {/* Mobile FAB */}
       {isMobile && (
