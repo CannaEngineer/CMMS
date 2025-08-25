@@ -168,25 +168,29 @@ export default function MaintenanceScheduleForm({
     
     // Clean and transform the data before submission
     const cleanedData = {
-      ...data,
-      // Ensure numeric fields are properly typed
-      assetId: Number(data.assetId) || 0,
-      estimatedHours: data.estimatedHours ? Number(data.estimatedHours) : undefined,
-      assignedToId: data.assignedToId ? Number(data.assignedToId) : undefined,
-      organizationId: data.organizationId ? Number(data.organizationId) : 1,
-      // Clean up empty strings
+      // Core required fields
       title: data.title?.trim(),
-      description: data.description?.trim() || undefined,
       frequency: data.frequency?.trim(),
       nextDue: data.nextDue?.trim(),
+      assetId: Number(data.assetId) || 0,
+      
+      // Optional fields - only include if they have values
+      ...(data.description?.trim() && { description: data.description.trim() }),
+      ...(data.priority && { priority: data.priority }),
+      ...(data.estimatedHours && { estimatedHours: Number(data.estimatedHours) }),
+      ...(data.assignedToId && { assignedToId: Number(data.assignedToId) }),
+      ...(data.organizationId && { organizationId: Number(data.organizationId) }),
+      
+      // Include ID for updates
+      ...(data.id && { id: Number(data.id) }),
+      ...(data.legacyId && { legacyId: Number(data.legacyId) }),
     };
     
-    // Remove undefined fields to prevent backend issues
-    Object.keys(cleanedData).forEach(key => {
-      if (cleanedData[key as keyof typeof cleanedData] === undefined || cleanedData[key as keyof typeof cleanedData] === null) {
-        delete cleanedData[key as keyof typeof cleanedData];
-      }
-    });
+    // Ensure required fields are not empty
+    if (!cleanedData.title || !cleanedData.frequency || !cleanedData.nextDue || !cleanedData.assetId) {
+      console.error('Missing required fields for PM schedule:', cleanedData);
+      return;
+    }
     
     console.log('Cleaned PM schedule data for submission:', cleanedData);
     onSubmit(cleanedData);
