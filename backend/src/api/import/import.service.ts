@@ -220,16 +220,28 @@ export class ImportService {
       }
     });
 
-    // Check required fields
+    // Check required fields (but consider relationship fields separately)
     const requiredFields = config.fields.filter(field => field.required);
-    const mappedRequiredFields = requiredFields.filter(field =>
-      mappings.some(mapping => mapping.targetField === field.key)
-    );
+    const mappedRequiredFields = requiredFields.filter(field => {
+      // For relationship fields, check if either the lookup field or the target field is mapped
+      if (field.relationField) {
+        return mappings.some(mapping => 
+          mapping.targetField === field.key || mapping.targetField === field.relationField
+        );
+      }
+      // For regular fields, check normal mapping
+      return mappings.some(mapping => mapping.targetField === field.key);
+    });
 
     if (mappedRequiredFields.length < requiredFields.length) {
-      const missing = requiredFields.filter(field =>
-        !mappings.some(mapping => mapping.targetField === field.key)
-      );
+      const missing = requiredFields.filter(field => {
+        if (field.relationField) {
+          return !mappings.some(mapping => 
+            mapping.targetField === field.key || mapping.targetField === field.relationField
+          );
+        }
+        return !mappings.some(mapping => mapping.targetField === field.key);
+      });
       errors.push(`Missing required fields: ${missing.map(f => f.label).join(', ')}`);
     }
 
@@ -248,9 +260,9 @@ export class ImportService {
         // Skip validation for empty optional fields
         if (!value && !field.required) continue;
         
-        // Required field validation
-        if (field.required && !value) {
-          errors.push(`Row ${i + 1}: ${field.label} is required but empty`);
+        // Required field validation (skip for relationship fields as they'll be validated after resolution)
+        if (field.required && !field.relationField && (!value || (typeof value === 'string' && value.trim() === ''))) {
+          errors.push(`Row ${i + 1}: Required field is missing or empty`);
           continue;
         }
 
@@ -1188,14 +1200,24 @@ export class ImportService {
               }
 
               // Validate required fields before creation
-              const requiredFields = config.fields.filter(field => field.required);
-              const missingFields = requiredFields.filter(field => 
-                !row[field.key] || (typeof row[field.key] === 'string' && row[field.key].trim() === '')
-              );
-              
-              if (missingFields.length > 0) {
-                const missingFieldNames = missingFields.map(field => field.key).join(', ');
-                throw new Error(`Missing required fields: ${missingFieldNames}`);
+              // For assets, check that we have either name AND locationId (after resolution)
+              // or handle the special case where location couldn't be resolved
+              if (entityType === 'assets') {
+                if (!row.name || (typeof row.name === 'string' && row.name.trim() === '')) {
+                  throw new Error(`Required field is missing or empty: name`);
+                }
+                // locationId is already handled above with default location creation
+              } else {
+                // For other entity types, validate required fields normally
+                const requiredFields = config.fields.filter(field => field.required && !field.relationField);
+                const missingFields = requiredFields.filter(field => 
+                  !row[field.key] || (typeof row[field.key] === 'string' && row[field.key].trim() === '')
+                );
+                
+                if (missingFields.length > 0) {
+                  const missingFieldNames = missingFields.map(field => field.label || field.key).join(', ');
+                  throw new Error(`Required field is missing or empty`);
+                }
               }
 
               console.log(`Creating ${config.tableName} record with data:`, row);
