@@ -28,12 +28,12 @@ import {
   Schedule as ScheduleIcon,
   Build as AssetIcon,
   Inventory as InventoryIcon,
-  Person as PersonIcon,
   Notifications as NotificationsIcon,
   AccessTime as TimeIcon,
   Comment as CommentIcon,
   AccountCircle as AccountCircleIcon,
   Home as HomeIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -41,12 +41,12 @@ interface TechnicianLayoutProps {
   children?: React.ReactNode;
 }
 
-// Simplified navigation items for technicians
+// Navigation items for technicians matching dashboard tabs
 const techNavItems = [
-  { text: 'My Work', icon: <WorkOrderIcon />, path: '/tech/dashboard', value: 'dashboard' },
-  { text: 'Time Tracking', icon: <TimeIcon />, path: '/tech/time', value: 'time' },
-  { text: 'Assets', icon: <AssetIcon />, path: '/tech/assets', value: 'assets' },
-  { text: 'Inventory', icon: <InventoryIcon />, path: '/tech/inventory', value: 'inventory' },
+  { text: 'My Work', icon: <WorkOrderIcon />, path: '/tech/dashboard?tab=my-work', value: 'my-work' },
+  { text: 'Available Work', icon: <PersonIcon />, path: '/tech/dashboard?tab=available-work', value: 'available-work' },
+  { text: 'Inventory', icon: <InventoryIcon />, path: '/tech/dashboard?tab=inventory', value: 'inventory' },
+  { text: 'Assets', icon: <AssetIcon />, path: '/tech/dashboard?tab=assets', value: 'assets' },
 ];
 
 export default function TechnicianLayout({ children }: TechnicianLayoutProps) {
@@ -63,13 +63,21 @@ export default function TechnicianLayout({ children }: TechnicianLayoutProps) {
   const user = userStr ? JSON.parse(userStr) : null;
   const userInitials = user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'T';
 
-  // Get current page based on route
+  // Get current page based on route and query params
   const getCurrentPage = () => {
     const path = location.pathname;
-    if (path.includes('/tech/time')) return 'time';
-    if (path.includes('/tech/assets')) return 'assets';
-    if (path.includes('/tech/inventory')) return 'inventory';
-    return 'dashboard';
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get('tab');
+    
+    if (path.includes('/tech/dashboard')) {
+      switch (tab) {
+        case 'available-work': return 'available-work';
+        case 'inventory': return 'inventory';
+        case 'assets': return 'assets';
+        default: return 'my-work';
+      }
+    }
+    return 'my-work';
   };
 
   const currentValue = getCurrentPage();

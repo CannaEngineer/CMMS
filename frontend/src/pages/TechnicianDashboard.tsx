@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -35,8 +36,6 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Tabs,
-  Tab,
   LinearProgress,
   Tooltip,
   SpeedDial,
@@ -125,9 +124,25 @@ interface QuickAction {
 
 export default function TechnicianDashboard() {
   const theme = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
+  
+  // Get active tab from URL params
+  const getActiveTab = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get('tab');
+    
+    switch (tab) {
+      case 'my-work': return 0;
+      case 'available-work': return 1;
+      case 'inventory': return 2;
+      case 'assets': return 3;
+      default: return 0;
+    }
+  };
 
   // State management
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
@@ -140,7 +155,18 @@ export default function TechnicianDashboard() {
   const [timeEntry, setTimeEntry] = useState({ hours: '', description: '' });
   const [comment, setComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
-  const [activeTab, setActiveTab] = useState(0);
+  const activeTab = getActiveTab();
+  
+  // Get current section title
+  const getCurrentSectionTitle = () => {
+    switch (activeTab) {
+      case 0: return 'My Work';
+      case 1: return 'Available Work';
+      case 2: return 'Inventory';
+      case 3: return 'Assets';
+      default: return 'My Work';
+    }
+  };
   const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<{type: 'asset' | 'workOrder', id: number} | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -582,7 +608,7 @@ export default function TechnicianDashboard() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box>
               <Typography variant={isSmallMobile ? "h5" : "h4"} fontWeight="bold" color="primary">
-                Technician Dashboard
+                {getCurrentSectionTitle()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Welcome back, {currentUser?.name || 'Technician'}
@@ -678,20 +704,6 @@ export default function TechnicianDashboard() {
           </Grid>
         </Box>
 
-        {/* Main Tabs */}
-        <Paper sx={{ mb: 3 }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={(e, newValue) => setActiveTab(newValue)}
-            variant={isMobile ? "scrollable" : "fullWidth"}
-            scrollButtons="auto"
-          >
-            <Tab icon={<WorkOrderIcon />} label="My Work" />
-            <Tab icon={<PersonIcon />} label="Available Work" />
-            <Tab icon={<InventoryIcon />} label="Inventory" />
-            <Tab icon={<AssetIcon />} label="Assets" />
-          </Tabs>
-        </Paper>
 
         {/* Tab Content */}
         {(activeTab === 0 || activeTab === 1) && (
@@ -1654,7 +1666,7 @@ export default function TechnicianDashboard() {
           key="search-assets"
           icon={<SearchIcon />}
           tooltipTitle="Search Assets"
-          onClick={() => setActiveTab(3)}
+          onClick={() => navigate('/tech/dashboard?tab=assets')}
         />
         <SpeedDialAction
           key="view-cart"

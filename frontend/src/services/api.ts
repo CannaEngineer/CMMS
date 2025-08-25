@@ -489,7 +489,10 @@ export const workOrdersService = {
 
   async unassignWorkOrder(id: string): Promise<any> {
     try {
-      return await apiClient.put<any>(`/api/work-orders/${id}`, { assignedToId: null });
+      return await apiClient.put<any>(`/api/work-orders/${id}`, { 
+        assignedToId: null,
+        assignedTo: null 
+      });
     } catch (error) {
       throw new Error(`Failed to unassign work order ${id}`);
     }
