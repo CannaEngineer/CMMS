@@ -184,6 +184,24 @@ export default function TechnicianDashboard() {
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
+  // Comprehensive refresh function to update all dashboard data
+  const refreshAllData = async () => {
+    console.log('🔄 Manual refresh triggered - updating all dashboard data...');
+    try {
+      // Invalidate all queries to force fresh data fetch
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['all-work-orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['technician-parts'] }),
+        queryClient.invalidateQueries({ queryKey: ['technician-assets'] }),
+        queryClient.invalidateQueries({ queryKey: ['work-orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] })
+      ]);
+      console.log('✅ All dashboard data refreshed successfully');
+    } catch (error) {
+      console.error('❌ Error refreshing dashboard data:', error);
+    }
+  };
+
   // Fetch all work orders and separate them
   const { data: allWorkOrders = [], isLoading, refetch } = useQuery({
     queryKey: ['all-work-orders'],
@@ -197,7 +215,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 15000, // Refresh every 15 seconds to keep data current
+    refetchIntervalInBackground: true, // Continue refetching when tab is in background
+    refetchOnWindowFocus: true, // Refetch when user returns to the tab
+    refetchOnReconnect: true, // Refetch when network reconnects
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   // Separate assigned and unassigned work orders
@@ -230,7 +252,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 30000, // Refresh every 30 seconds for inventory updates
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 
   // Fetch assets data
@@ -245,7 +271,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: 30000, // Refresh every 30 seconds for asset updates
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 
 
@@ -255,15 +285,48 @@ export default function TechnicianDashboard() {
     return wo.status === filterStatus;
   });
 
-  // Status update mutation
+  // Status update mutation with optimistic updates
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => {
       return workOrdersService.updateStatus(id.toString(), status);
     },
+    // Optimistic update - immediately update the UI before API call completes
+    onMutate: async ({ id, status }) => {
+      console.log(`🚀 Optimistically updating work order ${id} status to ${status}`);
+      
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['all-work-orders'] });
+      
+      // Snapshot the previous value
+      const previousWorkOrders = queryClient.getQueryData(['all-work-orders']);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(['all-work-orders'], (old: any[]) => {
+        if (!old) return old;
+        return old.map(wo => 
+          wo.id === id ? { ...wo, status, updatedAt: new Date().toISOString() } : wo
+        );
+      });
+      
+      // Return a context object with the snapshotted value
+      return { previousWorkOrders };
+    },
     onSuccess: () => {
+      // Invalidate all work order related queries to refresh with real data
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] });
       setStatusDialogOpen(false);
       setSelectedWorkOrder(null);
+      console.log('✅ Work order status updated successfully, syncing with server...');
+    },
+    onError: (error, variables, context) => {
+      console.error('❌ Status update failed, reverting optimistic update:', error);
+      
+      // Revert the optimistic update on error
+      if (context?.previousWorkOrders) {
+        queryClient.setQueryData(['all-work-orders'], context.previousWorkOrders);
+      }
     },
   });
 
@@ -274,7 +337,14 @@ export default function TechnicianDashboard() {
       return workOrdersService.assignWorkOrder(id.toString(), currentUser.id);
     },
     onSuccess: () => {
+      // Invalidate all work order related queries to refresh the entire dashboard
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] });
+      console.log('🔄 Work order claimed, refreshing dashboard data...');
+    },
+    onError: (error) => {
+      console.error('Claim work order failed:', error);
     },
   });
 
@@ -284,10 +354,17 @@ export default function TechnicianDashboard() {
       return workOrdersService.logTime(workOrderId.toString(), hours, description, 'LABOR', true);
     },
     onSuccess: () => {
+      // Invalidate all work order related queries to refresh the entire dashboard
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] });
       setTimeDialogOpen(false);
       setTimeEntry({ hours: '', description: '' });
       setSelectedWorkOrder(null);
+      console.log('🔄 Time logged, refreshing dashboard data...');
+    },
+    onError: (error) => {
+      console.error('Log time failed:', error);
     },
   });
 
@@ -456,8 +533,13 @@ export default function TechnicianDashboard() {
       setInventoryDialogOpen(false);
       setCheckoutReason('');
       setCheckoutNotes('');
-      // Refresh parts data
+      // Refresh both parts and work orders data (parts checkout may affect work orders)
       queryClient.invalidateQueries({ queryKey: ['technician-parts'] });
+      queryClient.invalidateQueries({ queryKey: ['all-work-orders'] });
+      console.log('🔄 Parts checked out, refreshing inventory and work order data...');
+    },
+    onError: (error) => {
+      console.error('Parts checkout failed:', error);
     },
   });
 
@@ -625,7 +707,7 @@ export default function TechnicianDashboard() {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton onClick={() => refetch()} color="primary">
+              <IconButton onClick={refreshAllData} color="primary">
                 <RefreshIcon />
               </IconButton>
               <IconButton color="primary">
@@ -1697,7 +1779,7 @@ export default function TechnicianDashboard() {
           key="refresh-data"
           icon={<RefreshIcon />}
           tooltipTitle="Refresh Data"
-          onClick={() => refetch()}
+          onClick={refreshAllData}
         />
       </SpeedDial>
     </Box>
