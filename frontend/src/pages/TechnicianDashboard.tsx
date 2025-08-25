@@ -1157,20 +1157,20 @@ export default function TechnicianDashboard() {
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Asset Name</Typography>
-                          <Typography variant="body1" fontWeight="500">{selectedAsset.name}</Typography>
+                          <Typography variant="body1" fontWeight="500">{selectedAsset.name || 'Unnamed Asset'}</Typography>
                         </Box>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Model</Typography>
-                          <Typography variant="body1">{selectedAsset.model}</Typography>
+                          <Typography variant="body1">{selectedAsset.model || 'Unknown'}</Typography>
                         </Box>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Serial Number</Typography>
-                          <Typography variant="body1">{selectedAsset.serialNumber}</Typography>
+                          <Typography variant="body1">{selectedAsset.serialNumber || 'N/A'}</Typography>
                         </Box>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Status</Typography>
                           <Chip
-                            label={selectedAsset.status}
+                            label={selectedAsset.status || 'UNKNOWN'}
                             color={selectedAsset.status === 'ONLINE' ? 'success' : 'error'}
                             size="small"
                           />
@@ -1186,11 +1186,16 @@ export default function TechnicianDashboard() {
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Location</Typography>
-                          <Typography variant="body1">{selectedAsset.location}</Typography>
+                          <Typography variant="body1">
+                            {typeof selectedAsset.location === 'string' 
+                              ? selectedAsset.location 
+                              : selectedAsset.location?.name || 'Unknown Location'
+                            }
+                          </Typography>
                         </Box>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Category</Typography>
-                          <Typography variant="body1">{selectedAsset.category}</Typography>
+                          <Typography variant="body1">{selectedAsset.category || 'Unknown'}</Typography>
                         </Box>
                         <Box>
                           <Typography variant="body2" color="text.secondary">Last Maintenance</Typography>

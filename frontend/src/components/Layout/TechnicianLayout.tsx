@@ -14,7 +14,6 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Paper,
-  Fab,
   Drawer,
   List,
   ListItem,
@@ -31,7 +30,6 @@ import {
   Inventory as InventoryIcon,
   Person as PersonIcon,
   Notifications as NotificationsIcon,
-  QrCodeScanner as QrIcon,
   AccessTime as TimeIcon,
   Comment as CommentIcon,
   AccountCircle as AccountCircleIcon,
@@ -273,23 +271,6 @@ export default function TechnicianLayout({ children }: TechnicianLayoutProps) {
         </Paper>
       )}
 
-      {/* Floating Action Button for QR Scanner */}
-      <Fab
-        color="secondary"
-        aria-label="scan qr code"
-        sx={{
-          position: 'fixed',
-          bottom: isMobile ? 80 : 16,
-          right: 16,
-          zIndex: theme.zIndex.speedDial,
-        }}
-        onClick={() => {
-          // TODO: Implement QR scanner functionality
-          console.log('QR Scanner clicked');
-        }}
-      >
-        <QrIcon />
-      </Fab>
     </Box>
   );
 }
