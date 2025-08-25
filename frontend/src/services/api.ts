@@ -487,6 +487,14 @@ export const workOrdersService = {
     }
   },
 
+  async unassignWorkOrder(id: string): Promise<any> {
+    try {
+      return await apiClient.put<any>(`/api/work-orders/${id}`, { assignedToId: null });
+    } catch (error) {
+      throw new Error(`Failed to unassign work order ${id}`);
+    }
+  },
+
   // Time Logging methods
   async logTime(id: string, hours: number, description: string, category?: string, billable?: boolean): Promise<any> {
     try {

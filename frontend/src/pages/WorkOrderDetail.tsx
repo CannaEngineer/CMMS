@@ -66,6 +66,7 @@ import {
   Update as UpdateIcon,
   PriorityHigh as PriorityIcon,
   PersonAdd as AssignIcon,
+  PersonRemove as PersonRemoveIcon,
   AccessTime as TimeIcon,
   Comment as CommentIcon,
   Print as PrintIcon,
@@ -359,6 +360,17 @@ export default function WorkOrderDetail() {
     },
   });
 
+  const unassignWorkOrderMutation = useMutation({
+    mutationFn: () => {
+      if (!id) throw new Error('Work order ID is required');
+      return workOrdersService.unassignWorkOrder(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-order', id] });
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+    },
+  });
+
   // Add comment mutation using the real comment system
   const createCommentMutation = useCreateComment();
 
@@ -413,6 +425,12 @@ export default function WorkOrderDetail() {
         // User not found in list, show error
         showWarning('User not found. Please select a user from the dropdown list.');
       }
+    }
+  };
+
+  const handleUnassignWorkOrder = () => {
+    if (window.confirm('Are you sure you want to unassign this work order? It will become available for technicians to claim.')) {
+      unassignWorkOrderMutation.mutate();
     }
   };
 
@@ -1163,6 +1181,22 @@ export default function WorkOrderDetail() {
               {workOrder.assignedTo ? `Assigned: ${typeof workOrder.assignedTo === 'string' ? workOrder.assignedTo : workOrder.assignedTo.name}` : 'Assign'}
             </Button>
           </Tooltip>
+
+          {/* Unassign Button (only show if work order is assigned) */}
+          {workOrder.assignedTo && (
+            <Tooltip title="Unassign work order - make it available for technicians to claim">
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={unassignWorkOrderMutation.isPending ? <CircularProgress size={16} /> : <PersonRemoveIcon />}
+                onClick={handleUnassignWorkOrder}
+                disabled={unassignWorkOrderMutation.isPending}
+                size="small"
+              >
+                {unassignWorkOrderMutation.isPending ? 'Unassigning...' : 'Unassign'}
+              </Button>
+            </Tooltip>
+          )}
 
           {/* Time Logging */}
           <Tooltip title="Log time spent">

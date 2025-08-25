@@ -153,28 +153,14 @@ export default function TechnicianDashboard() {
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
-  // Fetch work orders (assigned to current user + unassigned)
-  const { data: workOrders = [], isLoading, refetch } = useQuery({
-    queryKey: ['technician-work-orders', currentUser?.email],
+  // Fetch all work orders and separate them
+  const { data: allWorkOrders = [], isLoading, refetch } = useQuery({
+    queryKey: ['all-work-orders'],
     queryFn: async () => {
       try {
-        const allWorkOrders = await workOrdersService.getAll();
-        // Show work orders assigned to current user OR unassigned work orders
-        const relevantWorkOrders = allWorkOrders.filter(wo => {
-          // Check if assignedTo is a user object with id or email
-          if (wo.assignedTo && typeof wo.assignedTo === 'object') {
-            return wo.assignedTo.id === currentUser?.id || wo.assignedTo.email === currentUser?.email;
-          }
-          // Check assignedToId directly
-          if (wo.assignedToId === currentUser?.id) {
-            return true;
-          }
-          // Also show unassigned work orders that technicians can claim
-          return !wo.assignedTo && !wo.assignedToId;
-        });
-        
-        console.log(`Found ${relevantWorkOrders.length} work orders (assigned + unassigned) for ${currentUser?.name}`);
-        return relevantWorkOrders;
+        const workOrders = await workOrdersService.getAll();
+        console.log(`Found ${workOrders.length} total work orders`);
+        return workOrders;
       } catch (error) {
         console.error('Work orders API error:', error);
         return [];
@@ -182,6 +168,24 @@ export default function TechnicianDashboard() {
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Separate assigned and unassigned work orders
+  const assignedWorkOrders = allWorkOrders.filter(wo => {
+    // Check if assignedTo is a user object with id or email
+    if (wo.assignedTo && typeof wo.assignedTo === 'object') {
+      return wo.assignedTo.id === currentUser?.id || wo.assignedTo.email === currentUser?.email;
+    }
+    // Check assignedToId directly
+    return wo.assignedToId === currentUser?.id;
+  });
+
+  const unassignedWorkOrders = allWorkOrders.filter(wo => {
+    // Show unassigned work orders that technicians can claim
+    return !wo.assignedTo && !wo.assignedToId;
+  });
+
+  // Current work orders based on active tab
+  const workOrders = activeTab === 0 ? assignedWorkOrders : activeTab === 1 ? unassignedWorkOrders : [];
 
   // Fetch inventory/parts data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -485,11 +489,12 @@ export default function TechnicianDashboard() {
   // Stats calculation
   const stats = {
     workOrders: {
-      total: workOrders.length,
-      pending: workOrders.filter(wo => wo.status === 'PENDING').length,
-      inProgress: workOrders.filter(wo => wo.status === 'IN_PROGRESS').length,
-      completed: workOrders.filter(wo => wo.status === 'COMPLETED').length,
-      overdue: workOrders.filter(wo => wo.dueDate && new Date(wo.dueDate) < new Date()).length,
+      total: assignedWorkOrders.length,
+      pending: assignedWorkOrders.filter(wo => wo.status === 'PENDING').length,
+      inProgress: assignedWorkOrders.filter(wo => wo.status === 'IN_PROGRESS').length,
+      completed: assignedWorkOrders.filter(wo => wo.status === 'COMPLETED').length,
+      overdue: assignedWorkOrders.filter(wo => wo.dueDate && new Date(wo.dueDate) < new Date()).length,
+      available: unassignedWorkOrders.length,
     },
     inventory: {
       total: parts.length,
@@ -599,13 +604,13 @@ export default function TechnicianDashboard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography color="text.secondary" variant="body2">
-                        Completed
+                        Available
                       </Typography>
-                      <Typography variant="h4" color="success.main">
-                        {stats.workOrders.completed}
+                      <Typography variant="h4" color="info.main">
+                        {stats.workOrders.available}
                       </Typography>
                     </Box>
-                    <CompleteIcon color="success" />
+                    <PersonIcon color="info" />
                   </Box>
                 </CardContent>
               </Card>
@@ -621,33 +626,39 @@ export default function TechnicianDashboard() {
             variant={isMobile ? "scrollable" : "fullWidth"}
             scrollButtons="auto"
           >
-            <Tab icon={<WorkOrderIcon />} label="Work Orders" />
+            <Tab icon={<WorkOrderIcon />} label="My Work" />
+            <Tab icon={<PersonIcon />} label="Available Work" />
             <Tab icon={<InventoryIcon />} label="Inventory" />
             <Tab icon={<AssetIcon />} label="Assets" />
           </Tabs>
         </Paper>
 
         {/* Tab Content */}
-        {activeTab === 0 && (
+        {(activeTab === 0 || activeTab === 1) && (
           <>
             {/* Work Orders Filter Bar */}
             <Paper sx={{ p: 2, mb: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <FilterIcon color="action" />
-                <FormControl size="small" sx={{ minWidth: 120 }}>
-                  <InputLabel>Filter</InputLabel>
-                  <Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    label="Filter"
-                  >
-                    <MenuItem value="ALL">All Orders</MenuItem>
-                    <MenuItem value="PENDING">Pending</MenuItem>
-                    <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
-                    <MenuItem value="ON_HOLD">On Hold</MenuItem>
-                    <MenuItem value="COMPLETED">Completed</MenuItem>
-                  </Select>
-                </FormControl>
+                <Typography variant="h6" sx={{ mr: 2 }}>
+                  {activeTab === 0 ? 'My Assigned Work Orders' : 'Available Work Orders'}
+                </Typography>
+                {activeTab === 0 && (
+                  <FormControl size="small" sx={{ minWidth: 120 }}>
+                    <InputLabel>Filter</InputLabel>
+                    <Select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      label="Filter"
+                    >
+                      <MenuItem value="ALL">All Orders</MenuItem>
+                      <MenuItem value="PENDING">Pending</MenuItem>
+                      <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                      <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                      <MenuItem value="COMPLETED">Completed</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
                 <Typography variant="body2" color="text.secondary">
                   Showing {filteredWorkOrders.length} of {workOrders.length} work orders
                 </Typography>
@@ -805,14 +816,16 @@ export default function TechnicianDashboard() {
             {/* Work Orders Empty State */}
             {filteredWorkOrders.length === 0 && (
               <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <WorkOrderIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                {activeTab === 0 ? <WorkOrderIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} /> : <PersonIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />}
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No work orders found
+                  {activeTab === 0 ? 'No assigned work orders' : 'No available work orders'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {filterStatus === 'ALL' 
-                    ? "You don't have any assigned work orders yet."
-                    : `No work orders with status: ${filterStatus.toLowerCase()}`
+                  {activeTab === 0 
+                    ? (filterStatus === 'ALL' 
+                        ? "You don't have any assigned work orders yet. Check the 'Available Work' tab to claim work orders."
+                        : `No assigned work orders with status: ${filterStatus.toLowerCase()}`)
+                    : "No unassigned work orders are currently available to claim."
                   }
                 </Typography>
               </Paper>
@@ -821,7 +834,7 @@ export default function TechnicianDashboard() {
         )}
 
         {/* Inventory Tab */}
-        {activeTab === 1 && (
+        {activeTab === 2 && (
           <>
             {/* Inventory Search */}
             <Paper sx={{ p: 2, mb: 3 }}>
@@ -938,7 +951,7 @@ export default function TechnicianDashboard() {
         )}
 
         {/* Assets Tab */}
-        {activeTab === 2 && (
+        {activeTab === 3 && (
           <>
             {/* Asset Search */}
             <Paper sx={{ p: 2, mb: 3 }}>
@@ -1489,7 +1502,7 @@ export default function TechnicianDashboard() {
           key="search-assets"
           icon={<SearchIcon />}
           tooltipTitle="Search Assets"
-          onClick={() => setActiveTab(2)}
+          onClick={() => setActiveTab(3)}
         />
         <SpeedDialAction
           key="view-cart"
