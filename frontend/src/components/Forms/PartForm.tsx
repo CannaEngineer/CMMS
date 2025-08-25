@@ -104,6 +104,12 @@ export default function PartForm({
       sku: '',
       stockLevel: 0,
       reorderPoint: 5,
+      unitCost: 0,
+      unitOfMeasure: 'EACH',
+      category: '',
+      manufacturer: '',
+      location: '',
+      leadTime: 0,
       organizationId: 1,
       supplierId: undefined,
       ...initialData,
@@ -120,6 +126,12 @@ export default function PartForm({
         sku: '',
         stockLevel: 0,
         reorderPoint: 5,
+        unitCost: 0,
+        unitOfMeasure: 'EACH',
+        category: '',
+        manufacturer: '',
+        location: '',
+        leadTime: 0,
         organizationId: 1,
         supplierId: undefined,
         ...initialData,
@@ -350,7 +362,67 @@ export default function PartForm({
           disabled={mode === 'view'}
         />
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="unitCost"
+          control={control}
+          label="Unit Cost ($)"
+          type="number"
+          disabled={mode === 'view'}
+          InputProps={{ startAdornment: '$' }}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="unitOfMeasure"
+          control={control}
+          label="Unit of Measure"
+          type="select"
+          options={unitOptions}
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="category"
+          control={control}
+          label="Category"
+          type="select"
+          options={[
+            { value: '', label: 'No Category' },
+            ...categoryOptions,
+          ]}
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="manufacturer"
+          control={control}
+          label="Manufacturer"
+          type="text"
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="location"
+          control={control}
+          label="Storage Location"
+          type="text"
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
+        <HookFormField
+          name="leadTime"
+          control={control}
+          label="Lead Time (days)"
+          type="number"
+          disabled={mode === 'view'}
+        />
+      </Grid>
+      <Grid item xs={12} md={6}>
         <HookFormField
           name="supplierId"
           control={control}

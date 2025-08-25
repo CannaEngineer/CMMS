@@ -150,57 +150,22 @@ export default function WorkOrderDetail() {
     queryKey: ['work-order', id],
     queryFn: async () => {
       if (!id) throw new Error('Work order ID is required');
-      // Add mock data for better demo
-      const mockWorkOrder = {
-        id: parseInt(id),
-        title: `Work Order ${id}`,
-        description: 'This is a detailed work order description explaining what needs to be done.',
-        status: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'][Math.floor(Math.random() * 4)],
-        priority: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'][Math.floor(Math.random() * 4)],
-        assignedTo: 'John Smith',
-        assetId: Math.floor(Math.random() * 10) + 1,
-        assetName: `Asset ${Math.floor(Math.random() * 10) + 1}`,
-        createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-        updatedAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 86400000 * 7).toISOString(),
-        estimatedHours: Math.floor(Math.random() * 8) + 1,
-        qrCode: null, // Will be generated automatically
-      };
       
-      try {
-        console.log('📎 Fetching work order data for ID:', id);
-        const result = await workOrdersService.getById(id);
-        
-        // Get attachments from localStorage as a workaround until backend supports them
-        const localStorageKey = `workOrder_${id}_attachments`;
-        const savedAttachments = localStorage.getItem(localStorageKey);
-        const attachments = savedAttachments ? JSON.parse(savedAttachments) : null;
-        
-        const finalResult = { ...mockWorkOrder, ...result, attachments };
-        console.log('📎 Work order data received:', { 
-          id: finalResult?.id, 
-          attachments: finalResult?.attachments,
-          attachmentCount: finalResult?.attachments?.length || 0,
-          mockAttachments: mockWorkOrder.attachments,
-          apiAttachments: result?.attachments,
-          localStorageAttachments: attachments
-        });
-        return finalResult;
-      } catch (error) {
-        console.warn(`📎 Work order ${id} API not available, using mock data:`, error);
-        
-        // Get attachments from localStorage even for mock data
-        const localStorageKey = `workOrder_${id}_attachments`;
-        const savedAttachments = localStorage.getItem(localStorageKey);
-        const attachments = savedAttachments ? JSON.parse(savedAttachments) : null;
-        
-        console.log('📎 Mock work order data:', { 
-          id: mockWorkOrder.id, 
-          attachments: attachments,
-          attachmentCount: attachments?.length || 0 
-        });
-        return { ...mockWorkOrder, attachments };
-      }
+      console.log('📎 Fetching work order data for ID:', id);
+      const result = await workOrdersService.getById(id);
+      
+      // Get attachments from localStorage as a workaround until backend supports them
+      const localStorageKey = `workOrder_${id}_attachments`;
+      const savedAttachments = localStorage.getItem(localStorageKey);
+      const attachments = savedAttachments ? JSON.parse(savedAttachments) : [];
+      
+      const finalResult = { ...result, attachments };
+      console.log('📎 Work order data received:', { 
+        id: finalResult?.id, 
+        attachments: finalResult?.attachments,
+        attachmentCount: finalResult?.attachments?.length || 0,
+      });
+      return finalResult;
     },
     enabled: !!id,
   });
@@ -403,9 +368,10 @@ export default function WorkOrderDetail() {
       if (!id) throw new Error('Work order ID is required');
       return workOrdersService.unassignWorkOrder(id);
     },
-    onSuccess: () => {
-      // Only invalidate the main work order query and work orders list
-      // Avoid triggering other queries that are failing with 500 errors
+    onSuccess: (response) => {
+      console.log('Unassign successful:', response);
+      
+      // Invalidate queries to refetch fresh data from backend
       queryClient.invalidateQueries({ queryKey: ['work-order', id], exact: true });
       queryClient.invalidateQueries({ queryKey: ['work-orders'], exact: true });
       queryClient.invalidateQueries({ queryKey: ['all-work-orders'], exact: true }); // For technician dashboard
@@ -415,7 +381,7 @@ export default function WorkOrderDetail() {
     },
     onError: (error: any) => {
       console.error('Unassign work order error:', error);
-      showError('Failed to unassign work order. Please try again.');
+      showError(`Failed to unassign work order: ${error.message}`);
     },
   });
 

@@ -123,6 +123,37 @@ export const partSchema = z.object({
     .int('Reorder point must be a whole number')
     .min(0, 'Reorder point cannot be negative')
     .max(100000, 'Reorder point cannot exceed 100,000'),
+  unitCost: z
+    .number()
+    .min(0, 'Unit cost cannot be negative')
+    .max(1000000, 'Unit cost cannot exceed $1,000,000')
+    .optional(),
+  unitOfMeasure: z
+    .string()
+    .max(20, 'Unit of measure must be less than 20 characters')
+    .optional()
+    .or(z.literal('')),
+  category: z
+    .string()
+    .max(50, 'Category must be less than 50 characters')
+    .optional()
+    .or(z.literal('')),
+  manufacturer: z
+    .string()
+    .max(100, 'Manufacturer must be less than 100 characters')
+    .optional()
+    .or(z.literal('')),
+  location: z
+    .string()
+    .max(100, 'Location must be less than 100 characters')
+    .optional()
+    .or(z.literal('')),
+  leadTime: z
+    .number()
+    .int('Lead time must be a whole number')
+    .min(0, 'Lead time cannot be negative')
+    .max(365, 'Lead time cannot exceed 365 days')
+    .optional(),
   organizationId: z
     .number()
     .int()

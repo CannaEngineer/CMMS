@@ -171,21 +171,32 @@ export default function WorkOrderForm({
   };
 
   const handleSubmit = () => {
+    console.log('WorkOrderForm handleSubmit called, mode:', mode);
+    console.log('Form data:', formData);
+    
     // For edit mode, validate all required fields at once
     if (mode === 'edit') {
       const newErrors: Record<string, string> = {};
       if (!formData.title.trim()) newErrors.title = 'Title is required';
-      if (!formData.description?.trim()) newErrors.description = 'Description is required';
+      // Don't require description for edit mode
       if (!formData.priority) newErrors.priority = 'Priority is required';
       
       setErrors(newErrors);
+      console.log('Edit mode validation errors:', newErrors);
+      
       if (Object.keys(newErrors).length === 0) {
+        console.log('Validation passed, calling onSubmit with data:', formData);
         onSubmit(formData);
+      } else {
+        console.log('Validation failed with errors:', newErrors);
       }
     } else {
       // For create mode, use step validation
       if (validateStep(activeStep)) {
+        console.log('Step validation passed, calling onSubmit');
         onSubmit(formData);
+      } else {
+        console.log('Step validation failed');
       }
     }
   };
@@ -403,9 +414,8 @@ export default function WorkOrderForm({
           type="textarea"
           name="description"
           label="Detailed Description"
-          value={formData.description}
+          value={formData.description || ''}
           onChange={handleFieldChange}
-          required
           error={errors.description}
           disabled={mode === 'view'}
           placeholder="Provide detailed information about the issue or work required"
