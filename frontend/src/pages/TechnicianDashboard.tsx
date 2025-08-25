@@ -140,10 +140,11 @@ export default function TechnicianDashboard() {
   const [comment, setComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState(0);
-  const [timeTrackingDialogOpen, setTimeTrackingDialogOpen] = useState(false);
   const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<{type: 'asset' | 'workOrder', id: number} | null>(null);
-  const [projectTimeEntry, setProjectTimeEntry] = useState({ project: '', hours: '', description: '' });
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileDescription, setFileDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -152,28 +153,30 @@ export default function TechnicianDashboard() {
   const userStr = localStorage.getItem('user');
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
-  // Fetch work orders assigned to current user
+  // Fetch work orders (assigned to current user + unassigned)
   const { data: workOrders = [], isLoading, refetch } = useQuery({
     queryKey: ['technician-work-orders', currentUser?.email],
     queryFn: async () => {
       try {
         const allWorkOrders = await workOrdersService.getAll();
-        // Filter to only show work orders assigned to current user
-        const userWorkOrders = allWorkOrders.filter(wo => {
+        // Show work orders assigned to current user OR unassigned work orders
+        const relevantWorkOrders = allWorkOrders.filter(wo => {
           // Check if assignedTo is a user object with id or email
           if (wo.assignedTo && typeof wo.assignedTo === 'object') {
             return wo.assignedTo.id === currentUser?.id || wo.assignedTo.email === currentUser?.email;
           }
-          // Fallback to checking assignedToId directly
-          return wo.assignedToId === currentUser?.id;
+          // Check assignedToId directly
+          if (wo.assignedToId === currentUser?.id) {
+            return true;
+          }
+          // Also show unassigned work orders that technicians can claim
+          return !wo.assignedTo && !wo.assignedToId;
         });
         
-        // Return real work orders only
-        console.log(`Found ${userWorkOrders.length} work orders for ${currentUser?.name}`);
-        return userWorkOrders;
+        console.log(`Found ${relevantWorkOrders.length} work orders (assigned + unassigned) for ${currentUser?.name}`);
+        return relevantWorkOrders;
       } catch (error) {
         console.error('Work orders API error:', error);
-        // Return empty array - no mock data
         return [];
       }
     },
@@ -210,18 +213,6 @@ export default function TechnicianDashboard() {
     refetchInterval: 60000, // Refresh every minute
   });
 
-  // Project time mutation
-  const logProjectTimeMutation = useMutation({
-    mutationFn: async ({ project, hours, description }: { project: string; hours: number; description: string }) => {
-      // This would be a call to log time for general projects/tasks
-      // For now, we'll use the work order time logging with a special project ID
-      return workOrdersService.logTime('project', hours, description, 'PROJECT_TIME', true);
-    },
-    onSuccess: () => {
-      setTimeTrackingDialogOpen(false);
-      setProjectTimeEntry({ project: '', hours: '', description: '' });
-    },
-  });
 
   // Filter work orders based on selected filter
   const filteredWorkOrders = workOrders.filter(wo => {
@@ -238,6 +229,17 @@ export default function TechnicianDashboard() {
       queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] });
       setStatusDialogOpen(false);
       setSelectedWorkOrder(null);
+    },
+  });
+
+  // Work order claim mutation
+  const claimWorkOrderMutation = useMutation({
+    mutationFn: ({ id }: { id: number }) => {
+      // This would assign the work order to the current user
+      return workOrdersService.assignWorkOrder(id.toString(), currentUser.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['technician-work-orders'] });
     },
   });
 
@@ -415,18 +417,58 @@ export default function TechnicianDashboard() {
 
   const handleUploadFile = (type: 'asset' | 'workOrder', id: number) => {
     setUploadTarget({ type, id });
+    setSelectedFiles([]);
+    setFileDescription('');
     setFileUploadDialogOpen(true);
   };
 
-  const submitProjectTime = () => {
-    if (projectTimeEntry.project && projectTimeEntry.hours && projectTimeEntry.description) {
-      logProjectTimeMutation.mutate({
-        project: projectTimeEntry.project,
-        hours: parseFloat(projectTimeEntry.hours),
-        description: projectTimeEntry.description,
-      });
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
   };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const files = Array.from(e.dataTransfer.files);
+      setSelectedFiles(files);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(files);
+    }
+  };
+
+  const submitFileUpload = async () => {
+    if (!uploadTarget || selectedFiles.length === 0) return;
+    
+    try {
+      // Here you would implement the actual file upload logic
+      console.log('Uploading files:', selectedFiles);
+      console.log('Target:', uploadTarget);
+      console.log('Description:', fileDescription);
+      
+      // For now, just close the dialog
+      setFileUploadDialogOpen(false);
+      setSelectedFiles([]);
+      setFileDescription('');
+      setUploadTarget(null);
+    } catch (error) {
+      console.error('File upload error:', error);
+    }
+  };
+
 
   const filteredParts = parts.filter(part => 
     part.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -459,10 +501,6 @@ export default function TechnicianDashboard() {
       online: assets.filter(a => a.status === 'ONLINE').length,
       offline: assets.filter(a => a.status === 'OFFLINE').length,
     },
-    timeTracking: {
-      todayHours: 0, // This would come from API
-      weekHours: 0,  // This would come from API
-    }
   };
 
   if (isLoading && partsLoading && assetsLoading) {
@@ -561,13 +599,13 @@ export default function TechnicianDashboard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography color="text.secondary" variant="body2">
-                        Time Today
+                        Completed
                       </Typography>
-                      <Typography variant="h4" color="info.main">
-                        {stats.timeTracking.todayHours}h
+                      <Typography variant="h4" color="success.main">
+                        {stats.workOrders.completed}
                       </Typography>
                     </Box>
-                    <TimerIcon color="info" />
+                    <CompleteIcon color="success" />
                   </Box>
                 </CardContent>
               </Card>
@@ -586,7 +624,6 @@ export default function TechnicianDashboard() {
             <Tab icon={<WorkOrderIcon />} label="Work Orders" />
             <Tab icon={<InventoryIcon />} label="Inventory" />
             <Tab icon={<AssetIcon />} label="Assets" />
-            <Tab icon={<TimerIcon />} label="Time Tracking" />
           </Tabs>
         </Paper>
 
@@ -720,20 +757,36 @@ export default function TechnicianDashboard() {
 
                 {/* Actions */}
                 <CardActions sx={{ px: 2, pb: 2, pt: 0, flexWrap: 'wrap', gap: 1 }}>
-                  {quickActions.map((action, index) => (
+                  {/* Show claim button for unassigned work orders */}
+                  {(!workOrder.assignedTo && !workOrder.assignedToId) ? (
                     <Button
-                      key={index}
-                      startIcon={action.icon}
-                      onClick={action.action}
-                      variant={index === 0 ? 'contained' : 'outlined'}
-                      color={action.color}
+                      startIcon={<PersonIcon />}
+                      onClick={() => claimWorkOrderMutation.mutate({ id: workOrder.id })}
+                      variant="contained"
+                      color="primary"
                       size="small"
-                      disabled={action.disabled || updateStatusMutation.isPending}
+                      disabled={claimWorkOrderMutation.isPending}
                       sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
                     >
-                      {isSmallMobile && index > 1 ? '' : action.label}
+                      {isSmallMobile ? '' : 'Claim Work Order'}
                     </Button>
-                  ))}
+                  ) : (
+                    /* Show normal quick actions for assigned work orders */
+                    quickActions.map((action, index) => (
+                      <Button
+                        key={index}
+                        startIcon={action.icon}
+                        onClick={action.action}
+                        variant={index === 0 ? 'contained' : 'outlined'}
+                        color={action.color}
+                        size="small"
+                        disabled={action.disabled || updateStatusMutation.isPending}
+                        sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
+                      >
+                        {isSmallMobile && index > 1 ? '' : action.label}
+                      </Button>
+                    ))
+                  )}
                   <Button
                     startIcon={<FileUploadIcon />}
                     onClick={() => handleUploadFile('workOrder', workOrder.id)}
@@ -1003,84 +1056,6 @@ export default function TechnicianDashboard() {
           </>
         )}
 
-        {/* Time Tracking Tab */}
-        {activeTab === 3 && (
-          <>
-            {/* Time Tracking Header */}
-            <Paper sx={{ p: 2, mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justify: 'space-between', flexWrap: 'wrap' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <TimerIcon color="action" />
-                  <Typography variant="h6">
-                    Time Tracking
-                  </Typography>
-                </Box>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setTimeTrackingDialogOpen(true)}
-                >
-                  Log Project Time
-                </Button>
-              </Box>
-            </Paper>
-
-            {/* Time Summary Cards */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-              <Grid xs={6} md={3}>
-                <Card>
-                  <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <ClockIcon color="primary" />
-                      <Typography variant="body2" color="text.secondary">
-                        Today
-                      </Typography>
-                    </Box>
-                    <Typography variant="h4" color="primary">
-                      {stats.timeTracking.todayHours}h
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid xs={6} md={3}>
-                <Card>
-                  <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <CalendarIcon color="info" />
-                      <Typography variant="body2" color="text.secondary">
-                        This Week
-                      </Typography>
-                    </Box>
-                    <Typography variant="h4" color="info.main">
-                      {stats.timeTracking.weekHours}h
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* Recent Time Entries */}
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2 }}>Recent Time Entries</Typography>
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <TimerIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No time entries yet
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Start tracking time on work orders or projects to see your entries here.
-                </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => setTimeTrackingDialogOpen(true)}
-                >
-                  Log Time
-                </Button>
-              </Box>
-            </Paper>
-          </>
-        )}
       </Container>
 
       {/* Inventory Cart Dialog */}
@@ -1219,6 +1194,81 @@ export default function TechnicianDashboard() {
                     </CardContent>
                   </Card>
                 </Grid>
+                
+                {/* Work Orders for this Asset */}
+                <Grid xs={12}>
+                  <Card>
+                    <CardHeader title="Related Work Orders" />
+                    <CardContent>
+                      {(() => {
+                        const assetWorkOrders = workOrders.filter(wo => 
+                          wo.assetId === selectedAsset.id || 
+                          wo.assetName === selectedAsset.name
+                        );
+                        
+                        return assetWorkOrders.length > 0 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {assetWorkOrders.map(wo => (
+                              <Box key={wo.id} sx={{ 
+                                p: 2, 
+                                border: '1px solid', 
+                                borderColor: 'divider', 
+                                borderRadius: 1,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography variant="subtitle2" fontWeight="600">
+                                    #{wo.id} - {wo.title}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                    {wo.description}
+                                  </Typography>
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <Chip
+                                      label={wo.status.replace('_', ' ')}
+                                      color={getStatusColor(wo.status) as any}
+                                      size="small"
+                                    />
+                                    <Chip
+                                      label={wo.priority}
+                                      color={getPriorityColor(wo.priority) as any}
+                                      size="small"
+                                    />
+                                  </Box>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
+                                  {wo.assignedTo ? (
+                                    <Typography variant="body2" color="text.secondary">
+                                      Assigned: {typeof wo.assignedTo === 'object' ? wo.assignedTo.name : wo.assignedTo}
+                                    </Typography>
+                                  ) : (
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      startIcon={<PersonIcon />}
+                                      onClick={() => {
+                                        claimWorkOrderMutation.mutate({ id: wo.id });
+                                      }}
+                                      disabled={claimWorkOrderMutation.isPending}
+                                    >
+                                      Claim
+                                    </Button>
+                                  )}
+                                </Box>
+                              </Box>
+                            ))}
+                          </Box>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 2 }}>
+                            No work orders found for this asset
+                          </Typography>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                </Grid>
               </Grid>
             </Box>
           )}
@@ -1325,56 +1375,6 @@ export default function TechnicianDashboard() {
         </DialogActions>
       </Dialog>
 
-      {/* Project Time Tracking Dialog */}
-      <Dialog open={timeTrackingDialogOpen} onClose={() => setTimeTrackingDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TimerIcon />
-            Log Project Time
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <TextField
-              fullWidth
-              label="Project Name"
-              value={projectTimeEntry.project}
-              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, project: e.target.value })}
-              placeholder="Enter project or task name..."
-            />
-            <TextField
-              fullWidth
-              label="Hours Worked"
-              type="number"
-              value={projectTimeEntry.hours}
-              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, hours: e.target.value })}
-              inputProps={{ min: 0, step: 0.25 }}
-              helperText="Enter hours in decimal format (e.g., 2.5)"
-            />
-            <TextField
-              fullWidth
-              label="Work Description"
-              multiline
-              rows={3}
-              value={projectTimeEntry.description}
-              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, description: e.target.value })}
-              placeholder="Describe what work was performed..."
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTimeTrackingDialogOpen(false)}>Cancel</Button>
-          <LoadingButton
-            variant="contained"
-            onClick={submitProjectTime}
-            disabled={!projectTimeEntry.project || !projectTimeEntry.hours || !projectTimeEntry.description.trim()}
-            startIcon={<TimerIcon />}
-            loading={logProjectTimeMutation.isPending}
-          >
-            Log Time
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
 
       {/* File Upload Dialog */}
       <Dialog open={fileUploadDialogOpen} onClose={() => setFileUploadDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -1391,29 +1391,66 @@ export default function TechnicianDashboard() {
                 Uploading to {uploadTarget.type === 'asset' ? 'Asset' : 'Work Order'} #{uploadTarget.id}
               </Alert>
             )}
-            <Box sx={{ 
-              border: '2px dashed', 
-              borderColor: 'grey.300', 
-              borderRadius: 2, 
-              p: 4, 
-              textAlign: 'center',
-              cursor: 'pointer',
-              '&:hover': {
-                borderColor: 'primary.main',
-                bgcolor: 'grey.50'
-              }
-            }}>
-              <FileUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Drop files here or click to browse
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Supported formats: PDF, JPG, PNG, DOC, XLS
-              </Typography>
+            
+            {/* Drag and Drop Area */}
+            <Box 
+              sx={{ 
+                border: '2px dashed', 
+                borderColor: dragActive ? 'primary.main' : 'grey.300',
+                bgcolor: dragActive ? 'primary.50' : 'transparent',
+                borderRadius: 2, 
+                p: 4, 
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: 'grey.50'
+                }
+              }}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById('file-input')?.click()}
+            >
+              <input
+                id="file-input"
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+              />
+              
+              {selectedFiles.length > 0 ? (
+                <>
+                  <DocumentIcon sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom color="success.main">
+                    {selectedFiles.length} file(s) selected
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedFiles.map(f => f.name).join(', ')}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <FileUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Drop files here or click to browse
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Supported formats: PDF, JPG, PNG, DOC, XLS
+                  </Typography>
+                </>
+              )}
             </Box>
+            
             <TextField
               fullWidth
               label="File Description (optional)"
+              value={fileDescription}
+              onChange={(e) => setFileDescription(e.target.value)}
               placeholder="Add a description for this file..."
             />
           </Box>
@@ -1423,8 +1460,10 @@ export default function TechnicianDashboard() {
           <Button
             variant="contained"
             startIcon={<FileUploadIcon />}
+            disabled={selectedFiles.length === 0}
+            onClick={submitFileUpload}
           >
-            Upload
+            Upload {selectedFiles.length > 0 && `(${selectedFiles.length})`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1440,12 +1479,6 @@ export default function TechnicianDashboard() {
         }}
         icon={<SpeedDialIcon />}
       >
-        <SpeedDialAction
-          key="time-tracking"
-          icon={<TimerIcon />}
-          tooltipTitle="Log Project Time"
-          onClick={() => setTimeTrackingDialogOpen(true)}
-        />
         <SpeedDialAction
           key="file-upload"
           icon={<FileUploadIcon />}
