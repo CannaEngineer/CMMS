@@ -80,6 +80,10 @@ import {
   CategoryOutlined as CategoryIcon,
   LocationOn as LocationIcon,
   CalendarToday as CalendarIcon,
+  FileUpload as FileUploadIcon,
+  Folder as FolderIcon,
+  Camera as CameraIcon,
+  Description as DocumentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService, authService, assetsService, partsService } from '../services/api';
@@ -136,6 +140,10 @@ export default function TechnicianDashboard() {
   const [comment, setComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [activeTab, setActiveTab] = useState(0);
+  const [timeTrackingDialogOpen, setTimeTrackingDialogOpen] = useState(false);
+  const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<{type: 'asset' | 'workOrder', id: number} | null>(null);
+  const [projectTimeEntry, setProjectTimeEntry] = useState({ project: '', hours: '', description: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const [cartItems, setCartItems] = useState<any[]>([]);
@@ -202,27 +210,17 @@ export default function TechnicianDashboard() {
     refetchInterval: 60000, // Refresh every minute
   });
 
-  // Fetch upcoming maintenance tasks
-  const { data: maintenanceTasks = [], isLoading: maintenanceLoading } = useQuery({
-    queryKey: ['technician-maintenance'],
-    queryFn: async () => {
-      try {
-        // Get all maintenance schedules and filter for upcoming tasks
-        const allSchedules = await workOrdersService.getMaintenanceSchedule(50);
-        const now = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(now.getDate() + 7);
-        
-        return allSchedules.filter(schedule => {
-          const dueDate = new Date(schedule.nextDue || schedule.dueDate);
-          return dueDate >= now && dueDate <= nextWeek;
-        }) || [];
-      } catch (error) {
-        console.error('Maintenance API error:', error);
-        return [];
-      }
+  // Project time mutation
+  const logProjectTimeMutation = useMutation({
+    mutationFn: async ({ project, hours, description }: { project: string; hours: number; description: string }) => {
+      // This would be a call to log time for general projects/tasks
+      // For now, we'll use the work order time logging with a special project ID
+      return workOrdersService.logTime('project', hours, description, 'PROJECT_TIME', true);
     },
-    refetchInterval: 60000,
+    onSuccess: () => {
+      setTimeTrackingDialogOpen(false);
+      setProjectTimeEntry({ project: '', hours: '', description: '' });
+    },
   });
 
   // Filter work orders based on selected filter
@@ -415,6 +413,21 @@ export default function TechnicianDashboard() {
     setAssetDialogOpen(true);
   };
 
+  const handleUploadFile = (type: 'asset' | 'workOrder', id: number) => {
+    setUploadTarget({ type, id });
+    setFileUploadDialogOpen(true);
+  };
+
+  const submitProjectTime = () => {
+    if (projectTimeEntry.project && projectTimeEntry.hours && projectTimeEntry.description) {
+      logProjectTimeMutation.mutate({
+        project: projectTimeEntry.project,
+        hours: parseFloat(projectTimeEntry.hours),
+        description: projectTimeEntry.description,
+      });
+    }
+  };
+
   const filteredParts = parts.filter(part => 
     part.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     part.partNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -446,18 +459,13 @@ export default function TechnicianDashboard() {
       online: assets.filter(a => a.status === 'ONLINE').length,
       offline: assets.filter(a => a.status === 'OFFLINE').length,
     },
-    maintenance: {
-      upcoming: maintenanceTasks.length,
-      thisWeek: maintenanceTasks.filter(task => {
-        const dueDate = new Date(task.nextDue || task.dueDate);
-        const endOfWeek = new Date();
-        endOfWeek.setDate(endOfWeek.getDate() + 7);
-        return dueDate <= endOfWeek;
-      }).length,
+    timeTracking: {
+      todayHours: 0, // This would come from API
+      weekHours: 0,  // This would come from API
     }
   };
 
-  if (isLoading && partsLoading && assetsLoading && maintenanceLoading) {
+  if (isLoading && partsLoading && assetsLoading) {
     return (
       <TemplatedSkeleton template="dashboard" />
     );
@@ -553,13 +561,13 @@ export default function TechnicianDashboard() {
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box>
                       <Typography color="text.secondary" variant="body2">
-                        PM Tasks
+                        Time Today
                       </Typography>
                       <Typography variant="h4" color="info.main">
-                        {stats.maintenance.thisWeek}
+                        {stats.timeTracking.todayHours}h
                       </Typography>
                     </Box>
-                    <MaintenanceIcon color="info" />
+                    <TimerIcon color="info" />
                   </Box>
                 </CardContent>
               </Card>
@@ -578,7 +586,7 @@ export default function TechnicianDashboard() {
             <Tab icon={<WorkOrderIcon />} label="Work Orders" />
             <Tab icon={<InventoryIcon />} label="Inventory" />
             <Tab icon={<AssetIcon />} label="Assets" />
-            <Tab icon={<MaintenanceIcon />} label="PM Tasks" />
+            <Tab icon={<TimerIcon />} label="Time Tracking" />
           </Tabs>
         </Paper>
 
@@ -726,6 +734,15 @@ export default function TechnicianDashboard() {
                       {isSmallMobile && index > 1 ? '' : action.label}
                     </Button>
                   ))}
+                  <Button
+                    startIcon={<FileUploadIcon />}
+                    onClick={() => handleUploadFile('workOrder', workOrder.id)}
+                    variant="outlined"
+                    size="small"
+                    sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
+                  >
+                    {isSmallMobile ? '' : 'Upload'}
+                  </Button>
                 </CardActions>
               </Card>
             );
@@ -940,17 +957,30 @@ export default function TechnicianDashboard() {
                           </Typography>
                         </Box>
                       </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                         <Typography variant="body2" color="text.secondary">
                           Category: {asset.category || 'Unknown'}
                         </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          endIcon={<ArrowForwardIcon />}
-                        >
-                          View Details
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<FileUploadIcon />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUploadFile('asset', asset.id);
+                            }}
+                          >
+                            {isSmallMobile ? '' : 'Upload'}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            endIcon={<ArrowForwardIcon />}
+                          >
+                            Details
+                          </Button>
+                        </Box>
                       </Box>
                     </CardContent>
                   </Card>
@@ -973,102 +1003,82 @@ export default function TechnicianDashboard() {
           </>
         )}
 
-        {/* PM Tasks Tab */}
+        {/* Time Tracking Tab */}
         {activeTab === 3 && (
           <>
-            {/* PM Tasks Header */}
+            {/* Time Tracking Header */}
             <Paper sx={{ p: 2, mb: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                <CalendarIcon color="action" />
-                <Typography variant="h6">
-                  Upcoming Preventive Maintenance
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {maintenanceTasks.length} tasks in the next 7 days
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justify: 'space-between', flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <TimerIcon color="action" />
+                  <Typography variant="h6">
+                    Time Tracking
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setTimeTrackingDialogOpen(true)}
+                >
+                  Log Project Time
+                </Button>
               </Box>
             </Paper>
 
-            {/* Maintenance Tasks List */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {maintenanceLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index}>
-                    <CardContent>
-                      <Skeleton variant="text" width="60%" />
-                      <Skeleton variant="text" width="40%" />
-                      <Skeleton variant="rectangular" height={20} sx={{ mt: 1 }} />
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                maintenanceTasks.map((task) => (
-                  <Card key={task.id}>
-                    <CardContent>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" fontWeight="600">
-                            {task.assetName} - {task.taskType}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                            {task.description}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Chip
-                              label={`Due ${new Date(task.nextDue || task.dueDate).toLocaleDateString()}`}
-                              color={new Date(task.nextDue || task.dueDate) < new Date() ? 'error' : 'warning'}
-                              size="small"
-                              icon={<CalendarIcon />}
-                            />
-                            <Chip
-                              label={`${task.estimatedHours || 1}h estimated`}
-                              size="small"
-                              icon={<ClockIcon />}
-                            />
-                          </Box>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Priority
-                          </Typography>
-                          <Typography variant="body2" fontWeight="500" color={
-                            task.priority === 'HIGH' ? 'error.main' : 
-                            task.priority === 'MEDIUM' ? 'warning.main' : 'text.primary'
-                          }>
-                            {task.priority || 'MEDIUM'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Frequency: {task.frequency}
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<AddIcon />}
-                        >
-                          Create Work Order
-                        </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </Box>
+            {/* Time Summary Cards */}
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid xs={6} md={3}>
+                <Card>
+                  <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <ClockIcon color="primary" />
+                      <Typography variant="body2" color="text.secondary">
+                        Today
+                      </Typography>
+                    </Box>
+                    <Typography variant="h4" color="primary">
+                      {stats.timeTracking.todayHours}h
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid xs={6} md={3}>
+                <Card>
+                  <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <CalendarIcon color="info" />
+                      <Typography variant="body2" color="text.secondary">
+                        This Week
+                      </Typography>
+                    </Box>
+                    <Typography variant="h4" color="info.main">
+                      {stats.timeTracking.weekHours}h
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
 
-            {/* PM Tasks Empty State */}
-            {maintenanceTasks.length === 0 && !maintenanceLoading && (
-              <Paper sx={{ p: 4, textAlign: 'center' }}>
-                <MaintenanceIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+            {/* Recent Time Entries */}
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Recent Time Entries</Typography>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <TimerIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No upcoming maintenance tasks
+                  No time entries yet
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  All maintenance tasks are up to date!
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Start tracking time on work orders or projects to see your entries here.
                 </Typography>
-              </Paper>
-            )}
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => setTimeTrackingDialogOpen(true)}
+                >
+                  Log Time
+                </Button>
+              </Box>
+            </Paper>
           </>
         )}
       </Container>
@@ -1310,6 +1320,110 @@ export default function TechnicianDashboard() {
         </DialogActions>
       </Dialog>
 
+      {/* Project Time Tracking Dialog */}
+      <Dialog open={timeTrackingDialogOpen} onClose={() => setTimeTrackingDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TimerIcon />
+            Log Project Time
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              fullWidth
+              label="Project Name"
+              value={projectTimeEntry.project}
+              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, project: e.target.value })}
+              placeholder="Enter project or task name..."
+            />
+            <TextField
+              fullWidth
+              label="Hours Worked"
+              type="number"
+              value={projectTimeEntry.hours}
+              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, hours: e.target.value })}
+              inputProps={{ min: 0, step: 0.25 }}
+              helperText="Enter hours in decimal format (e.g., 2.5)"
+            />
+            <TextField
+              fullWidth
+              label="Work Description"
+              multiline
+              rows={3}
+              value={projectTimeEntry.description}
+              onChange={(e) => setProjectTimeEntry({ ...projectTimeEntry, description: e.target.value })}
+              placeholder="Describe what work was performed..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTimeTrackingDialogOpen(false)}>Cancel</Button>
+          <LoadingButton
+            variant="contained"
+            onClick={submitProjectTime}
+            disabled={!projectTimeEntry.project || !projectTimeEntry.hours || !projectTimeEntry.description.trim()}
+            startIcon={<TimerIcon />}
+            loading={logProjectTimeMutation.isPending}
+          >
+            Log Time
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* File Upload Dialog */}
+      <Dialog open={fileUploadDialogOpen} onClose={() => setFileUploadDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FileUploadIcon />
+            Upload File
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {uploadTarget && (
+              <Alert severity="info">
+                Uploading to {uploadTarget.type === 'asset' ? 'Asset' : 'Work Order'} #{uploadTarget.id}
+              </Alert>
+            )}
+            <Box sx={{ 
+              border: '2px dashed', 
+              borderColor: 'grey.300', 
+              borderRadius: 2, 
+              p: 4, 
+              textAlign: 'center',
+              cursor: 'pointer',
+              '&:hover': {
+                borderColor: 'primary.main',
+                bgcolor: 'grey.50'
+              }
+            }}>
+              <FileUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                Drop files here or click to browse
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Supported formats: PDF, JPG, PNG, DOC, XLS
+              </Typography>
+            </Box>
+            <TextField
+              fullWidth
+              label="File Description (optional)"
+              placeholder="Add a description for this file..."
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setFileUploadDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            startIcon={<FileUploadIcon />}
+          >
+            Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Speed Dial for Quick Actions */}
       <SpeedDial
         ariaLabel="Quick actions"
@@ -1322,14 +1436,22 @@ export default function TechnicianDashboard() {
         icon={<SpeedDialIcon />}
       >
         <SpeedDialAction
-          key="qr-scanner"
-          icon={<QrIcon />}
-          tooltipTitle="Scan QR Code"
+          key="time-tracking"
+          icon={<TimerIcon />}
+          tooltipTitle="Log Project Time"
+          onClick={() => setTimeTrackingDialogOpen(true)}
         />
         <SpeedDialAction
-          key="add-work-order"
-          icon={<AddIcon />}
-          tooltipTitle="New Work Order"
+          key="file-upload"
+          icon={<FileUploadIcon />}
+          tooltipTitle="Upload File"
+          onClick={() => setFileUploadDialogOpen(true)}
+        />
+        <SpeedDialAction
+          key="search-assets"
+          icon={<SearchIcon />}
+          tooltipTitle="Search Assets"
+          onClick={() => setActiveTab(2)}
         />
         <SpeedDialAction
           key="view-cart"
@@ -1340,6 +1462,11 @@ export default function TechnicianDashboard() {
           }
           tooltipTitle="View Cart"
           onClick={() => setInventoryDialogOpen(true)}
+        />
+        <SpeedDialAction
+          key="qr-scanner"
+          icon={<QrIcon />}
+          tooltipTitle="Scan QR Code"
         />
         <SpeedDialAction
           key="refresh-data"

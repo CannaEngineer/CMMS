@@ -34,7 +34,6 @@ import {
   QrCodeScanner as QrIcon,
   AccessTime as TimeIcon,
   Comment as CommentIcon,
-  Settings as SettingsIcon,
   AccountCircle as AccountCircleIcon,
   Home as HomeIcon,
 } from '@mui/icons-material';
@@ -175,12 +174,6 @@ export default function TechnicianLayout({ children }: TechnicianLayoutProps) {
             <AccountCircleIcon fontSize="small" />
           </ListItemIcon>
           My Profile
-        </MenuItem>
-        <MenuItem onClick={() => { handleMenuClose(); navigate('/tech/settings'); }}>
-          <ListItemIcon>
-            <SettingsIcon fontSize="small" />
-          </ListItemIcon>
-          Settings
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => {
