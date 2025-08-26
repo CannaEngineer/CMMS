@@ -141,7 +141,20 @@ export class UploadService {
   async getEntityFiles(entityType: string, entityId: string): Promise<UploadedFile[]> {
     try {
       const response = await apiClient.get(`/api/uploads/${entityType}/${entityId}`);
-      return response.data.files || [];
+      
+      // Handle different response formats from apiClient
+      if (response?.files && Array.isArray(response.files)) {
+        return response.files;
+      } else if (response?.data?.files && Array.isArray(response.data.files)) {
+        return response.data.files;
+      } else if (response?.success && response?.files) {
+        return response.files;
+      } else if (response?.data?.success && response?.data?.files) {
+        return response.data.files;
+      }
+      
+      console.warn(`[UploadService] Unexpected response format for ${entityType} files:`, response);
+      return [];
     } catch (error) {
       console.error(`[UploadService] Error fetching ${entityType} files:`, error);
       return [];

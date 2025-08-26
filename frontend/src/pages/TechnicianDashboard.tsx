@@ -269,19 +269,31 @@ export default function TechnicianDashboard() {
   // Load files for work orders
   useEffect(() => {
     const loadWorkOrderFiles = async () => {
+      console.log('Loading files for work orders...');
       const uploadService = new UploadService();
       const filesData: {[key: number]: any[]} = {};
       
-      for (const workOrder of allWorkOrders) {
+      // Use Promise.all to load files in parallel for better performance
+      const filePromises = allWorkOrders.map(async (workOrder) => {
         try {
+          console.log(`Loading files for work order ${workOrder.id}...`);
           const files = await uploadService.getWorkOrderFiles(workOrder.id.toString());
-          filesData[workOrder.id] = files || [];
+          console.log(`Work order ${workOrder.id} has ${files?.length || 0} files:`, files);
+          return { workOrderId: workOrder.id, files: files || [] };
         } catch (error) {
           console.error(`Error loading files for work order ${workOrder.id}:`, error);
-          filesData[workOrder.id] = [];
+          return { workOrderId: workOrder.id, files: [] };
         }
-      }
+      });
       
+      const results = await Promise.all(filePromises);
+      
+      // Build the filesData object from results
+      results.forEach(result => {
+        filesData[result.workOrderId] = result.files;
+      });
+      
+      console.log('All work order files loaded:', filesData);
       setWorkOrderFiles(filesData);
     };
 
@@ -1240,26 +1252,25 @@ export default function TechnicianDashboard() {
                   </Box>
 
                   {/* Files & Photos Section */}
-                  {workOrderFiles[workOrder.id] && (
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <FolderIcon fontSize="small" color="action" />
-                          <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                            Files & Photos ({workOrderFiles[workOrder.id]?.length || 0})
-                          </Typography>
-                        </Box>
-                        <Button
-                          size="small"
-                          startIcon={<CameraIcon />}
-                          onClick={() => handleUploadFile('workOrder', workOrder.id)}
-                          sx={{ minWidth: 'auto', px: 1 }}
-                        >
-                          Add
-                        </Button>
+                  <Box sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <FolderIcon fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                          Files & Photos ({workOrderFiles[workOrder.id]?.length || 0})
+                        </Typography>
                       </Box>
-                      
-                      {workOrderFiles[workOrder.id]?.length > 0 ? (
+                      <Button
+                        size="small"
+                        startIcon={<CameraIcon />}
+                        onClick={() => handleUploadFile('workOrder', workOrder.id)}
+                        sx={{ minWidth: 'auto', px: 1 }}
+                      >
+                        Add
+                      </Button>
+                    </Box>
+                    
+                    {workOrderFiles[workOrder.id]?.length > 0 ? (
                         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                           {workOrderFiles[workOrder.id].slice(0, 4).map((file, index) => (
                             <Box
@@ -1324,7 +1335,6 @@ export default function TechnicianDashboard() {
                         </Typography>
                       )}
                     </Box>
-                  )}
                 </CardContent>
 
                 {/* Actions - Mobile Optimized */}
