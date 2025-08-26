@@ -32,6 +32,11 @@ import {
   TableHead,
   TableRow,
   Divider,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  TextField,
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -49,6 +54,8 @@ import {
   Cancel as CancelIcon,
   History as HistoryIcon,
   Assignment as WorkOrderIcon,
+  SelectAll as SelectAllIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/Common/StatCard';
@@ -73,6 +80,14 @@ export default function Maintenance() {
   const [currentCalendarDate, setCurrentCalendarDate] = useState(dayjs());
   const [pmDetailsOpen, setPmDetailsOpen] = useState(false);
   const [selectedPM, setSelectedPM] = useState<any>(null);
+  
+  // Bulk edit state
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [selectedPMIds, setSelectedPMIds] = useState<Set<string>>(new Set());
+  const [bulkEditData, setBulkEditData] = useState({
+    frequency: '',
+    nextDue: '',
+  });
 
   // Fetch PM Schedules
   const { data: pmSchedules, isLoading: pmSchedulesLoading, error: pmSchedulesError } = useQuery({
@@ -231,6 +246,24 @@ export default function Maintenance() {
     },
   });
 
+  const bulkEditMutation = useMutation({
+    mutationFn: async ({ ids, data }: { ids: string[], data: any }) => {
+      const promises = ids.map(id => pmService.updateSchedule(id, data));
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
+      setBulkEditOpen(false);
+      setSelectedPMIds(new Set());
+      setBulkEditData({ frequency: '', nextDue: '' });
+    },
+    onError: (error) => {
+      console.error("Error bulk editing PM schedules:", error);
+      alert("Failed to update selected PM schedules.");
+    },
+  });
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -301,15 +334,83 @@ export default function Maintenance() {
     setSelectedPM(null);
   };
 
-  // Function to check if PM has associated work orders
-  const hasWorkOrder = (pmSchedule: any) => {
+  // Function to check if PM has ACTIVE work orders (open or in progress only)
+  const hasActiveWorkOrder = (pmSchedule: any) => {
     if (!workOrders || !pmSchedule) return false;
     
     return workOrders.some((wo: any) => 
-      wo.pmScheduleId === pmSchedule.id || 
-      (wo.title && wo.title.toLowerCase().includes(pmSchedule.title?.toLowerCase() || '')) ||
-      (wo.assetId === pmSchedule.assetId && wo.type === 'PREVENTIVE')
+      (wo.status === 'OPEN' || wo.status === 'IN_PROGRESS') && (
+        wo.pmScheduleId === pmSchedule.id || 
+        (wo.title && wo.title.toLowerCase().includes(pmSchedule.title?.toLowerCase() || '')) ||
+        (wo.assetId === pmSchedule.assetId && wo.type === 'PREVENTIVE')
+      )
     );
+  };
+
+  // Bulk edit handlers
+  const handleSelectPM = (pmId: string, selected: boolean) => {
+    const newSelection = new Set(selectedPMIds);
+    if (selected) {
+      newSelection.add(pmId);
+    } else {
+      newSelection.delete(pmId);
+    }
+    setSelectedPMIds(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (!filteredPMSchedules) return;
+    
+    if (selectedPMIds.size === filteredPMSchedules.length) {
+      // Deselect all
+      setSelectedPMIds(new Set());
+    } else {
+      // Select all
+      const allIds = new Set(filteredPMSchedules.map((pm: any) => pm.id.toString()));
+      setSelectedPMIds(allIds);
+    }
+  };
+
+  const handleBulkEditOpen = () => {
+    if (selectedPMIds.size === 0) {
+      alert('Please select at least one PM schedule to edit.');
+      return;
+    }
+    setBulkEditOpen(true);
+  };
+
+  const handleBulkEditClose = () => {
+    setBulkEditOpen(false);
+    setBulkEditData({ frequency: '', nextDue: '' });
+  };
+
+  const handleBulkEditChange = (field: string, value: string) => {
+    setBulkEditData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleBulkEditSubmit = () => {
+    const updateData: any = {};
+    
+    if (bulkEditData.frequency) {
+      updateData.frequency = bulkEditData.frequency;
+    }
+    
+    if (bulkEditData.nextDue) {
+      updateData.nextDue = bulkEditData.nextDue;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      alert('Please select at least one field to update.');
+      return;
+    }
+
+    bulkEditMutation.mutate({
+      ids: Array.from(selectedPMIds),
+      data: updateData
+    });
   };
 
   // Filter PM schedules based on tab
@@ -668,7 +769,47 @@ export default function Maintenance() {
               </Box>
             ) : (
               // List View
-              <List>
+              <>
+                {/* Bulk Action Toolbar */}
+                {filteredPMSchedules.length > 0 && (
+                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Checkbox
+                        checked={selectedPMIds.size > 0 && selectedPMIds.size === filteredPMSchedules.length}
+                        indeterminate={selectedPMIds.size > 0 && selectedPMIds.size < filteredPMSchedules.length}
+                        onChange={handleSelectAll}
+                      />
+                      <Typography variant="body2">
+                        {selectedPMIds.size > 0 
+                          ? `${selectedPMIds.size} of ${filteredPMSchedules.length} selected` 
+                          : 'Select all'}
+                      </Typography>
+                      
+                      {selectedPMIds.size > 0 && (
+                        <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            onClick={handleBulkEditOpen}
+                          >
+                            Bulk Edit ({selectedPMIds.size})
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<ClearIcon />}
+                            onClick={() => setSelectedPMIds(new Set())}
+                          >
+                            Clear Selection
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+                
+                <List>
                 {filteredPMSchedules.length === 0 ? (
                   <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
                     No PM schedules found for this category.
@@ -686,6 +827,11 @@ export default function Maintenance() {
                         },
                       }}
                     >
+                      <Checkbox
+                        checked={selectedPMIds.has(item.id.toString())}
+                        onChange={(e) => handleSelectPM(item.id.toString(), e.target.checked)}
+                        sx={{ mr: 1 }}
+                      />
                       <ListItemAvatar>
                         <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
                           <ScheduleIcon />
@@ -711,15 +857,15 @@ export default function Maintenance() {
                               size="small"
                               onClick={() => handlePMDetailsOpen(item)}
                               sx={{
-                                color: hasWorkOrder(item) ? 'success.main' : 'error.main',
+                                color: hasActiveWorkOrder(item) ? 'success.main' : 'error.main',
                                 '&:hover': {
-                                  backgroundColor: hasWorkOrder(item) ? 'success.light' : 'error.light',
+                                  backgroundColor: hasActiveWorkOrder(item) ? 'success.light' : 'error.light',
                                   opacity: 0.1,
                                 },
                               }}
-                              title={hasWorkOrder(item) ? 'Has work orders - Click to view details' : 'No work orders found - Click to view details'}
+                              title={hasActiveWorkOrder(item) ? 'Has active work order - Click to view details' : 'No active work orders - Click to view details'}
                             >
-                              {hasWorkOrder(item) ? <CheckIcon /> : <CancelIcon />}
+                              {hasActiveWorkOrder(item) ? <CheckIcon /> : <CancelIcon />}
                             </IconButton>
                           </Box>
                         }
@@ -743,6 +889,7 @@ export default function Maintenance() {
                   ))
                 )}
               </List>
+              </>
             )}
           </Paper>
         </Grid>
@@ -794,17 +941,17 @@ export default function Maintenance() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-            {hasWorkOrder(selectedPM) ? (
+            {hasActiveWorkOrder(selectedPM) ? (
               <Chip
                 icon={<CheckIcon />}
-                label="Has Work Orders"
+                label="Has Active Work Orders"
                 color="success"
                 size="small"
               />
             ) : (
               <Chip
                 icon={<CancelIcon />}
-                label="No Work Orders"
+                label="No Active Work Orders"
                 color="error"
                 size="small"
               />
@@ -987,6 +1134,66 @@ export default function Maintenance() {
               View Current Work Order
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Edit Dialog */}
+      <Dialog
+        open={bulkEditOpen}
+        onClose={handleBulkEditClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6">
+            Bulk Edit PM Schedules ({selectedPMIds.size} selected)
+          </Typography>
+        </DialogTitle>
+        
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel>Frequency</InputLabel>
+              <Select
+                value={bulkEditData.frequency}
+                label="Frequency"
+                onChange={(e) => handleBulkEditChange('frequency', e.target.value)}
+              >
+                <MenuItem value="">Keep Current</MenuItem>
+                <MenuItem value="DAILY">Daily</MenuItem>
+                <MenuItem value="WEEKLY">Weekly</MenuItem>
+                <MenuItem value="MONTHLY">Monthly</MenuItem>
+                <MenuItem value="QUARTERLY">Quarterly</MenuItem>
+                <MenuItem value="SEMI_ANNUAL">Semi-Annual</MenuItem>
+                <MenuItem value="ANNUAL">Annual</MenuItem>
+              </Select>
+            </FormControl>
+
+            <TextField
+              fullWidth
+              label="Next Due Date"
+              type="datetime-local"
+              value={bulkEditData.nextDue}
+              onChange={(e) => handleBulkEditChange('nextDue', e.target.value)}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              helperText="Leave empty to keep current due dates"
+            />
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleBulkEditClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleBulkEditSubmit}
+            variant="contained"
+            disabled={bulkEditMutation.isPending}
+          >
+            {bulkEditMutation.isPending ? 'Updating...' : 'Update Selected'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
