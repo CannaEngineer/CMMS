@@ -129,25 +129,36 @@ export default function Maintenance() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      console.log('Updating PM schedule:', id, 'with data:', data);
+      console.log('[Maintenance] Starting PM schedule update mutation:', id, 'with data:', data);
       
-      // If the PM schedule doesn't have a QR code, generate one
-      if (!data.qrCode) {
-        const qrCodeUrl = await generatePMScheduleQRCode({ ...data, id });
-        data = { ...data, qrCode: qrCodeUrl };
+      try {
+        // If the PM schedule doesn't have a QR code, generate one
+        if (!data.qrCode) {
+          console.log('[Maintenance] Generating QR code for PM schedule...');
+          const qrCodeUrl = await generatePMScheduleQRCode({ ...data, id });
+          data = { ...data, qrCode: qrCodeUrl };
+          console.log('[Maintenance] QR code generated:', qrCodeUrl);
+        }
+        
+        console.log('[Maintenance] Calling pmService.updateSchedule...');
+        const result = await pmService.updateSchedule(id, data);
+        console.log('[Maintenance] PM schedule update successful:', result);
+        return result;
+      } catch (error) {
+        console.error('[Maintenance] PM schedule update failed in mutation:', error);
+        throw error; // Re-throw to trigger onError
       }
-      
-      return pmService.updateSchedule(id, data);
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('[Maintenance] PM schedule update mutation succeeded:', result);
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       setOpenScheduleDialog(false);
       setSelectedSchedule(null);
     },
-    onError: (error) => {
-      console.error("Error updating PM schedule:", error);
-      console.error("Error details:", error?.response?.data);
+    onError: (error: any) => {
+      console.error("[Maintenance] PM schedule update mutation failed:", error);
+      console.error("[Maintenance] Error details:", error?.response?.data);
       const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
       alert(`Failed to update PM schedule: ${errorMessage}`);
     },

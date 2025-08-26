@@ -1169,7 +1169,7 @@ export const pmService = {
 
   async updateSchedule(id: string, schedule: any): Promise<any> {
     try {
-      console.log(`Updating PM schedule ${id} with data:`, schedule);
+      console.log(`[PMService] Updating PM schedule ${id} with data:`, schedule);
       
       // Clean the data payload
       const cleanedData = {
@@ -1183,23 +1183,35 @@ export const pmService = {
         assignedToId: schedule.assignedToId,
       };
 
+      console.log(`[PMService] Cleaned data for API:`, cleanedData);
+      console.log(`[PMService] Making API call to: /api/pm-schedules/${id}`);
+
       // Try PATCH first (more appropriate for partial updates)
       try {
+        console.log(`[PMService] Attempting PATCH request...`);
         const result = await apiClient.patch<any>(`/api/pm-schedules/${id}`, cleanedData);
-        console.log(`PM schedule PATCH update successful:`, result);
+        console.log(`[PMService] PM schedule PATCH update successful:`, result);
         return result;
-      } catch (patchError) {
-        console.warn(`PM schedule PATCH update failed, trying PUT:`, patchError.response?.data);
+      } catch (patchError: any) {
+        console.error(`[PMService] PATCH failed with status:`, patchError?.status);
+        console.error(`[PMService] PATCH error response:`, patchError?.response?.data);
+        console.warn(`[PMService] PM schedule PATCH update failed, trying PUT:`, patchError);
         
         // Fallback to PUT
+        console.log(`[PMService] Attempting PUT request...`);
         const result = await apiClient.put<any>(`/api/pm-schedules/${id}`, cleanedData);
-        console.log(`PM schedule PUT update successful:`, result);
+        console.log(`[PMService] PM schedule PUT update successful:`, result);
         return result;
       }
-    } catch (error) {
-      console.error(`PM schedule ${id} update failed:`, error);
-      console.error('Server response:', error.response?.data);
-      throw new Error(`Failed to update PM schedule ${id}: ${error.response?.data?.message || error.message}`);
+    } catch (error: any) {
+      console.error(`[PMService] PM schedule ${id} update completely failed:`, error);
+      console.error(`[PMService] Error status:`, error?.status);
+      console.error(`[PMService] Error response:`, error?.response?.data);
+      console.error(`[PMService] Full error object:`, error);
+      
+      // Provide detailed error message
+      const errorDetails = error?.response?.data?.details || error?.response?.data?.message || error?.message || 'Unknown error';
+      throw new Error(`Failed to update PM schedule ${id}: ${errorDetails}`);
     }
   },
 
