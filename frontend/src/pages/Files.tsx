@@ -101,18 +101,50 @@ export default function Files() {
       setLoading(true);
       setError(null);
 
+      console.log('Loading files from API...');
+
       // Try to fetch organization-wide files (admin only)
       try {
+        console.log('Fetching asset files...');
         const assetResponse = await apiClient.get('/api/uploads/assets');
-        if (assetResponse.data.success) {
-          setAssetFiles(assetResponse.data.files || []);
+        console.log('Asset response raw:', assetResponse);
+        
+        // Handle different response formats from apiClient
+        let assetFiles = [];
+        if (assetResponse?.files && Array.isArray(assetResponse.files)) {
+          assetFiles = assetResponse.files;
+        } else if (assetResponse?.data?.files && Array.isArray(assetResponse.data.files)) {
+          assetFiles = assetResponse.data.files;
+        } else if (assetResponse?.success && assetResponse?.files) {
+          assetFiles = assetResponse.files;
+        } else if (assetResponse?.data?.success && assetResponse?.data?.files) {
+          assetFiles = assetResponse.data.files;
         }
+        
+        console.log('Processed asset files:', assetFiles);
+        setAssetFiles(assetFiles);
 
+        console.log('Fetching work order files...');
         const workOrderResponse = await apiClient.get('/api/uploads/work-orders');
-        if (workOrderResponse.data.success) {
-          setWorkOrderFiles(workOrderResponse.data.files || []);
+        console.log('Work order response raw:', workOrderResponse);
+        
+        // Handle different response formats from apiClient
+        let workOrderFiles = [];
+        if (workOrderResponse?.files && Array.isArray(workOrderResponse.files)) {
+          workOrderFiles = workOrderResponse.files;
+        } else if (workOrderResponse?.data?.files && Array.isArray(workOrderResponse.data.files)) {
+          workOrderFiles = workOrderResponse.data.files;
+        } else if (workOrderResponse?.success && workOrderResponse?.files) {
+          workOrderFiles = workOrderResponse.files;
+        } else if (workOrderResponse?.data?.success && workOrderResponse?.data?.files) {
+          workOrderFiles = workOrderResponse.data.files;
         }
+        
+        console.log('Processed work order files:', workOrderFiles);
+        setWorkOrderFiles(workOrderFiles);
+        
       } catch (adminError: any) {
+        console.error('Admin API error:', adminError);
         if (adminError.response?.status === 403) {
           // User is not admin, try to get files from their assigned assets/work orders
           console.log('Not admin, fetching files from user assignments...');
@@ -120,11 +152,11 @@ export default function Files() {
           try {
             // Get assets the user has access to
             const assetsResponse = await apiClient.get('/api/assets');
-            const assets = assetsResponse.data || [];
+            const assets = assetsResponse.data || assetsResponse || [];
             
             // Get work orders assigned to the user
             const workOrdersResponse = await apiClient.get('/api/work-orders');
-            const workOrders = workOrdersResponse.data || [];
+            const workOrders = workOrdersResponse.data || workOrdersResponse || [];
             
             // Extract files from assets
             const assetFilesList: FileItem[] = [];
@@ -164,7 +196,8 @@ export default function Files() {
             setError('Failed to load your files. Please try again.');
           }
         } else {
-          throw adminError; // Re-throw non-403 errors
+          console.error('Non-403 admin error:', adminError);
+          setError('Failed to load files. Please try again.');
         }
       }
 
