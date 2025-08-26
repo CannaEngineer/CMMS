@@ -143,7 +143,8 @@ export default function Assets() {
   const [detailsDrawerOpen, setDetailsDrawerOpen] = useState(false);
   const [selectedDetailAsset, setSelectedDetailAsset] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-  const [sortBy, setSortBy] = useState<'name' | 'status' | 'criticality' | 'updated'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'criticality' | 'created'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [quickActionMenuOpen, setQuickActionMenuOpen] = useState(false);
   
   // QR-related state
