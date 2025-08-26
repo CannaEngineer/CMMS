@@ -484,102 +484,6 @@ export default function WorkOrders() {
     setQuickActionOpen(false);
   }, [updateWorkOrderMutation]);
 
-  // Bulk edit handlers
-  const handleSelectWorkOrder = useCallback((workOrderId: number, selected: boolean) => {
-    const newSelection = new Set(selectedWorkOrderIds);
-    if (selected) {
-      newSelection.add(workOrderId);
-    } else {
-      newSelection.delete(workOrderId);
-    }
-    setSelectedWorkOrderIds(newSelection);
-  }, [selectedWorkOrderIds]);
-
-  const handleSelectAll = useCallback(() => {
-    if (selectedWorkOrderIds.size === filteredWorkOrders.length) {
-      // Deselect all
-      setSelectedWorkOrderIds(new Set());
-    } else {
-      // Select all visible work orders
-      const allIds = new Set(filteredWorkOrders.map((wo: WorkOrder) => wo.id));
-      setSelectedWorkOrderIds(allIds);
-    }
-  }, [selectedWorkOrderIds.size, filteredWorkOrders]);
-
-  const handleBulkEditOpen = useCallback((action: string) => {
-    if (selectedWorkOrderIds.size === 0) {
-      setSnackbarMessage('Please select at least one work order to edit.');
-      setSnackbarOpen(true);
-      return;
-    }
-    
-    // Warn for large batch operations
-    if (selectedWorkOrderIds.size > 20) {
-      const proceed = confirm(
-        `You are about to ${action} ${selectedWorkOrderIds.size} work orders. This may take some time and will be processed in batches. Do you want to proceed?`
-      );
-      if (!proceed) {
-        return;
-      }
-    }
-    
-    setBulkEditData(prev => ({ ...prev, action }));
-    setBulkEditOpen(true);
-  }, [selectedWorkOrderIds.size]);
-
-  const handleBulkEditClose = useCallback(() => {
-    // Prevent closing while processing
-    if (bulkEditProgress.isProcessing) {
-      return;
-    }
-    setBulkEditOpen(false);
-    setBulkEditData({ action: '', status: '', priority: '', assignedToId: '', dueDate: '' });
-  }, [bulkEditProgress.isProcessing]);
-
-  const handleBulkEditChange = useCallback((field: string, value: string) => {
-    setBulkEditData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }, []);
-
-  const handleBulkEditSubmit = useCallback(() => {
-    const { action, ...data } = bulkEditData;
-    
-    if (!action) {
-      setSnackbarMessage('Please select an action.');
-      setSnackbarOpen(true);
-      return;
-    }
-
-    // Validate required fields based on action
-    if (action === 'status' && !data.status) {
-      setSnackbarMessage('Please select a status.');
-      setSnackbarOpen(true);
-      return;
-    }
-    if (action === 'priority' && !data.priority) {
-      setSnackbarMessage('Please select a priority.');
-      setSnackbarOpen(true);
-      return;
-    }
-    if (action === 'assign' && !data.assignedToId) {
-      setSnackbarMessage('Please select a user to assign.');
-      setSnackbarOpen(true);
-      return;
-    }
-    if (action === 'dueDate' && !data.dueDate) {
-      setSnackbarMessage('Please select a due date.');
-      setSnackbarOpen(true);
-      return;
-    }
-
-    bulkEditMutation.mutate({
-      ids: Array.from(selectedWorkOrderIds),
-      action,
-      data
-    });
-  }, [bulkEditData, selectedWorkOrderIds, bulkEditMutation]);
 
   const handleWorkOrderSubmit = useCallback((data: any) => {
     if (formMode === 'create') {
@@ -903,6 +807,103 @@ export default function WorkOrders() {
       </Container>
     );
   }
+
+  // Bulk edit handlers (moved after filteredWorkOrders definition to avoid temporal dead zone)
+  const handleSelectWorkOrder = useCallback((workOrderId: number, selected: boolean) => {
+    const newSelection = new Set(selectedWorkOrderIds);
+    if (selected) {
+      newSelection.add(workOrderId);
+    } else {
+      newSelection.delete(workOrderId);
+    }
+    setSelectedWorkOrderIds(newSelection);
+  }, [selectedWorkOrderIds]);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedWorkOrderIds.size === filteredWorkOrders.length) {
+      // Deselect all
+      setSelectedWorkOrderIds(new Set());
+    } else {
+      // Select all visible work orders
+      const allIds = new Set(filteredWorkOrders.map((wo: WorkOrder) => wo.id));
+      setSelectedWorkOrderIds(allIds);
+    }
+  }, [selectedWorkOrderIds.size, filteredWorkOrders]);
+
+  const handleBulkEditOpen = useCallback((action: string) => {
+    if (selectedWorkOrderIds.size === 0) {
+      setSnackbarMessage('Please select at least one work order to edit.');
+      setSnackbarOpen(true);
+      return;
+    }
+    
+    // Warn for large batch operations
+    if (selectedWorkOrderIds.size > 20) {
+      const proceed = confirm(
+        `You are about to ${action} ${selectedWorkOrderIds.size} work orders. This may take some time and will be processed in batches. Do you want to proceed?`
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+    
+    setBulkEditData(prev => ({ ...prev, action }));
+    setBulkEditOpen(true);
+  }, [selectedWorkOrderIds.size]);
+
+  const handleBulkEditClose = useCallback(() => {
+    // Prevent closing while processing
+    if (bulkEditProgress.isProcessing) {
+      return;
+    }
+    setBulkEditOpen(false);
+    setBulkEditData({ action: '', status: '', priority: '', assignedToId: '', dueDate: '' });
+  }, [bulkEditProgress.isProcessing]);
+
+  const handleBulkEditChange = useCallback((field: string, value: string) => {
+    setBulkEditData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
+  const handleBulkEditSubmit = useCallback(() => {
+    const { action, ...data } = bulkEditData;
+    
+    if (!action) {
+      setSnackbarMessage('Please select an action.');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validate required fields based on action
+    if (action === 'status' && !data.status) {
+      setSnackbarMessage('Please select a status.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'priority' && !data.priority) {
+      setSnackbarMessage('Please select a priority.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'assign' && !data.assignedToId) {
+      setSnackbarMessage('Please select a user to assign.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'dueDate' && !data.dueDate) {
+      setSnackbarMessage('Please select a due date.');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    bulkEditMutation.mutate({
+      ids: Array.from(selectedWorkOrderIds),
+      action,
+      data
+    });
+  }, [bulkEditData, selectedWorkOrderIds, bulkEditMutation]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
