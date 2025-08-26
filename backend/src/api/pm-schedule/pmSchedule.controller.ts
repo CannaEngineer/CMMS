@@ -59,8 +59,8 @@ export class PMScheduleController {
   }
 
   async updatePMSchedule(req: AuthenticatedRequest, res: Response) {
+    const { id } = req.params;
     try {
-      const { id } = req.params;
       console.log(`[PMController] Updating PM schedule ${id} with data:`, req.body);
       console.log(`[PMController] User org ID:`, req.user?.organizationId);
       
