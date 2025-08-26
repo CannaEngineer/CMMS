@@ -21,6 +21,17 @@ import {
   Menu,
   MenuItem,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Divider,
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -35,6 +46,9 @@ import {
   Delete as DeleteIcon,
   ChevronLeft,
   ChevronRight,
+  Cancel as CancelIcon,
+  History as HistoryIcon,
+  Assignment as WorkOrderIcon,
 } from '@mui/icons-material';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatCard from '../components/Common/StatCard';
@@ -57,6 +71,8 @@ export default function Maintenance() {
   const [formMode, setFormMode] = useState<'create' | 'edit' | 'view'>('create');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentCalendarDate, setCurrentCalendarDate] = useState(dayjs());
+  const [pmDetailsOpen, setPmDetailsOpen] = useState(false);
+  const [selectedPM, setSelectedPM] = useState<any>(null);
 
   // Fetch PM Schedules
   const { data: pmSchedules, isLoading: pmSchedulesLoading, error: pmSchedulesError } = useQuery({
@@ -91,6 +107,44 @@ export default function Maintenance() {
   const { data: monthlyTrendsData, isLoading: trendsLoading } = useQuery({
     queryKey: ['dashboard', 'maintenance-trends'],
     queryFn: () => dashboardService.getTrends(6), // Get last 6 months
+  });
+
+  // Fetch work orders for the selected PM schedule
+  const { data: pmWorkOrders, isLoading: pmWorkOrdersLoading } = useQuery({
+    queryKey: ['pm-work-orders', selectedPM?.id],
+    queryFn: async () => {
+      if (!selectedPM?.id) return { current: null, history: [] };
+      
+      try {
+        const allWorkOrders = await workOrdersService.getAll();
+        
+        // Find work orders related to this PM schedule
+        const relatedWorkOrders = allWorkOrders.filter((wo: any) => 
+          wo.pmScheduleId === selectedPM.id || 
+          (wo.title && wo.title.toLowerCase().includes(selectedPM.title?.toLowerCase() || '')) ||
+          (wo.assetId === selectedPM.assetId && wo.type === 'PREVENTIVE')
+        );
+        
+        // Separate current (open/in progress) from completed
+        const currentWorkOrder = relatedWorkOrders.find((wo: any) => 
+          wo.status === 'OPEN' || wo.status === 'IN_PROGRESS'
+        );
+        
+        const completedWorkOrders = relatedWorkOrders
+          .filter((wo: any) => wo.status === 'COMPLETED')
+          .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        
+        return {
+          current: currentWorkOrder || null,
+          history: completedWorkOrders,
+          total: relatedWorkOrders.length
+        };
+      } catch (error) {
+        console.error('Error fetching PM work orders:', error);
+        return { current: null, history: [], total: 0 };
+      }
+    },
+    enabled: !!selectedPM?.id && pmDetailsOpen
   });
 
   // Helper function to generate QR code for PM schedule
@@ -234,6 +288,28 @@ export default function Maintenance() {
     console.log('[Maintenance] handleCloseMenu called, clearing selectedSchedule');
     setAnchorEl(null);
     setSelectedSchedule(null);
+  };
+
+  // PM Details Modal Handlers
+  const handlePMDetailsOpen = (pm: any) => {
+    setSelectedPM(pm);
+    setPmDetailsOpen(true);
+  };
+
+  const handlePMDetailsClose = () => {
+    setPmDetailsOpen(false);
+    setSelectedPM(null);
+  };
+
+  // Function to check if PM has associated work orders
+  const hasWorkOrder = (pmSchedule: any) => {
+    if (!workOrders || !pmSchedule) return false;
+    
+    return workOrders.some((wo: any) => 
+      wo.pmScheduleId === pmSchedule.id || 
+      (wo.title && wo.title.toLowerCase().includes(pmSchedule.title?.toLowerCase() || '')) ||
+      (wo.assetId === pmSchedule.assetId && wo.type === 'PREVENTIVE')
+    );
   };
 
   // Filter PM schedules based on tab
@@ -630,6 +706,21 @@ export default function Maintenance() {
                                 fontWeight: 600,
                               }}
                             />
+                            {/* Work Order Verification Indicator */}
+                            <IconButton
+                              size="small"
+                              onClick={() => handlePMDetailsOpen(item)}
+                              sx={{
+                                color: hasWorkOrder(item) ? 'success.main' : 'error.main',
+                                '&:hover': {
+                                  backgroundColor: hasWorkOrder(item) ? 'success.light' : 'error.light',
+                                  opacity: 0.1,
+                                },
+                              }}
+                              title={hasWorkOrder(item) ? 'Has work orders - Click to view details' : 'No work orders found - Click to view details'}
+                            >
+                              {hasWorkOrder(item) ? <CheckIcon /> : <CancelIcon />}
+                            </IconButton>
                           </Box>
                         }
                         secondary={
@@ -684,6 +775,220 @@ export default function Maintenance() {
         mode={formMode}
         loading={createMutation.isPending || updateMutation.isPending}
       />
+
+      {/* PM Details Modal */}
+      <Dialog
+        open={pmDetailsOpen}
+        onClose={handlePMDetailsClose}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: '500px' }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ScheduleIcon color="primary" />
+            <Typography variant="h6">
+              PM Schedule Details: {selectedPM?.title}
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+            {hasWorkOrder(selectedPM) ? (
+              <Chip
+                icon={<CheckIcon />}
+                label="Has Work Orders"
+                color="success"
+                size="small"
+              />
+            ) : (
+              <Chip
+                icon={<CancelIcon />}
+                label="No Work Orders"
+                color="error"
+                size="small"
+              />
+            )}
+          </Box>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {pmWorkOrdersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <LoadingSpinner />
+            </Box>
+          ) : (
+            <>
+              {/* PM Schedule Information */}
+              <Paper sx={{ p: 3, mb: 3, bgcolor: 'grey.50' }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Frequency</Typography>
+                    <Typography variant="body1" fontWeight={600}>{selectedPM?.frequency}</Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Next Due</Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {selectedPM?.nextDue ? dayjs(selectedPM.nextDue).format('YYYY-MM-DD') : 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Asset</Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {selectedPM?.asset?.name || 'N/A'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="body2" color="text.secondary">Priority</Typography>
+                    <Chip
+                      label={selectedPM?.priority || 'MEDIUM'}
+                      color={selectedPM?.priority === 'HIGH' ? 'error' : selectedPM?.priority === 'LOW' ? 'default' : 'warning'}
+                      size="small"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="text.secondary">Description</Typography>
+                    <Typography variant="body1">{selectedPM?.description || 'No description available'}</Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+
+              {/* Current Work Order */}
+              {pmWorkOrders?.current ? (
+                <>
+                  <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <WorkOrderIcon color="primary" />
+                    Current Work Order
+                  </Typography>
+                  <Paper sx={{ p: 2, mb: 3, border: '2px solid', borderColor: 'primary.main' }}>
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid item xs={12} sm={8}>
+                        <Typography variant="body1" fontWeight={600}>
+                          {pmWorkOrders.current.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {pmWorkOrders.current.description}
+                        </Typography>
+                        <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
+                          <Chip
+                            label={pmWorkOrders.current.status}
+                            color={pmWorkOrders.current.status === 'OPEN' ? 'info' : 'warning'}
+                            size="small"
+                          />
+                          <Chip
+                            label={pmWorkOrders.current.priority}
+                            color={pmWorkOrders.current.priority === 'HIGH' ? 'error' : 'default'}
+                            size="small"
+                          />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Typography variant="body2" color="text.secondary">
+                          Created: {dayjs(pmWorkOrders.current.createdAt).format('YYYY-MM-DD')}
+                        </Typography>
+                        {pmWorkOrders.current.dueDate && (
+                          <Typography variant="body2" color="text.secondary">
+                            Due: {dayjs(pmWorkOrders.current.dueDate).format('YYYY-MM-DD')}
+                          </Typography>
+                        )}
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </>
+              ) : (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  No current work order found for this PM schedule.
+                </Alert>
+              )}
+
+              {/* Work Order History */}
+              <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <HistoryIcon color="action" />
+                Work Order History ({pmWorkOrders?.history?.length || 0})
+              </Typography>
+
+              {pmWorkOrders?.history && pmWorkOrders.history.length > 0 ? (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Title</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Priority</TableCell>
+                        <TableCell>Created</TableCell>
+                        <TableCell>Completed</TableCell>
+                        <TableCell>Duration</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pmWorkOrders.history.map((wo: any) => (
+                        <TableRow key={wo.id} hover>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={500}>
+                              {wo.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {wo.description}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={wo.status}
+                              color="success"
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={wo.priority}
+                              color={wo.priority === 'HIGH' ? 'error' : 'default'}
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {dayjs(wo.createdAt).format('YYYY-MM-DD')}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {dayjs(wo.updatedAt).format('YYYY-MM-DD')}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {dayjs(wo.updatedAt).diff(dayjs(wo.createdAt), 'days')} days
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Alert severity="info">
+                  No completed work orders found for this PM schedule.
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handlePMDetailsClose}>Close</Button>
+          {pmWorkOrders?.current && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                // Navigate to work order details
+                window.open(`/admin/work-orders/${pmWorkOrders.current.id}`, '_blank');
+              }}
+            >
+              View Current Work Order
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
