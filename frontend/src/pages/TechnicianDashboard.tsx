@@ -38,9 +38,6 @@ import {
   AccordionDetails,
   LinearProgress,
   Tooltip,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
   ListItemAvatar,
   Skeleton,
   CardHeader,
@@ -83,6 +80,7 @@ import {
   Folder as FolderIcon,
   Camera as CameraIcon,
   Description as DocumentIcon,
+  Launch as LaunchIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService, authService, assetsService, partsService } from '../services/api';
@@ -1100,11 +1098,36 @@ export default function TechnicianDashboard() {
                   {/* Asset and Time Info */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                     {workOrder.assetName && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <AssetIcon fontSize="small" color="action" />
-                        <Typography variant="body2" color="text.secondary">
+                      <Box 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 0.5,
+                          cursor: workOrder.assetId ? 'pointer' : 'default',
+                          p: 0.5,
+                          borderRadius: 1,
+                          '&:hover': workOrder.assetId ? {
+                            bgcolor: 'primary.50',
+                            '& .asset-name': { color: 'primary.main' }
+                          } : {}
+                        }}
+                        onClick={() => workOrder.assetId && navigate(`/tech/assets/${workOrder.assetId}`)}
+                      >
+                        <AssetIcon fontSize="small" color={workOrder.assetId ? "primary" : "action"} />
+                        <Typography 
+                          variant="body2" 
+                          className="asset-name"
+                          sx={{ 
+                            color: workOrder.assetId ? 'primary.main' : 'text.secondary',
+                            fontWeight: workOrder.assetId ? 500 : 400,
+                            textDecoration: workOrder.assetId ? 'underline' : 'none'
+                          }}
+                        >
                           {workOrder.assetName}
                         </Typography>
+                        {workOrder.assetId && (
+                          <LaunchIcon fontSize="small" sx={{ ml: 0.5, opacity: 0.6 }} />
+                        )}
                       </Box>
                     )}
                     {workOrder.estimatedHours && (
@@ -2156,68 +2179,6 @@ export default function TechnicianDashboard() {
         </DialogActions>
       </Dialog>
 
-      {/* Quick Actions - Technician Optimized */}
-      <SpeedDial
-        ariaLabel="Technician quick actions"
-        sx={{
-          position: 'fixed',
-          bottom: isMobile ? 88 : 16,
-          right: 16,
-          zIndex: 1000,
-        }}
-        icon={<SpeedDialIcon />}
-      >
-        {/* QR Scanner - Most important for field work */}
-        <SpeedDialAction
-          key="qr-scanner"
-          icon={<QrIcon />}
-          tooltipTitle="Scan Asset QR Code"
-          onClick={() => setQrScannerOpen(true)}
-        />
-        
-        {/* View Cart - Only show if items in cart */}
-        {cartItems.length > 0 && (
-          <SpeedDialAction
-            key="view-cart"
-            icon={
-              <Badge badgeContent={cartItems.length} color="secondary">
-                <CartIcon />
-              </Badge>
-            }
-            tooltipTitle="View Parts Cart"
-            onClick={() => setInventoryDialogOpen(true)}
-          />
-        )}
-        
-        {/* Quick Time Log - For active work */}
-        {assignedWorkOrders.filter(wo => wo.status === 'IN_PROGRESS').length > 0 && (
-          <SpeedDialAction
-            key="quick-time-log"
-            icon={<TimerIcon />}
-            tooltipTitle="Quick Time Entry"
-            onClick={() => handleQuickTimeLog()}
-          />
-        )}
-        
-        {/* Emergency Work Orders */}
-        <SpeedDialAction
-          key="emergency-work"
-          icon={<WarningIcon />}
-          tooltipTitle="View Urgent Work"
-          onClick={() => {
-            setFilterStatus('URGENT');
-            navigate('/tech/dashboard?tab=my-work');
-          }}
-        />
-        
-        {/* Available Work - Quick claim */}
-        <SpeedDialAction
-          key="available-work"
-          icon={<PersonIcon />}
-          tooltipTitle="Claim Available Work"
-          onClick={() => navigate('/tech/dashboard?tab=available-work')}
-        />
-      </SpeedDial>
 
       {/* QR Scanner Modal */}
       <QRScanner
