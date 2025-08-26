@@ -1231,62 +1231,33 @@ export const pmService = {
     try {
       console.log(`Updating PM schedule ${id} with data:`, schedule);
       
-      // Try different payload formats that the backend might expect
-      const payloadOptions = [
-        // Option 1: Original data as-is
-        schedule,
-        // Option 2: Ensure proper field mapping
-        {
-          ...schedule,
-          // Ensure date is in proper format
-          nextDue: schedule.nextDue ? new Date(schedule.nextDue).toISOString() : schedule.nextDue,
-          // Remove any UI-only fields
-          qrCode: undefined,
-        },
-        // Option 3: Only send fields that can be updated
-        {
-          title: schedule.title,
-          description: schedule.description,
-          frequency: schedule.frequency,
-          nextDue: schedule.nextDue,
-          assetId: schedule.assetId,
-          priority: schedule.priority,
-          estimatedHours: schedule.estimatedHours,
-          assignedToId: schedule.assignedToId,
-        }
-      ];
+      // Clean the data payload
+      const cleanedData = {
+        title: schedule.title,
+        description: schedule.description,
+        frequency: schedule.frequency,
+        nextDue: schedule.nextDue ? new Date(schedule.nextDue).toISOString() : schedule.nextDue,
+        assetId: schedule.assetId,
+        priority: schedule.priority,
+        estimatedHours: schedule.estimatedHours,
+        assignedToId: schedule.assignedToId,
+      };
 
-      // Try each payload format with both PUT and PATCH methods
-      for (let i = 0; i < payloadOptions.length; i++) {
-        const payload = payloadOptions[i];
+      // Try PATCH first (more appropriate for partial updates)
+      try {
+        const result = await apiClient.patch<any>(`/api/pm-schedules/${id}`, cleanedData);
+        console.log(`PM schedule PATCH update successful:`, result);
+        return result;
+      } catch (patchError) {
+        console.warn(`PM schedule PATCH update failed, trying PUT:`, patchError.response?.data);
         
-        // Try PUT first
-        try {
-          console.log(`Trying PM schedule PUT update option ${i + 1}:`, payload);
-          const result = await apiClient.put<any>(`/api/pm-schedules/${id}`, payload);
-          console.log(`PM schedule PUT update option ${i + 1} successful:`, result);
-          return result;
-        } catch (putError) {
-          console.warn(`PM schedule PUT update option ${i + 1} failed:`, putError.response?.data);
-          
-          // If PUT fails, try PATCH
-          try {
-            console.log(`Trying PM schedule PATCH update option ${i + 1}:`, payload);
-            const result = await apiClient.patch<any>(`/api/pm-schedules/${id}`, payload);
-            console.log(`PM schedule PATCH update option ${i + 1} successful:`, result);
-            return result;
-          } catch (patchError) {
-            console.warn(`PM schedule PATCH update option ${i + 1} failed:`, patchError.response?.data);
-            
-            if (i === payloadOptions.length - 1) {
-              // If this is the last option and both PUT and PATCH failed, throw the error
-              throw patchError;
-            }
-          }
-        }
+        // Fallback to PUT
+        const result = await apiClient.put<any>(`/api/pm-schedules/${id}`, cleanedData);
+        console.log(`PM schedule PUT update successful:`, result);
+        return result;
       }
     } catch (error) {
-      console.error(`All PM schedule ${id} update methods failed:`, error);
+      console.error(`PM schedule ${id} update failed:`, error);
       console.error('Server response:', error.response?.data);
       throw new Error(`Failed to update PM schedule ${id}: ${error.response?.data?.message || error.message}`);
     }

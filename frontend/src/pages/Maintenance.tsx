@@ -112,20 +112,8 @@ export default function Maintenance() {
   // Mutations for PM Schedules
   const createMutation = useMutation({
     mutationFn: async (pmData: any) => {
-      // Create the PM schedule first
+      // Create the PM schedule
       const createdSchedule = await pmService.createSchedule(pmData);
-      
-      // Generate QR code with the actual schedule ID
-      const qrCodeUrl = await generatePMScheduleQRCode({ ...pmData, id: createdSchedule.id });
-      
-      // Update the schedule with the QR code if generation succeeded
-      if (qrCodeUrl && createdSchedule.id) {
-        await pmService.updateSchedule(createdSchedule.id.toString(), {
-          ...createdSchedule,
-          qrCode: qrCodeUrl
-        });
-      }
-      
       return createdSchedule;
     },
     onSuccess: () => {
