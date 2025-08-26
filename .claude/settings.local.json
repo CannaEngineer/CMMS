@@ -42,7 +42,8 @@
       "Bash(git push:*)",
       "mcp__playwright__browser_press_key",
       "WebSearch",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "mcp__playwright__browser_fill_form"
     ],
     "deny": []
   }
