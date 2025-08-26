@@ -268,8 +268,21 @@ app.get('/api/uploads/:entityType/:entityId', authenticate, async (req, res) => 
     let files: any[] = [];
     
     if (entityType === 'assets') {
+      // Validate entityId is a valid integer
+      const assetId = parseInt(entityId);
+      if (isNaN(assetId)) {
+        console.error(`Invalid asset ID: ${entityId}`);
+        return res.json({
+          success: true,
+          files: [],
+          entityType,
+          entityId,
+          organizationId
+        });
+      }
+
       const asset = await prisma.asset.findFirst({
-        where: { id: parseInt(entityId), organizationId },
+        where: { id: assetId, organizationId },
         select: { attachments: true }
       });
       
@@ -278,14 +291,33 @@ app.get('/api/uploads/:entityType/:entityId', authenticate, async (req, res) => 
       }
       
     } else if (entityType === 'work-orders') {
+      // Validate entityId is a valid integer
+      const workOrderId = parseInt(entityId);
+      if (isNaN(workOrderId)) {
+        console.error(`Invalid work order ID: ${entityId}`);
+        return res.json({
+          success: true,
+          files: [],
+          entityType,
+          entityId,
+          organizationId
+        });
+      }
+
       const workOrder = await prisma.workOrder.findFirst({
-        where: { id: parseInt(entityId), organizationId },
+        where: { id: workOrderId, organizationId },
         select: { attachments: true }
       });
       
       if (workOrder && workOrder.attachments) {
         files = Array.isArray(workOrder.attachments) ? workOrder.attachments : [];
       }
+    } else {
+      console.error(`Unsupported entity type: ${entityType}`);
+      return res.status(400).json({ 
+        error: `Unsupported entity type: ${entityType}`,
+        success: false 
+      });
     }
 
     res.json({
