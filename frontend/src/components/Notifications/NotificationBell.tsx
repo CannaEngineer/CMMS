@@ -15,7 +15,7 @@ import {
   Notifications as NotificationsIcon,
   NotificationsActive as NotificationsActiveIcon,
 } from '@mui/icons-material';
-import { NotificationCenter } from './NotificationCenter';
+import NotificationCenter from './NotificationCenter';
 import { useNotificationSocket } from '../../hooks/useNotifications';
 
 // Animation keyframes
