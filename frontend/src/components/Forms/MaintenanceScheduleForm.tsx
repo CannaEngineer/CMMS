@@ -128,7 +128,7 @@ export default function MaintenanceScheduleForm({
   const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
   const [showCustomFrequency, setShowCustomFrequency] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const watchedData = watch();
 
   // Check if current frequency is non-standard
@@ -180,12 +180,12 @@ export default function MaintenanceScheduleForm({
 
   const onFormSubmit = async (data: PMScheduleFormData) => {
     // Prevent double submissions
-    if (isSubmitting) {
+    if (isFormSubmitting) {
       console.log('[MaintenanceScheduleForm] Already submitting, ignoring duplicate submission');
       return;
     }
     
-    setIsSubmitting(true);
+    setIsFormSubmitting(true);
     
     try {
       console.log('PM Schedule form submitted with data:', data);
@@ -215,7 +215,7 @@ export default function MaintenanceScheduleForm({
       // Ensure required fields are not empty
       if (!cleanedData.title || !cleanedData.frequency || !cleanedData.nextDue || !cleanedData.assetId) {
         console.error('Missing required fields for PM schedule:', cleanedData);
-        setIsSubmitting(false);
+        setIsFormSubmitting(false);
         return;
       }
       
@@ -226,7 +226,7 @@ export default function MaintenanceScheduleForm({
     } catch (error) {
       console.error('[MaintenanceScheduleForm] Error during submission:', error);
     } finally {
-      setIsSubmitting(false);
+      setIsFormSubmitting(false);
     }
   };
 
@@ -435,10 +435,10 @@ export default function MaintenanceScheduleForm({
         `Maintenance Schedule - ${watchedData.title || 'Schedule'}`
       }
       submitText={mode === 'view' ? undefined : mode === 'edit' ? 'Update Schedule' : 'Create Schedule'}
-      loading={loading || isSubmitting}
+      loading={loading || isSubmitting || isFormSubmitting}
       maxWidth="lg"
       hideActions={mode === 'view'}
-      submitDisabled={mode === 'view' || isSubmitting}
+      submitDisabled={mode === 'view' || isSubmitting || isFormSubmitting}
     >
       <FormErrorDisplay errors={errors} />
 
