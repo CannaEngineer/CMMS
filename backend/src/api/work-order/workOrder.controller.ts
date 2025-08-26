@@ -109,11 +109,15 @@ export const createWorkOrder = async (req: Request, res: Response) => {
 
 export const updateWorkOrder = async (req: Request, res: Response) => {
   try {
-    // Convert string IDs to numbers if needed
+    // Convert string IDs to numbers if needed, but handle null properly for unassignment
     const processedBody = {
       ...req.body,
       assetId: req.body.assetId ? Number(req.body.assetId) : undefined,
-      assignedToId: req.body.assignedToId ? Number(req.body.assignedToId) : undefined,
+      assignedToId: req.body.hasOwnProperty('assignedToId') 
+        ? (req.body.assignedToId === null || req.body.assignedToId === undefined || req.body.assignedToId === "" || req.body.assignedToId === 0) 
+          ? null 
+          : Number(req.body.assignedToId)
+        : undefined,
       estimatedHours: req.body.estimatedHours ? Number(req.body.estimatedHours) : undefined,
     };
     
@@ -431,6 +435,52 @@ export const deactivateShare = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deactivating share:', error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const unassignWorkOrder = async (req: Request, res: Response) => {
+  try {
+    const { organizationId, id: userId } = req.user;
+    const workOrderId = Number(req.params.id);
+    
+    console.log('Unassigning work order:', { workOrderId, organizationId, userId });
+    
+    // Get the work order first to check current assignment
+    const currentWorkOrder = await workOrderService.getWorkOrderById(workOrderId, organizationId);
+    if (!currentWorkOrder) {
+      return res.status(404).json({ error: 'Work Order not found' });
+    }
+    
+    console.log('Current work order assignment:', { 
+      assignedToId: currentWorkOrder.assignedToId, 
+      assignedTo: currentWorkOrder.assignedTo 
+    });
+    
+    // Check if work order is currently assigned
+    if (!currentWorkOrder.assignedToId && !currentWorkOrder.assignedTo) {
+      return res.status(200).json({ 
+        ...currentWorkOrder, 
+        message: 'Work order was already unassigned' 
+      });
+    }
+    
+    // Update work order to unassign
+    const data = { assignedToId: null };
+    const updatedWorkOrder = await workOrderService.updateWorkOrder(workOrderId, data, organizationId, userId);
+    
+    console.log('Work order unassigned successfully:', {
+      id: updatedWorkOrder?.id,
+      assignedToId: updatedWorkOrder?.assignedToId,
+      assignedTo: updatedWorkOrder?.assignedTo
+    });
+    
+    res.status(200).json({
+      ...updatedWorkOrder,
+      message: 'Work order unassigned successfully'
+    });
+  } catch (error) {
+    console.error('Error unassigning work order:', error);
+    res.status(500).json({ error: error.message || 'Failed to unassign work order' });
   }
 };
 

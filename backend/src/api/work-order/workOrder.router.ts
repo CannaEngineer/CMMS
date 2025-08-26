@@ -10,6 +10,7 @@ router.get('/:id/progress', workOrderController.getWorkOrderProgress);
 router.post('/', workOrderController.createWorkOrder);
 router.put('/:id', workOrderController.updateWorkOrder);
 router.put('/:id/status', workOrderController.updateWorkOrderStatus);
+router.post('/:id/unassign', workOrderController.unassignWorkOrder);
 router.delete('/:id', workOrderController.deleteWorkOrder);
 
 // Time logging routes

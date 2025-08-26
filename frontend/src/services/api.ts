@@ -519,21 +519,11 @@ export const workOrdersService = {
         console.log('PUT method failed, trying PATCH...');
         
         try {
-          // Second try: Use PATCH method for partial update
-          response = await apiClient.patch<any>(`/api/work-orders/${id}`, { 
-            assignedToId: null 
-          });
-          console.log('PATCH method successful:', response);
+          // Second try: Use POST to a specific unassign endpoint
+          response = await apiClient.post<any>(`/api/work-orders/${id}/unassign`, {});
+          console.log('Unassign endpoint successful:', response);
           return response;
-        } catch (patchError) {
-          console.log('PATCH method failed, trying specific unassign endpoint...');
-          
-          try {
-            // Third try: Use POST to a specific unassign endpoint
-            response = await apiClient.post<any>(`/api/work-orders/${id}/unassign`, {});
-            console.log('Unassign endpoint successful:', response);
-            return response;
-          } catch (unassignError) {
+        } catch (unassignError) {
             console.log('Unassign endpoint failed, trying generic update...');
             
             // Fourth try: Get the work order first, then update it
