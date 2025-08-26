@@ -212,10 +212,11 @@ export default function Maintenance() {
   };
 
   const handleEditClick = (schedule: any) => {
+    console.log('[Maintenance] handleEditClick called with schedule:', schedule);
     setSelectedSchedule(schedule);
     setFormMode('edit');
     setOpenScheduleDialog(true);
-    handleCloseMenu();
+    setAnchorEl(null); // Close menu without clearing selectedSchedule
   };
 
   const handleDeleteClick = (scheduleId: string) => {
@@ -230,6 +231,7 @@ export default function Maintenance() {
   };
 
   const handleCloseMenu = () => {
+    console.log('[Maintenance] handleCloseMenu called, clearing selectedSchedule');
     setAnchorEl(null);
     setSelectedSchedule(null);
   };
@@ -673,7 +675,10 @@ export default function Maintenance() {
       {/* Maintenance Schedule Form Dialog */}
       <MaintenanceScheduleForm
         open={openScheduleDialog}
-        onClose={() => setOpenScheduleDialog(false)}
+        onClose={() => {
+          console.log('[Maintenance] Form dialog closing, keeping selectedSchedule');
+          setOpenScheduleDialog(false);
+        }}
         onSubmit={handleSubmitSchedule}
         initialData={selectedSchedule || {}}
         mode={formMode}
