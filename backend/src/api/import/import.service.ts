@@ -785,29 +785,86 @@ export class ImportService {
     }
   }
 
-  // Normalize frequency text to standard format (legacy method for backwards compatibility)
+  // Normalize frequency text to standard format with intelligent parsing
   private static normalizeFrequency(frequency: string): string {
+    if (!frequency) return 'monthly';
+    
     const freq = frequency.toLowerCase().trim();
+    console.log(`[Import] Normalizing frequency: "${frequency}" -> "${freq}"`);
     
-    if (freq.includes('daily') || freq.includes('day')) return 'daily';
-    if (freq.includes('weekly') || freq.includes('week')) return 'weekly';
-    if (freq.includes('monthly') || freq.includes('month')) return 'monthly';
-    if (freq.includes('quarterly') || freq.includes('quarter')) return 'quarterly';
-    if (freq.includes('annually') || freq.includes('yearly') || freq.includes('year')) return 'annually';
-    
-    // Try to extract number patterns like "30 days", "2 weeks"
-    const numberMatch = freq.match(/(\d+)\s*(day|week|month|hour)/);
-    if (numberMatch) {
-      const num = parseInt(numberMatch[1]);
-      const unit = numberMatch[2];
-      
-      if (unit === 'day') return `${num} days`;
-      if (unit === 'week') return `${num} weeks`;
-      if (unit === 'month') return `${num} months`;
-      if (unit === 'hour') return `${num} hours`;
+    // Handle numeric patterns like "6 weeks", "2 months", etc.
+    const numericWeekMatch = freq.match(/(\d+)\s*weeks?/);
+    if (numericWeekMatch) {
+      const weeks = parseInt(numericWeekMatch[1]);
+      console.log(`[Import] Found ${weeks} weeks pattern, converting to weekly`);
+      return 'weekly'; // Convert any "X weeks" to weekly
     }
     
-    return frequency; // Return original if no pattern matches
+    const numericMonthMatch = freq.match(/(\d+)\s*months?/);
+    if (numericMonthMatch) {
+      const months = parseInt(numericMonthMatch[1]);
+      console.log(`[Import] Found ${months} months pattern`);
+      if (months >= 12) return 'yearly';
+      if (months >= 3) return 'quarterly';
+      return 'monthly'; // 1-2 months -> monthly
+    }
+    
+    const numericDayMatch = freq.match(/(\d+)\s*days?/);
+    if (numericDayMatch) {
+      const days = parseInt(numericDayMatch[1]);
+      console.log(`[Import] Found ${days} days pattern`);
+      if (days >= 365) return 'yearly';
+      if (days >= 90) return 'quarterly';
+      if (days >= 28) return 'monthly';
+      if (days >= 7) return 'weekly';
+      return 'daily';
+    }
+    
+    // Handle complex monthly patterns like "monthly by weekday first monday"
+    if (freq.includes('monthly') && (freq.includes('weekday') || freq.includes('monday') || freq.includes('tuesday') || 
+        freq.includes('wednesday') || freq.includes('thursday') || freq.includes('friday') || 
+        freq.includes('saturday') || freq.includes('sunday') || freq.includes('first') || freq.includes('last'))) {
+      console.log(`[Import] Complex monthly pattern detected, converting to monthly`);
+      return 'monthly';
+    }
+    
+    // Handle bi-weekly, semi-weekly patterns
+    if (freq.includes('bi-week') || freq.includes('biweek') || freq.includes('every other week') || freq.includes('2 weeks')) {
+      console.log(`[Import] Bi-weekly pattern detected, converting to weekly`);
+      return 'weekly';
+    }
+    
+    // Handle semi-annual, bi-annual patterns
+    if (freq.includes('semi-annual') || freq.includes('bi-annual') || freq.includes('twice a year') || freq.includes('6 months')) {
+      console.log(`[Import] Semi-annual pattern detected, converting to quarterly`);
+      return 'quarterly';
+    }
+    
+    // Standard pattern matching
+    if (freq.includes('daily') || freq.includes('day')) {
+      console.log(`[Import] Daily pattern detected`);
+      return 'daily';
+    }
+    if (freq.includes('weekly') || freq.includes('week')) {
+      console.log(`[Import] Weekly pattern detected`);
+      return 'weekly';
+    }
+    if (freq.includes('monthly') || freq.includes('month')) {
+      console.log(`[Import] Monthly pattern detected`);
+      return 'monthly';
+    }
+    if (freq.includes('quarterly') || freq.includes('quarter')) {
+      console.log(`[Import] Quarterly pattern detected`);
+      return 'quarterly';
+    }
+    if (freq.includes('annually') || freq.includes('yearly') || freq.includes('year')) {
+      console.log(`[Import] Yearly pattern detected`);
+      return 'yearly';
+    }
+    
+    // Default fallback
+    console.log(`[Import] No pattern matched for "${frequency}", defaulting to monthly`);
+    return 'monthly';
   }
 
   // Calculate next due date from MaintainX recurrence format

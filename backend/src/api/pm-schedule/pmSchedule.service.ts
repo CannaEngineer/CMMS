@@ -286,10 +286,163 @@ export class PMScheduleService {
   }
 
   async updatePMSchedule(id: number, data: any) {
-    return prisma.pMSchedule.update({
-      where: { id },
-      data,
-    });
+    console.log('Updating PM schedule:', id, 'with data:', data);
+    
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Get the current PM schedule
+        const currentPM = await tx.pMSchedule.findUnique({
+          where: { id },
+          include: {
+            asset: {
+              select: { organizationId: true, name: true }
+            },
+            workOrders: {
+              where: { status: { notIn: ['COMPLETED', 'CANCELED'] } },
+              take: 1
+            }
+          }
+        });
+        
+        if (!currentPM) {
+          throw new Error('PM Schedule not found');
+        }
+        
+        // 2. Normalize frequency if it's being updated
+        const updateData = { ...data };
+        if (updateData.frequency) {
+          updateData.frequency = this.normalizeFrequency(updateData.frequency);
+          console.log('Normalized frequency for update:', updateData.frequency);
+        }
+        
+        // 3. Update the PM schedule
+        const updatedPM = await tx.pMSchedule.update({
+          where: { id },
+          data: updateData,
+        });
+        
+        // 4. Check if there's an active work order, create one if not
+        if (currentPM.workOrders.length === 0) {
+          console.log('No active work orders found for PM, creating one...');
+          
+          const workOrderTitle = `${updatedPM.title} - ${currentPM.asset.name || 'Asset'}`;
+          
+          const workOrder = await tx.workOrder.create({
+            data: {
+              title: workOrderTitle,
+              description: updatedPM.description || `Preventive maintenance for ${currentPM.asset.name}`,
+              status: 'OPEN',
+              priority: data.priority || 'MEDIUM',
+              dueDate: updatedPM.nextDue,
+              assetId: updatedPM.assetId,
+              assignedToId: data.assignedToId || null,
+              pmScheduleId: updatedPM.id,
+              organizationId: currentPM.asset.organizationId || 1,
+              estimatedHours: data.estimatedHours || 1,
+            },
+          });
+          
+          console.log('Created new work order:', workOrder.id, 'for updated PM:', updatedPM.id);
+        }
+        
+        // 5. Update triggers if frequency changed
+        if (updateData.frequency && updateData.frequency !== currentPM.frequency) {
+          console.log('Frequency changed, updating triggers...');
+          
+          // Update existing triggers
+          await tx.pMTrigger.updateMany({
+            where: { pmScheduleId: id },
+            data: {
+              ...this.getTriggerFieldsFromFrequency(updateData.frequency),
+              lastTriggered: null, // Reset last triggered to recalculate
+            }
+          });
+        }
+        
+        // 6. Return the updated PM with full data
+        return tx.pMSchedule.findUnique({
+          where: { id },
+          include: {
+            asset: {
+              select: {
+                name: true,
+                id: true,
+                organizationId: true,
+              },
+            },
+            tasks: {
+              include: {
+                pmTask: true
+              }
+            },
+            triggers: true,
+            workOrders: {
+              take: 5,
+              orderBy: { createdAt: 'desc' },
+              select: {
+                id: true,
+                uniqueId: true,
+                title: true,
+                status: true,
+                priority: true,
+                dueDate: true,
+                createdAt: true
+              }
+            }
+          },
+        });
+      });
+      
+      console.log('PM schedule update completed successfully');
+      return result;
+      
+    } catch (error) {
+      console.error('Error updating PM schedule:', error);
+      throw new Error(`Failed to update PM schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+  
+  // Normalize frequency to standard values
+  private normalizeFrequency(frequency: string): string {
+    if (!frequency) return 'monthly';
+    
+    const freq = frequency.toLowerCase().trim();
+    console.log(`[PMService] Normalizing frequency: "${frequency}" -> "${freq}"`);
+    
+    // Handle numeric patterns like "6 weeks", "2 months", etc.
+    const numericWeekMatch = freq.match(/(\d+)\s*weeks?/);
+    if (numericWeekMatch) {
+      console.log(`[PMService] Found weeks pattern, converting to weekly`);
+      return 'weekly';
+    }
+    
+    const numericMonthMatch = freq.match(/(\d+)\s*months?/);
+    if (numericMonthMatch) {
+      const months = parseInt(numericMonthMatch[1]);
+      console.log(`[PMService] Found ${months} months pattern`);
+      if (months >= 12) return 'yearly';
+      if (months >= 3) return 'quarterly';
+      return 'monthly';
+    }
+    
+    // Handle complex monthly patterns
+    if (freq.includes('monthly') && (freq.includes('weekday') || freq.includes('monday') || freq.includes('tuesday') || 
+        freq.includes('wednesday') || freq.includes('thursday') || freq.includes('friday') || 
+        freq.includes('saturday') || freq.includes('sunday') || freq.includes('first') || freq.includes('last'))) {
+      console.log(`[PMService] Complex monthly pattern detected, converting to monthly`);
+      return 'monthly';
+    }
+    
+    // Standard mappings
+    if (freq.includes('daily') || freq.includes('day')) return 'daily';
+    if (freq.includes('weekly') || freq.includes('week')) return 'weekly';
+    if (freq.includes('monthly') || freq.includes('month')) return 'monthly';
+    if (freq.includes('quarterly') || freq.includes('quarter')) return 'quarterly';
+    if (freq.includes('yearly') || freq.includes('year') || freq.includes('annual')) return 'yearly';
+    
+    // Default fallback
+    console.log(`[PMService] No pattern matched, defaulting to monthly`);
+    return 'monthly';
   }
 
   async deletePMSchedule(id: number) {
