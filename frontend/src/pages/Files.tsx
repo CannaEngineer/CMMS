@@ -38,8 +38,8 @@ import {
   AttachFile as FileIcon,
   Search as SearchIcon,
   FilterList as FilterIcon,
-  Asset as AssetIcon,
-  Build as WorkOrderIcon,
+  Build as AssetIcon,
+  Assignment as WorkOrderIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
 } from '@mui/icons-material';
