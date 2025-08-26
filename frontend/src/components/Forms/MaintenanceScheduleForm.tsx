@@ -128,6 +128,7 @@ export default function MaintenanceScheduleForm({
   const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
   const [showCustomFrequency, setShowCustomFrequency] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const watchedData = watch();
 
   // Check if current frequency is non-standard
@@ -177,39 +178,56 @@ export default function MaintenanceScheduleForm({
     fetchAssets();
   }, []);
 
-  const onFormSubmit = (data: PMScheduleFormData) => {
-    console.log('PM Schedule form submitted with data:', data);
-    console.log('Form errors:', errors);
-    console.log('Is form valid:', isValid);
-    
-    // Clean and transform the data before submission
-    const cleanedData = {
-      // Core required fields
-      title: data.title?.trim(),
-      frequency: data.frequency?.trim(),
-      nextDue: data.nextDue?.trim(),
-      assetId: Number(data.assetId) || 0,
-      
-      // Optional fields - only include if they have values
-      ...(data.description?.trim() && { description: data.description.trim() }),
-      ...(data.priority && { priority: data.priority }),
-      ...(data.estimatedHours && { estimatedHours: Number(data.estimatedHours) }),
-      ...(data.assignedToId && { assignedToId: Number(data.assignedToId) }),
-      ...(data.organizationId && { organizationId: Number(data.organizationId) }),
-      
-      // Include ID for updates
-      ...(data.id && { id: Number(data.id) }),
-      ...(data.legacyId && { legacyId: Number(data.legacyId) }),
-    };
-    
-    // Ensure required fields are not empty
-    if (!cleanedData.title || !cleanedData.frequency || !cleanedData.nextDue || !cleanedData.assetId) {
-      console.error('Missing required fields for PM schedule:', cleanedData);
+  const onFormSubmit = async (data: PMScheduleFormData) => {
+    // Prevent double submissions
+    if (isSubmitting) {
+      console.log('[MaintenanceScheduleForm] Already submitting, ignoring duplicate submission');
       return;
     }
     
-    console.log('Cleaned PM schedule data for submission:', cleanedData);
-    onSubmit(cleanedData);
+    setIsSubmitting(true);
+    
+    try {
+      console.log('PM Schedule form submitted with data:', data);
+      console.log('Form errors:', errors);
+      console.log('Is form valid:', isValid);
+      
+      // Clean and transform the data before submission
+      const cleanedData = {
+        // Core required fields
+        title: data.title?.trim(),
+        frequency: data.frequency?.trim(),
+        nextDue: data.nextDue?.trim(),
+        assetId: Number(data.assetId) || 0,
+        
+        // Optional fields - only include if they have values
+        ...(data.description?.trim() && { description: data.description.trim() }),
+        ...(data.priority && { priority: data.priority }),
+        ...(data.estimatedHours && { estimatedHours: Number(data.estimatedHours) }),
+        ...(data.assignedToId && { assignedToId: Number(data.assignedToId) }),
+        ...(data.organizationId && { organizationId: Number(data.organizationId) }),
+        
+        // Include ID for updates
+        ...(data.id && { id: Number(data.id) }),
+        ...(data.legacyId && { legacyId: Number(data.legacyId) }),
+      };
+      
+      // Ensure required fields are not empty
+      if (!cleanedData.title || !cleanedData.frequency || !cleanedData.nextDue || !cleanedData.assetId) {
+        console.error('Missing required fields for PM schedule:', cleanedData);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Cleaned PM schedule data for submission:', cleanedData);
+      console.log('[MaintenanceScheduleForm] Calling onSubmit callback with cleaned data');
+      
+      await onSubmit(cleanedData);
+    } catch (error) {
+      console.error('[MaintenanceScheduleForm] Error during submission:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderViewMode = () => (

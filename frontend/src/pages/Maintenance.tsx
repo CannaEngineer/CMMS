@@ -188,12 +188,26 @@ export default function Maintenance() {
   };
 
   const handleSubmitSchedule = (data: any) => {
-    console.log('Submitting PM schedule with mode:', formMode, 'data:', data);
+    console.log('[Maintenance] handleSubmitSchedule called with mode:', formMode, 'data:', data);
+    console.log('[Maintenance] selectedSchedule:', selectedSchedule);
+    console.log('[Maintenance] updateMutation status:', {
+      isPending: updateMutation.isPending,
+      isError: updateMutation.isError,
+      error: updateMutation.error
+    });
     
     if (formMode === 'create') {
+      console.log('[Maintenance] Calling createMutation.mutate');
       createMutation.mutate(data);
     } else if (formMode === 'edit' && selectedSchedule) {
+      console.log('[Maintenance] Calling updateMutation.mutate with id:', selectedSchedule.id.toString());
       updateMutation.mutate({ id: selectedSchedule.id.toString(), data });
+    } else {
+      console.error('[Maintenance] Update conditions not met:', {
+        formMode,
+        hasSelectedSchedule: !!selectedSchedule,
+        selectedScheduleId: selectedSchedule?.id
+      });
     }
   };
 
