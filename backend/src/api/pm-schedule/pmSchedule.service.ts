@@ -308,10 +308,10 @@ export class PMScheduleService {
           throw new Error('PM Schedule not found');
         }
         
-        // 2. Filter and prepare update data - only include fields allowed by Prisma schema
+        // 2. Filter and prepare update data - only include fields that exist in PMSchedule model
         const updateData: any = {};
         
-        // Only include allowed fields for PM schedule updates
+        // Only include fields that actually exist in the PMSchedule Prisma model
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;
         if (data.frequency !== undefined) {
@@ -319,12 +319,11 @@ export class PMScheduleService {
           console.log('Normalized frequency for update:', updateData.frequency);
         }
         if (data.nextDue !== undefined) updateData.nextDue = data.nextDue;
-        if (data.priority !== undefined) updateData.priority = data.priority;
-        if (data.estimatedHours !== undefined) updateData.estimatedHours = data.estimatedHours;
-        if (data.assignedToId !== undefined) updateData.assignedToId = data.assignedToId;
         
-        // Note: assetId is NOT included as PM updates cannot change the associated asset
-        console.log('Filtered update data for PM:', updateData);
+        // Note: These fields are NOT part of PMSchedule model, they belong to WorkOrder:
+        // - priority, estimatedHours, assignedToId are WorkOrder fields
+        // - assetId cannot be updated (relation constraint)
+        console.log('Filtered update data for PM (only PMSchedule model fields):', updateData);
         
         // 3. Update the PM schedule
         const updatedPM = await tx.pMSchedule.update({
