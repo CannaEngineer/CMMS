@@ -11,6 +11,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import http from 'http';
+import { PrismaClient } from '@prisma/client';
 import authRouter from './api/auth/auth.router';
 import assetRouter from './api/asset/asset.router';
 import locationRouter from './api/location/location.router';
@@ -48,6 +49,7 @@ import {
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5000;
+const prisma = new PrismaClient();
 
 // Initialize WebSocket service only in non-serverless environments
 // WebSockets don't work in Vercel serverless functions
@@ -155,6 +157,10 @@ const handleUpload = (req: any, res: any) => {
       const { entityType, entityId } = req.params;
       const organizationId = req.user?.organizationId;
       
+      if (!organizationId) {
+        return res.status(401).json({ error: 'User organization not found' });
+      }
+      
       // Create folder structure: entityType/organizationId/entityId (if provided)
       const folder = entityId 
         ? `${entityType}/${organizationId}/${entityId}`
@@ -165,6 +171,11 @@ const handleUpload = (req: any, res: any) => {
         addRandomSuffix: true,
         cacheControlMaxAge: 86400 // 1 day cache
       });
+
+      // Save file metadata to database if entityId is provided
+      if (entityId && (entityType === 'assets' || entityType === 'work-orders')) {
+        await saveFilesToDatabase(entityType, entityId, processedFiles, organizationId);
+      }
       
       res.json({
         success: true,
@@ -176,6 +187,71 @@ const handleUpload = (req: any, res: any) => {
     }
   });
 };
+
+// Helper function to save file metadata to database
+async function saveFilesToDatabase(entityType: string, entityId: string, files: any[], organizationId: number) {
+  try {
+    const fileMetadata = files.map(file => ({
+      id: file.id,
+      filename: file.filename,
+      originalName: file.originalName,
+      mimetype: file.mimetype,
+      size: file.size,
+      url: file.url,
+      pathname: file.pathname,
+      uploadedAt: new Date().toISOString(),
+      uploadedBy: organizationId
+    }));
+
+    if (entityType === 'assets') {
+      // Get current attachments
+      const asset = await prisma.asset.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (!asset) {
+        console.error(`Asset ${entityId} not found in organization ${organizationId}`);
+        return;
+      }
+
+      const currentAttachments = (asset.attachments as any[]) || [];
+      const updatedAttachments = [...currentAttachments, ...fileMetadata];
+
+      await prisma.asset.update({
+        where: { id: parseInt(entityId) },
+        data: { attachments: updatedAttachments }
+      });
+      
+      console.log(`Saved ${files.length} files to asset ${entityId} attachments`);
+      
+    } else if (entityType === 'work-orders') {
+      // Get current attachments
+      const workOrder = await prisma.workOrder.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (!workOrder) {
+        console.error(`Work order ${entityId} not found in organization ${organizationId}`);
+        return;
+      }
+
+      const currentAttachments = (workOrder.attachments as any[]) || [];
+      const updatedAttachments = [...currentAttachments, ...fileMetadata];
+
+      await prisma.workOrder.update({
+        where: { id: parseInt(entityId) },
+        data: { attachments: updatedAttachments }
+      });
+      
+      console.log(`Saved ${files.length} files to work order ${entityId} attachments`);
+    }
+    
+  } catch (error) {
+    console.error('Error saving file metadata to database:', error);
+  }
+}
 
 // Upload routes with and without entity ID
 app.post('/api/uploads/:entityType/:entityId', authenticate, handleUpload);
@@ -189,11 +265,32 @@ app.get('/api/uploads/:entityType/:entityId', authenticate, async (req, res) => 
 
     console.log(`Fetching files for ${entityType} ${entityId} in organization ${organizationId}`);
 
-    // For now, return empty array - this endpoint exists to prevent 404s
-    // In a full implementation, you would fetch from a database or file system
+    let files: any[] = [];
+    
+    if (entityType === 'assets') {
+      const asset = await prisma.asset.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (asset && asset.attachments) {
+        files = Array.isArray(asset.attachments) ? asset.attachments : [];
+      }
+      
+    } else if (entityType === 'work-orders') {
+      const workOrder = await prisma.workOrder.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (workOrder && workOrder.attachments) {
+        files = Array.isArray(workOrder.attachments) ? workOrder.attachments : [];
+      }
+    }
+
     res.json({
       success: true,
-      files: [],
+      files: files,
       entityType,
       entityId,
       organizationId
@@ -207,20 +304,133 @@ app.get('/api/uploads/:entityType/:entityId', authenticate, async (req, res) => 
 app.get('/api/uploads/:entityType', authenticate, async (req, res) => {
   try {
     const { entityType } = req.params;
-    const { organizationId } = req.user;
+    const { organizationId, role } = req.user;
 
     console.log(`Fetching files for ${entityType} in organization ${organizationId}`);
 
-    // For now, return empty array - this endpoint exists to prevent 404s
+    let allFiles: any[] = [];
+    
+    // Only admins can access organization-wide files
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    if (entityType === 'assets') {
+      const assets = await prisma.asset.findMany({
+        where: { organizationId },
+        select: { id: true, name: true, attachments: true }
+      });
+      
+      assets.forEach(asset => {
+        if (asset.attachments && Array.isArray(asset.attachments)) {
+          const filesWithAssetInfo = (asset.attachments as any[]).map(file => ({
+            ...file,
+            entityId: asset.id,
+            entityName: asset.name,
+            entityType: 'assets'
+          }));
+          allFiles.push(...filesWithAssetInfo);
+        }
+      });
+      
+    } else if (entityType === 'work-orders') {
+      const workOrders = await prisma.workOrder.findMany({
+        where: { organizationId },
+        select: { id: true, title: true, attachments: true }
+      });
+      
+      workOrders.forEach(workOrder => {
+        if (workOrder.attachments && Array.isArray(workOrder.attachments)) {
+          const filesWithWorkOrderInfo = (workOrder.attachments as any[]).map(file => ({
+            ...file,
+            entityId: workOrder.id,
+            entityName: workOrder.title,
+            entityType: 'work-orders'
+          }));
+          allFiles.push(...filesWithWorkOrderInfo);
+        }
+      });
+    }
+
     res.json({
       success: true,
-      files: [],
+      files: allFiles,
       entityType,
-      organizationId
+      organizationId,
+      totalFiles: allFiles.length
     });
   } catch (error) {
     console.error('Error fetching files:', error);
     res.status(500).json({ error: 'Failed to fetch files' });
+  }
+});
+
+// DELETE route for removing files (admin only)
+app.delete('/api/uploads/:entityType/:entityId/:fileId', authenticate, async (req, res) => {
+  try {
+    const { entityType, entityId, fileId } = req.params;
+    const { organizationId, role } = req.user;
+
+    console.log(`Admin deleting file ${fileId} from ${entityType} ${entityId} in organization ${organizationId}`);
+
+    // Only admins can delete files
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required to delete files' });
+    }
+    
+    if (entityType === 'assets') {
+      const asset = await prisma.asset.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (!asset) {
+        return res.status(404).json({ error: 'Asset not found' });
+      }
+
+      const currentAttachments = (asset.attachments as any[]) || [];
+      const updatedAttachments = currentAttachments.filter(file => file.id !== fileId);
+
+      await prisma.asset.update({
+        where: { id: parseInt(entityId) },
+        data: { attachments: updatedAttachments }
+      });
+      
+      console.log(`Removed file ${fileId} from asset ${entityId}`);
+      
+    } else if (entityType === 'work-orders') {
+      const workOrder = await prisma.workOrder.findFirst({
+        where: { id: parseInt(entityId), organizationId },
+        select: { attachments: true }
+      });
+      
+      if (!workOrder) {
+        return res.status(404).json({ error: 'Work order not found' });
+      }
+
+      const currentAttachments = (workOrder.attachments as any[]) || [];
+      const updatedAttachments = currentAttachments.filter(file => file.id !== fileId);
+
+      await prisma.workOrder.update({
+        where: { id: parseInt(entityId) },
+        data: { attachments: updatedAttachments }
+      });
+      
+      console.log(`Removed file ${fileId} from work order ${entityId}`);
+    } else {
+      return res.status(400).json({ error: 'Unsupported entity type for file deletion' });
+    }
+
+    res.json({
+      success: true,
+      message: 'File deleted successfully',
+      fileId,
+      entityType,
+      entityId
+    });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ error: 'Failed to delete file' });
   }
 });
 
