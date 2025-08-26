@@ -1177,7 +1177,6 @@ export const pmService = {
         description: schedule.description,
         frequency: schedule.frequency,
         nextDue: schedule.nextDue ? new Date(schedule.nextDue).toISOString() : schedule.nextDue,
-        assetId: schedule.assetId,
         priority: schedule.priority,
         estimatedHours: schedule.estimatedHours,
         assignedToId: schedule.assignedToId,

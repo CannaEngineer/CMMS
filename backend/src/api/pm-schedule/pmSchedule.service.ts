@@ -308,12 +308,23 @@ export class PMScheduleService {
           throw new Error('PM Schedule not found');
         }
         
-        // 2. Normalize frequency if it's being updated
-        const updateData = { ...data };
-        if (updateData.frequency) {
-          updateData.frequency = this.normalizeFrequency(updateData.frequency);
+        // 2. Filter and prepare update data - only include fields allowed by Prisma schema
+        const updateData: any = {};
+        
+        // Only include allowed fields for PM schedule updates
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.description !== undefined) updateData.description = data.description;
+        if (data.frequency !== undefined) {
+          updateData.frequency = this.normalizeFrequency(data.frequency);
           console.log('Normalized frequency for update:', updateData.frequency);
         }
+        if (data.nextDue !== undefined) updateData.nextDue = data.nextDue;
+        if (data.priority !== undefined) updateData.priority = data.priority;
+        if (data.estimatedHours !== undefined) updateData.estimatedHours = data.estimatedHours;
+        if (data.assignedToId !== undefined) updateData.assignedToId = data.assignedToId;
+        
+        // Note: assetId is NOT included as PM updates cannot change the associated asset
+        console.log('Filtered update data for PM:', updateData);
         
         // 3. Update the PM schedule
         const updatedPM = await tx.pMSchedule.update({
