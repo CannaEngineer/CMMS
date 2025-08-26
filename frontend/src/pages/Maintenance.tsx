@@ -37,6 +37,7 @@ import {
   InputLabel,
   Select,
   TextField,
+  LinearProgress,
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -87,6 +88,19 @@ export default function Maintenance() {
   const [bulkEditData, setBulkEditData] = useState({
     frequency: '',
     nextDue: '',
+  });
+  const [bulkEditProgress, setBulkEditProgress] = useState<{
+    isProcessing: boolean;
+    processed: number;
+    total: number;
+    currentBatch: number;
+    totalBatches: number;
+  }>({
+    isProcessing: false,
+    processed: 0,
+    total: 0,
+    currentBatch: 0,
+    totalBatches: 0
   });
 
   // Fetch PM Schedules
@@ -248,19 +262,134 @@ export default function Maintenance() {
 
   const bulkEditMutation = useMutation({
     mutationFn: async ({ ids, data }: { ids: string[], data: any }) => {
-      const promises = ids.map(id => pmService.updateSchedule(id, data));
-      return Promise.all(promises);
+      const BATCH_SIZE = 5; // Process 5 items at a time
+      const DELAY_MS = 200; // 200ms delay between batches
+      const results = [];
+      const errors = [];
+      const totalBatches = Math.ceil(ids.length / BATCH_SIZE);
+
+      console.log(`Processing bulk edit for ${ids.length} PM schedules in batches of ${BATCH_SIZE}`);
+      
+      // Initialize progress
+      setBulkEditProgress({
+        isProcessing: true,
+        processed: 0,
+        total: ids.length,
+        currentBatch: 0,
+        totalBatches
+      });
+
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        const currentBatchNum = Math.floor(i / BATCH_SIZE) + 1;
+        
+        console.log(`Processing batch ${currentBatchNum}/${totalBatches}: ${batch.length} items`);
+        
+        // Update progress
+        setBulkEditProgress(prev => ({
+          ...prev,
+          currentBatch: currentBatchNum
+        }));
+
+        try {
+          // Process batch with individual error handling
+          const batchPromises = batch.map(async (id) => {
+            try {
+              const result = await pmService.updateSchedule(id, data);
+              return { id, success: true, result };
+            } catch (error) {
+              console.error(`Failed to update PM schedule ${id}:`, error);
+              return { id, success: false, error: error.message || 'Unknown error' };
+            }
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+          
+          // Separate successful and failed updates
+          batchResults.forEach(result => {
+            if (result.success) {
+              results.push(result);
+            } else {
+              errors.push(result);
+            }
+          });
+
+          // Update progress with completed items
+          setBulkEditProgress(prev => ({
+            ...prev,
+            processed: results.length + errors.length
+          }));
+
+          // Add delay between batches (except for the last batch)
+          if (i + BATCH_SIZE < ids.length) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+          }
+
+        } catch (batchError) {
+          console.error(`Batch processing failed:`, batchError);
+          // If entire batch fails, mark all items in batch as failed
+          batch.forEach(id => {
+            errors.push({ id, success: false, error: batchError.message || 'Batch processing failed' });
+          });
+          
+          // Update progress
+          setBulkEditProgress(prev => ({
+            ...prev,
+            processed: results.length + errors.length
+          }));
+        }
+      }
+
+      console.log(`Bulk edit completed: ${results.length} successful, ${errors.length} failed`);
+      
+      return {
+        successful: results,
+        failed: errors,
+        totalProcessed: ids.length,
+        successCount: results.length,
+        failureCount: errors.length
+      };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
+      
+      // Reset progress
+      setBulkEditProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0,
+        currentBatch: 0,
+        totalBatches: 0
+      });
+      
+      // Show detailed success/failure message
+      if (result.failureCount === 0) {
+        alert(`Successfully updated all ${result.successCount} PM schedules.`);
+      } else if (result.successCount === 0) {
+        alert(`Failed to update any PM schedules. Please try again or contact support.`);
+      } else {
+        alert(`Updated ${result.successCount} PM schedules successfully. ${result.failureCount} failed - please check the console for details.`);
+        console.log('Failed updates:', result.failed);
+      }
+      
       setBulkEditOpen(false);
       setSelectedPMIds(new Set());
       setBulkEditData({ frequency: '', nextDue: '' });
     },
     onError: (error) => {
-      console.error("Error bulk editing PM schedules:", error);
-      alert("Failed to update selected PM schedules.");
+      console.error("Error during bulk edit operation:", error);
+      
+      // Reset progress
+      setBulkEditProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0,
+        currentBatch: 0,
+        totalBatches: 0
+      });
+      
+      alert(`Bulk edit operation failed: ${error.message || 'Unknown error'}. Please try with fewer items or contact support.`);
     },
   });
 
@@ -376,10 +505,25 @@ export default function Maintenance() {
       alert('Please select at least one PM schedule to edit.');
       return;
     }
+    
+    // Warn for large batch operations
+    if (selectedPMIds.size > 20) {
+      const proceed = confirm(
+        `You are about to edit ${selectedPMIds.size} PM schedules. This may take some time and will be processed in batches to avoid database issues. Do you want to proceed?`
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+    
     setBulkEditOpen(true);
   };
 
   const handleBulkEditClose = () => {
+    // Prevent closing while processing
+    if (bulkEditProgress.isProcessing) {
+      return;
+    }
     setBulkEditOpen(false);
     setBulkEditData({ frequency: '', nextDue: '' });
   };
@@ -1143,6 +1287,12 @@ export default function Maintenance() {
         onClose={handleBulkEditClose}
         maxWidth="sm"
         fullWidth
+        disableEscapeKeyDown={bulkEditProgress.isProcessing}
+        PaperProps={{
+          sx: { 
+            minHeight: bulkEditProgress.isProcessing ? '350px' : 'auto'
+          }
+        }}
       >
         <DialogTitle>
           <Typography variant="h6">
@@ -1180,19 +1330,43 @@ export default function Maintenance() {
               }}
               helperText="Leave empty to keep current due dates"
             />
+
+            {/* Progress Indicator */}
+            {bulkEditProgress.isProcessing && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  Processing batch {bulkEditProgress.currentBatch} of {bulkEditProgress.totalBatches}...
+                </Typography>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={(bulkEditProgress.processed / bulkEditProgress.total) * 100}
+                  sx={{ mb: 1 }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {bulkEditProgress.processed} of {bulkEditProgress.total} items processed
+                </Typography>
+              </Box>
+            )}
           </Box>
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleBulkEditClose}>
+          <Button 
+            onClick={handleBulkEditClose}
+            disabled={bulkEditProgress.isProcessing}
+          >
             Cancel
           </Button>
           <Button 
             onClick={handleBulkEditSubmit}
             variant="contained"
-            disabled={bulkEditMutation.isPending}
+            disabled={bulkEditMutation.isPending || bulkEditProgress.isProcessing}
           >
-            {bulkEditMutation.isPending ? 'Updating...' : 'Update Selected'}
+            {bulkEditProgress.isProcessing 
+              ? `Processing... (${bulkEditProgress.processed}/${bulkEditProgress.total})`
+              : bulkEditMutation.isPending 
+                ? 'Starting...' 
+                : 'Update Selected'}
           </Button>
         </DialogActions>
       </Dialog>
