@@ -452,12 +452,11 @@ export const unassignWorkOrder = async (req: Request, res: Response) => {
     }
     
     console.log('Current work order assignment:', { 
-      assignedToId: currentWorkOrder.assignedToId, 
-      assignedTo: currentWorkOrder.assignedTo 
+      assignedToId: currentWorkOrder.assignedToId
     });
     
     // Check if work order is currently assigned
-    if (!currentWorkOrder.assignedToId && !currentWorkOrder.assignedTo) {
+    if (!currentWorkOrder.assignedToId) {
       return res.status(200).json({ 
         ...currentWorkOrder, 
         message: 'Work order was already unassigned' 
@@ -470,8 +469,7 @@ export const unassignWorkOrder = async (req: Request, res: Response) => {
     
     console.log('Work order unassigned successfully:', {
       id: updatedWorkOrder?.id,
-      assignedToId: updatedWorkOrder?.assignedToId,
-      assignedTo: updatedWorkOrder?.assignedTo
+      assignedToId: updatedWorkOrder?.assignedToId
     });
     
     res.status(200).json({

@@ -503,75 +503,25 @@ export const workOrdersService = {
     try {
       console.log('Unassigning work order:', id);
       
-      // Try different approaches to unassign the work order
-      let response;
-      
+      // Try the dedicated unassign endpoint first
       try {
-        // First try: Use PUT method (most common for updates)
-        console.log('Trying PUT method...');
-        response = await apiClient.put<any>(`/api/work-orders/${id}`, { 
-          assignedToId: null,
-          assignedTo: null
+        console.log('Trying dedicated unassign endpoint...');
+        const response = await apiClient.post<any>(`/api/work-orders/${id}/unassign`, {});
+        console.log('Unassign endpoint successful:', response);
+        return response;
+      } catch (unassignError) {
+        console.log('Dedicated unassign endpoint failed, trying PUT method...', unassignError.message);
+        
+        // Fallback to PUT method
+        const response = await apiClient.put<any>(`/api/work-orders/${id}`, { 
+          assignedToId: null
         });
         console.log('PUT method successful:', response);
         return response;
-      } catch (putError) {
-        console.log('PUT method failed, trying PATCH...');
-        
-        try {
-          // Second try: Use POST to a specific unassign endpoint
-          response = await apiClient.post<any>(`/api/work-orders/${id}/unassign`, {});
-          console.log('Unassign endpoint successful:', response);
-          return response;
-        } catch (unassignError) {
-            console.log('Unassign endpoint failed, trying generic update...');
-            
-            // Fourth try: Get the work order first, then update it
-            console.log('Fetching current work order data...');
-            const workOrder = await this.getById(id);
-            console.log('Current work order data:', workOrder);
-            
-            // Check if work order is currently assigned
-            if (!workOrder.assignedToId && !workOrder.assignedTo) {
-              console.log('Work order is already unassigned');
-              return { ...workOrder, message: 'Work order was already unassigned' };
-            }
-            
-            // Try different ways to represent "unassigned"
-            const unassignOptions = [
-              // Option 1: Remove assignedToId and assignedTo fields entirely
-              { ...workOrder, assignedToId: undefined, assignedTo: undefined },
-              // Option 2: Set to empty string
-              { ...workOrder, assignedToId: "", assignedTo: "" },
-              // Option 3: Set to 0 (if backend expects integer)
-              { ...workOrder, assignedToId: 0, assignedTo: null },
-              // Option 4: Just remove from the object
-              (() => {
-                const { assignedToId, assignedTo, ...rest } = workOrder;
-                return rest;
-              })(),
-            ];
-            
-            // Try each unassign option
-            for (let i = 0; i < unassignOptions.length; i++) {
-              try {
-                console.log(`Trying unassign option ${i + 1}:`, unassignOptions[i]);
-                response = await apiClient.put<any>(`/api/work-orders/${id}`, unassignOptions[i]);
-                console.log(`Unassign option ${i + 1} successful:`, response);
-                return response;
-              } catch (optionError) {
-                console.log(`Unassign option ${i + 1} failed:`, optionError.message);
-                if (i === unassignOptions.length - 1) {
-                  throw optionError; // Throw the last error if all options fail
-                }
-              }
-            }
-          }
-        }
       }
     } catch (error) {
-      console.error('All unassign methods failed:', error);
-      throw new Error(`Failed to unassign work order ${id}. Please check if the work order exists and the API is accessible. Error: ${error.message}`);
+      console.error('All unassign attempts failed:', error);
+      throw error;
     }
   },
 
