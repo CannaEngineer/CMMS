@@ -37,6 +37,7 @@ import {
   SyncDisabled as SyncDisabledIcon,
   FileDownload as ExportIcon,
   QrCode as PortalIcon,
+  AttachFile as FilesIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -56,6 +57,7 @@ const baseNavItems: NavItem[] = [
   { text: 'Maintenance', icon: <SettingsIcon />, path: '/maintenance' },
   { text: 'Inventory', icon: <InventoryIcon />, path: '/inventory' },
   { text: 'Locations', icon: <LocationIcon />, path: '/locations' },
+  { text: 'Files', icon: <FilesIcon />, path: '/files' },
   { text: 'Portals', icon: <PortalIcon />, path: '/portals' },
   { text: 'Export Center', icon: <ExportIcon />, path: '/exports' },
   { text: 'Users', icon: <PeopleIcon />, path: '/users' },

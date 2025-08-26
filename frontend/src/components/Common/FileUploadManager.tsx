@@ -103,7 +103,21 @@ export default function FileUploadManager({
             const uploadResult = await response.json();
             console.log('📎 Upload result:', uploadResult);
             
-            if (uploadResult.success && uploadResult.url) {
+            if (uploadResult.success && uploadResult.files) {
+              // Handle new backend format that returns files array
+              uploadResult.files.forEach((uploadedFile: any) => {
+                const newAttachment = {
+                  url: uploadedFile.url,
+                  filename: uploadedFile.filename || uploadedFile.originalName || file.name,
+                  size: uploadedFile.size || file.size,
+                  type: file.type,
+                  fileId: uploadedFile.id,
+                };
+                console.log('📎 Adding new attachment:', newAttachment);
+                newAttachments.push(newAttachment);
+              });
+            } else if (uploadResult.success && uploadResult.url) {
+              // Handle legacy format for backward compatibility
               const newAttachment = {
                 url: uploadResult.url,
                 filename: uploadResult.filename || file.name,
@@ -111,10 +125,10 @@ export default function FileUploadManager({
                 type: file.type,
                 fileId: uploadResult.fileId,
               };
-              console.log('📎 Adding new attachment:', newAttachment);
+              console.log('📎 Adding new attachment (legacy format):', newAttachment);
               newAttachments.push(newAttachment);
             } else {
-              console.log('📎 Upload result not successful or missing URL:', uploadResult);
+              console.log('📎 Upload result not successful or missing data:', uploadResult);
             }
           } else {
             const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));

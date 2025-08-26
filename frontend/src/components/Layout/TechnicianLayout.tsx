@@ -34,6 +34,7 @@ import {
   AccountCircle as AccountCircleIcon,
   Home as HomeIcon,
   Person as PersonIcon,
+  AttachFile as FilesIcon,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 

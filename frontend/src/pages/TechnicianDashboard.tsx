@@ -720,6 +720,9 @@ export default function TechnicianDashboard() {
                   <CartIcon />
                 </Badge>
               </IconButton>
+              <IconButton onClick={() => navigate('/tech/files')} color="primary" title="View Files">
+                <FolderIcon />
+              </IconButton>
             </Box>
           </Box>
 
