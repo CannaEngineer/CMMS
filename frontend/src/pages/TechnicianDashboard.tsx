@@ -90,6 +90,7 @@ import { UploadService } from '../services/uploadService';
 import { statusColors } from '../theme/theme';
 import { useComments, useCreateComment } from '../hooks/useComments';
 import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingButton } from '../components/Loading';
+import QRScanner from '../components/QRScanner';
 
 interface WorkOrder {
   id: number;
@@ -179,6 +180,7 @@ export default function TechnicianDashboard() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [checkoutReason, setCheckoutReason] = useState('');
   const [checkoutNotes, setCheckoutNotes] = useState('');
+  const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
   // Get current user
   const userStr = localStorage.getItem('user');
@@ -239,6 +241,54 @@ export default function TechnicianDashboard() {
 
   // Current work orders based on active tab
   const workOrders = activeTab === 0 ? assignedWorkOrders : activeTab === 1 ? unassignedWorkOrders : [];
+
+  // Load files for each work order when work orders change
+  useEffect(() => {
+    const loadWorkOrderFiles = async () => {
+      if (workOrders.length > 0) {
+        const filesMap: {[key: number]: any[]} = {};
+        
+        for (const workOrder of workOrders) {
+          try {
+            const uploadService = new UploadService();
+            const files = await uploadService.getWorkOrderFiles(workOrder.id.toString());
+            filesMap[workOrder.id] = files || [];
+          } catch (error) {
+            console.error(`Error loading files for work order ${workOrder.id}:`, error);
+            filesMap[workOrder.id] = [];
+          }
+        }
+        
+        setWorkOrderFiles(filesMap);
+      }
+    };
+    
+    loadWorkOrderFiles();
+  }, [workOrders.map(wo => wo.id).join(',')]); // Only re-run if work order IDs change
+
+  // Load files for work orders
+  useEffect(() => {
+    const loadWorkOrderFiles = async () => {
+      const uploadService = new UploadService();
+      const filesData: {[key: number]: any[]} = {};
+      
+      for (const workOrder of allWorkOrders) {
+        try {
+          const files = await uploadService.getWorkOrderFiles(workOrder.id.toString());
+          filesData[workOrder.id] = files || [];
+        } catch (error) {
+          console.error(`Error loading files for work order ${workOrder.id}:`, error);
+          filesData[workOrder.id] = [];
+        }
+      }
+      
+      setWorkOrderFiles(filesData);
+    };
+
+    if (allWorkOrders.length > 0) {
+      loadWorkOrderFiles();
+    }
+  }, [allWorkOrders]);
 
   // Fetch inventory/parts data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -562,6 +612,47 @@ export default function TechnicianDashboard() {
     checkoutPartsMutation.mutate(checkoutData);
   };
 
+  // QR Scanner handler
+  const handleQRScanner = () => {
+    setQrScannerOpen(true);
+  };
+
+  // Handle QR scan results
+  const handleQRAssetFound = (assetId: string) => {
+    // Find and display the asset
+    const asset = assets.find(a => a.id.toString() === assetId);
+    if (asset) {
+      handleViewAsset(asset);
+    } else {
+      // Navigate to assets tab with search
+      navigate(`/tech/dashboard?tab=assets&search=${assetId}`);
+    }
+  };
+
+  const handleQRWorkOrderFound = (workOrderId: string) => {
+    // Find and focus the work order
+    const workOrder = allWorkOrders.find(wo => wo.id.toString() === workOrderId);
+    if (workOrder) {
+      // Navigate to the appropriate tab and highlight the work order
+      if (workOrder.assignedTo || workOrder.assignedToId) {
+        navigate('/tech/dashboard?tab=my-work');
+      } else {
+        navigate('/tech/dashboard?tab=available-work');
+      }
+      // Could add highlighting logic here
+    }
+  };
+
+  // Quick time log handler
+  const handleQuickTimeLog = () => {
+    // Get the first in-progress work order
+    const inProgressWork = assignedWorkOrders.find(wo => wo.status === 'IN_PROGRESS');
+    if (inProgressWork) {
+      setSelectedWorkOrder(inProgressWork);
+      setTimeDialogOpen(true);
+    }
+  };
+
   const handleViewAsset = async (asset: any) => {
     setSelectedAsset(asset);
     setAssetDialogOpen(true);
@@ -707,91 +798,183 @@ export default function TechnicianDashboard() {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton onClick={refreshAllData} color="primary">
+              <IconButton onClick={refreshAllData} color="primary" title="Refresh Data">
                 <RefreshIcon />
               </IconButton>
-              <IconButton color="primary">
-                <Badge badgeContent={stats.workOrders.pending} color="error">
-                  <NotificationIcon />
-                </Badge>
-              </IconButton>
-              <IconButton color="primary">
-                <Badge badgeContent={cartItems.length} color="secondary">
-                  <CartIcon />
-                </Badge>
-              </IconButton>
-              <IconButton onClick={() => navigate('/tech/files')} color="primary" title="View Files">
-                <FolderIcon />
+              {cartItems.length > 0 && (
+                <IconButton 
+                  color="primary" 
+                  onClick={() => setInventoryDialogOpen(true)}
+                  title="Parts Cart"
+                >
+                  <Badge badgeContent={cartItems.length} color="secondary">
+                    <CartIcon />
+                  </Badge>
+                </IconButton>
+              )}
+              <IconButton 
+                onClick={() => setQrScannerOpen(true)} 
+                color="primary" 
+                title="Scan QR Code"
+              >
+                <QrIcon />
               </IconButton>
             </Box>
           </Box>
 
-          {/* Quick Stats Grid */}
-          <Grid container spacing={2}>
+          {/* Quick Stats Grid - Mobile Optimized */}
+          <Grid container spacing={1.5}>
             <Grid xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+              <Card 
+                sx={{ 
+                  cursor: activeTab === 0 ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  '&:hover': activeTab === 0 ? { 
+                    transform: 'translateY(-2px)', 
+                    boxShadow: 2 
+                  } : {},
+                }}
+                onClick={() => activeTab === 0 ? setFilterStatus('ALL') : navigate('/tech/dashboard?tab=my-work')}
+              >
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography color="text.secondary" variant="body2">
-                        Work Orders
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography color="text.secondary" variant="caption" sx={{ fontSize: '0.7rem' }}>
+                        My Work
                       </Typography>
-                      <Typography variant="h4" color="primary">
+                      <Typography 
+                        variant={isSmallMobile ? "h5" : "h4"} 
+                        color="primary" 
+                        sx={{ lineHeight: 1.2, fontWeight: 'bold' }}
+                      >
                         {stats.workOrders.total}
                       </Typography>
+                      {stats.workOrders.inProgress > 0 && (
+                        <Chip 
+                          size="small" 
+                          label={`${stats.workOrders.inProgress} active`}
+                          color="primary"
+                          sx={{ 
+                            fontSize: '0.6rem', 
+                            height: 16, 
+                            mt: 0.5,
+                            '& .MuiChip-label': { px: 0.5 }
+                          }}
+                        />
+                      )}
                     </Box>
-                    <WorkOrderIcon color="primary" />
+                    <WorkOrderIcon color="primary" sx={{ fontSize: { xs: 24, sm: 32 } }} />
                   </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 2 },
+                  ...(stats.inventory.lowStock > 0 && {
+                    border: '1px solid',
+                    borderColor: 'warning.main'
+                  })
+                }}
+                onClick={() => navigate('/tech/dashboard?tab=inventory')}
+              >
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography color="text.secondary" variant="body2">
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography color="text.secondary" variant="caption" sx={{ fontSize: '0.7rem' }}>
                         Low Stock
                       </Typography>
-                      <Typography variant="h4" color="warning.main">
+                      <Typography 
+                        variant={isSmallMobile ? "h5" : "h4"} 
+                        color="warning.main" 
+                        sx={{ lineHeight: 1.2, fontWeight: 'bold' }}
+                      >
                         {stats.inventory.lowStock}
                       </Typography>
+                      {stats.inventory.outOfStock > 0 && (
+                        <Chip 
+                          size="small" 
+                          label={`${stats.inventory.outOfStock} empty`}
+                          color="error"
+                          sx={{ 
+                            fontSize: '0.6rem', 
+                            height: 16, 
+                            mt: 0.5,
+                            '& .MuiChip-label': { px: 0.5 }
+                          }}
+                        />
+                      )}
                     </Box>
-                    <WarningIcon color="warning" />
+                    <WarningIcon color="warning" sx={{ fontSize: { xs: 24, sm: 32 } }} />
                   </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 2 },
+                }}
+                onClick={() => navigate('/tech/dashboard?tab=assets')}
+              >
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography color="text.secondary" variant="body2">
-                        Assets
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography color="text.secondary" variant="caption" sx={{ fontSize: '0.7rem' }}>
+                        Assets Online
                       </Typography>
-                      <Typography variant="h4" color="success.main">
+                      <Typography 
+                        variant={isSmallMobile ? "h5" : "h4"} 
+                        color="success.main" 
+                        sx={{ lineHeight: 1.2, fontWeight: 'bold' }}
+                      >
                         {stats.assets.online}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        of {stats.assets.total} total
+                      </Typography>
                     </Box>
-                    <AssetIcon color="success" />
+                    <AssetIcon color="success" sx={{ fontSize: { xs: 24, sm: 32 } }} />
                   </Box>
                 </CardContent>
               </Card>
             </Grid>
             <Grid xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+              <Card 
+                sx={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': { transform: 'translateY(-2px)', boxShadow: 2 },
+                  ...(stats.workOrders.available > 0 && {
+                    border: '1px solid',
+                    borderColor: 'info.main'
+                  })
+                }}
+                onClick={() => navigate('/tech/dashboard?tab=available-work')}
+              >
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box>
-                      <Typography color="text.secondary" variant="body2">
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography color="text.secondary" variant="caption" sx={{ fontSize: '0.7rem' }}>
                         Available
                       </Typography>
-                      <Typography variant="h4" color="info.main">
+                      <Typography 
+                        variant={isSmallMobile ? "h5" : "h4"} 
+                        color="info.main" 
+                        sx={{ lineHeight: 1.2, fontWeight: 'bold' }}
+                      >
                         {stats.workOrders.available}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        to claim
+                      </Typography>
                     </Box>
-                    <PersonIcon color="info" />
+                    <PersonIcon color="info" sx={{ fontSize: { xs: 24, sm: 32 } }} />
                   </Box>
                 </CardContent>
               </Card>
@@ -842,9 +1025,26 @@ export default function TechnicianDashboard() {
               <Card
                 key={workOrder.id}
                 sx={{
-                  border: isOverdue ? '1px solid' : 'none',
-                  borderColor: isOverdue ? 'error.main' : 'transparent',
+                  border: '1px solid',
+                  borderColor: isOverdue 
+                    ? 'error.main' 
+                    : workOrder.priority === 'URGENT' 
+                      ? 'warning.main' 
+                      : workOrder.status === 'IN_PROGRESS' 
+                        ? 'primary.main' 
+                        : 'grey.300',
                   bgcolor: workOrder.status === 'IN_PROGRESS' ? 'primary.50' : 'background.paper',
+                  position: 'relative',
+                  '&::before': workOrder.priority === 'URGENT' || isOverdue ? {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '4px',
+                    height: '100%',
+                    bgcolor: isOverdue ? 'error.main' : 'warning.main',
+                    borderRadius: '2px 0 0 2px',
+                  } : {},
                 }}
               >
                 <CardContent sx={{ pb: 1 }}>
@@ -953,10 +1153,192 @@ export default function TechnicianDashboard() {
                       <LoadingBar progress={undefined} />
                     </Box>
                   )}
+
+                  {/* Files Section - Contextual to Work Order */}
+                  <Box sx={{ mb: 2, p: 1.5, bgcolor: 'grey.50', borderRadius: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <FolderIcon fontSize="small" color="action" />
+                        <Typography variant="body2" fontWeight="500">
+                          Files & Photos
+                        </Typography>
+                        <Chip 
+                          size="small" 
+                          label={workOrderFiles[workOrder.id]?.length || 0}
+                          sx={{ ml: 0.5, minWidth: 24, height: 18 }}
+                        />
+                      </Box>
+                      <Button
+                        size="small"
+                        startIcon={<CameraIcon />}
+                        onClick={() => handleUploadFile('workOrder', workOrder.id)}
+                        sx={{ fontSize: '0.75rem', px: 1 }}
+                      >
+                        {isSmallMobile ? '' : 'Add'}
+                      </Button>
+                    </Box>
+                    
+                    {/* File Thumbnails Preview */}
+                    {workOrderFiles[workOrder.id] && workOrderFiles[workOrder.id].length > 0 ? (
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                        {workOrderFiles[workOrder.id].slice(0, 4).map((file: any, index: number) => (
+                          <Box
+                            key={index}
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 0.5,
+                              overflow: 'hidden',
+                              border: '1px solid',
+                              borderColor: 'grey.300',
+                              cursor: 'pointer',
+                              position: 'relative'
+                            }}
+                            onClick={() => window.open(file.url, '_blank')}
+                          >
+                            {file.mimetype?.startsWith('image/') ? (
+                              <img
+                                src={file.url}
+                                alt={file.filename}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <Box sx={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                height: '100%',
+                                bgcolor: 'primary.50'
+                              }}>
+                                <DocumentIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                              </Box>
+                            )}
+                          </Box>
+                        ))}
+                        {workOrderFiles[workOrder.id].length > 4 && (
+                          <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            width: 40,
+                            height: 40,
+                            bgcolor: 'action.hover',
+                            borderRadius: 0.5,
+                            cursor: 'pointer'
+                          }}>
+                            <Typography variant="caption" fontWeight="500">
+                              +{workOrderFiles[workOrder.id].length - 4}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    ) : (
+                      <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        No files attached yet
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Files & Photos Section */}
+                  {workOrderFiles[workOrder.id] && (
+                    <Box sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <FolderIcon fontSize="small" color="action" />
+                          <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                            Files & Photos ({workOrderFiles[workOrder.id]?.length || 0})
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          startIcon={<CameraIcon />}
+                          onClick={() => handleUploadFile('workOrder', workOrder.id)}
+                          sx={{ minWidth: 'auto', px: 1 }}
+                        >
+                          Add
+                        </Button>
+                      </Box>
+                      
+                      {workOrderFiles[workOrder.id]?.length > 0 ? (
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {workOrderFiles[workOrder.id].slice(0, 4).map((file, index) => (
+                            <Box
+                              key={file.id || index}
+                              sx={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'grey.300',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                bgcolor: 'grey.50',
+                                cursor: 'pointer',
+                                '&:hover': { borderColor: 'primary.main' }
+                              }}
+                              onClick={() => window.open(file.url, '_blank')}
+                            >
+                              {file.mimetype?.startsWith('image/') ? (
+                                <img 
+                                  src={file.url} 
+                                  alt={file.filename}
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover' 
+                                  }}
+                                />
+                              ) : (
+                                <DocumentIcon fontSize="small" color="action" />
+                              )}
+                            </Box>
+                          ))}
+                          {workOrderFiles[workOrder.id].length > 4 && (
+                            <Box
+                              sx={{
+                                width: 50,
+                                height: 50,
+                                borderRadius: 1,
+                                border: '1px solid',
+                                borderColor: 'grey.300',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: 'grey.100',
+                                cursor: 'pointer',
+                                '&:hover': { borderColor: 'primary.main' }
+                              }}
+                              onClick={() => navigate(`/tech/files?workOrder=${workOrder.id}`)}
+                            >
+                              <Typography variant="caption" fontWeight={600}>
+                                +{workOrderFiles[workOrder.id].length - 4}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          No files uploaded yet
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
                 </CardContent>
 
-                {/* Actions */}
-                <CardActions sx={{ px: 2, pb: 2, pt: 0, flexWrap: 'wrap', gap: 1 }}>
+                {/* Actions - Mobile Optimized */}
+                <CardActions 
+                  sx={{ 
+                    px: 2, 
+                    pb: 2, 
+                    pt: 0, 
+                    display: 'flex',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: 1,
+                    alignItems: 'stretch'
+                  }}
+                >
                   {/* Show claim button for unassigned work orders */}
                   {(!workOrder.assignedTo && !workOrder.assignedToId) ? (
                     <Button
@@ -964,38 +1346,89 @@ export default function TechnicianDashboard() {
                       onClick={() => claimWorkOrderMutation.mutate({ id: workOrder.id })}
                       variant="contained"
                       color="primary"
-                      size="small"
+                      size={isMobile ? 'large' : 'small'}
                       disabled={claimWorkOrderMutation.isPending}
-                      sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
+                      fullWidth={isMobile}
+                      sx={{ 
+                        minHeight: isMobile ? 48 : 32,
+                        fontSize: isMobile ? '0.9rem' : '0.75rem',
+                        fontWeight: 600
+                      }}
                     >
-                      {isSmallMobile ? '' : 'Claim Work Order'}
+                      Claim Work Order
                     </Button>
                   ) : (
                     /* Show normal quick actions for assigned work orders */
-                    quickActions.map((action, index) => (
-                      <Button
-                        key={index}
-                        startIcon={action.icon}
-                        onClick={action.action}
-                        variant={index === 0 ? 'contained' : 'outlined'}
-                        color={action.color}
-                        size="small"
-                        disabled={action.disabled || updateStatusMutation.isPending}
-                        sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
-                      >
-                        {isSmallMobile && index > 1 ? '' : action.label}
-                      </Button>
-                    ))
+                    <>
+                      {/* Primary Action Row */}
+                      <Box sx={{ 
+                        display: 'flex', 
+                        gap: 1, 
+                        flex: 1,
+                        flexDirection: isMobile ? 'row' : 'row' 
+                      }}>
+                        {quickActions.slice(0, 2).map((action, index) => (
+                          <Button
+                            key={index}
+                            startIcon={action.icon}
+                            onClick={action.action}
+                            variant={index === 0 ? 'contained' : 'outlined'}
+                            color={action.color}
+                            size={isMobile ? 'large' : 'small'}
+                            disabled={action.disabled || updateStatusMutation.isPending}
+                            sx={{ 
+                              flex: 1,
+                              minHeight: isMobile ? 44 : 32,
+                              fontSize: isMobile ? '0.85rem' : '0.75rem',
+                              fontWeight: 500
+                            }}
+                          >
+                            {action.label}
+                          </Button>
+                        ))}
+                      </Box>
+                      
+                      {/* Secondary Actions Row (only on mobile if more than 2 actions) */}
+                      {isMobile && quickActions.length > 2 && (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {quickActions.slice(2).map((action, index) => (
+                            <Button
+                              key={index + 2}
+                              startIcon={action.icon}
+                              onClick={action.action}
+                              variant="outlined"
+                              color={action.color}
+                              size="medium"
+                              disabled={action.disabled || updateStatusMutation.isPending}
+                              sx={{ 
+                                flex: 1,
+                                minHeight: 40,
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </Box>
+                      )}
+                      
+                      {/* Desktop: Show remaining actions inline */}
+                      {!isMobile && quickActions.slice(2).map((action, index) => (
+                        <Button
+                          key={index + 2}
+                          startIcon={action.icon}
+                          onClick={action.action}
+                          variant="outlined"
+                          color={action.color}
+                          size="small"
+                          disabled={action.disabled || updateStatusMutation.isPending}
+                          sx={{ minWidth: 100 }}
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
+                    </>
                   )}
-                  <Button
-                    startIcon={<FileUploadIcon />}
-                    onClick={() => handleUploadFile('workOrder', workOrder.id)}
-                    variant="outlined"
-                    size="small"
-                    sx={{ minWidth: isSmallMobile ? 'auto' : 100 }}
-                  >
-                    {isSmallMobile ? '' : 'Upload'}
-                  </Button>
                 </CardActions>
               </Card>
             );
@@ -1820,9 +2253,9 @@ export default function TechnicianDashboard() {
         </DialogActions>
       </Dialog>
 
-      {/* Speed Dial for Quick Actions */}
+      {/* Quick Actions - Technician Optimized */}
       <SpeedDial
-        ariaLabel="Quick actions"
+        ariaLabel="Technician quick actions"
         sx={{
           position: 'fixed',
           bottom: isMobile ? 88 : 16,
@@ -1831,40 +2264,65 @@ export default function TechnicianDashboard() {
         }}
         icon={<SpeedDialIcon />}
       >
-        <SpeedDialAction
-          key="file-upload"
-          icon={<FileUploadIcon />}
-          tooltipTitle="Upload File"
-          onClick={() => setFileUploadDialogOpen(true)}
-        />
-        <SpeedDialAction
-          key="search-assets"
-          icon={<SearchIcon />}
-          tooltipTitle="Search Assets"
-          onClick={() => navigate('/tech/dashboard?tab=assets')}
-        />
-        <SpeedDialAction
-          key="view-cart"
-          icon={
-            <Badge badgeContent={cartItems.length} color="secondary">
-              <CartIcon />
-            </Badge>
-          }
-          tooltipTitle="View Cart"
-          onClick={() => setInventoryDialogOpen(true)}
-        />
+        {/* QR Scanner - Most important for field work */}
         <SpeedDialAction
           key="qr-scanner"
           icon={<QrIcon />}
-          tooltipTitle="Scan QR Code"
+          tooltipTitle="Scan Asset QR Code"
+          onClick={() => setQrScannerOpen(true)}
         />
+        
+        {/* View Cart - Only show if items in cart */}
+        {cartItems.length > 0 && (
+          <SpeedDialAction
+            key="view-cart"
+            icon={
+              <Badge badgeContent={cartItems.length} color="secondary">
+                <CartIcon />
+              </Badge>
+            }
+            tooltipTitle="View Parts Cart"
+            onClick={() => setInventoryDialogOpen(true)}
+          />
+        )}
+        
+        {/* Quick Time Log - For active work */}
+        {assignedWorkOrders.filter(wo => wo.status === 'IN_PROGRESS').length > 0 && (
+          <SpeedDialAction
+            key="quick-time-log"
+            icon={<TimerIcon />}
+            tooltipTitle="Quick Time Entry"
+            onClick={() => handleQuickTimeLog()}
+          />
+        )}
+        
+        {/* Emergency Work Orders */}
         <SpeedDialAction
-          key="refresh-data"
-          icon={<RefreshIcon />}
-          tooltipTitle="Refresh Data"
-          onClick={refreshAllData}
+          key="emergency-work"
+          icon={<WarningIcon />}
+          tooltipTitle="View Urgent Work"
+          onClick={() => {
+            setFilterStatus('URGENT');
+            navigate('/tech/dashboard?tab=my-work');
+          }}
+        />
+        
+        {/* Available Work - Quick claim */}
+        <SpeedDialAction
+          key="available-work"
+          icon={<PersonIcon />}
+          tooltipTitle="Claim Available Work"
+          onClick={() => navigate('/tech/dashboard?tab=available-work')}
         />
       </SpeedDial>
+
+      {/* QR Scanner Modal */}
+      <QRScanner
+        open={qrScannerOpen}
+        onClose={() => setQrScannerOpen(false)}
+        onAssetFound={handleQRAssetFound}
+        onWorkOrderFound={handleQRWorkOrderFound}
+      />
     </Box>
   );
 }
