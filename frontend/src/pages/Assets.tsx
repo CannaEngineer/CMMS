@@ -35,6 +35,13 @@ import {
   Skeleton,
   alpha,
   Collapse,
+  Tabs,
+  Tab,
+  Breadcrumbs,
+  Link,
+  Slide,
+  Fade,
+  Avatar,
 } from '@mui/material';
 import { Grid } from '@mui/material';
 import {
@@ -62,6 +69,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AssetForm from '../components/Forms/AssetForm';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
+import DataTable from '../components/Common/DataTable';
 import { assetsService } from '../services/api';
 import { useSwipeable } from 'react-swipeable';
 import QRScanner from '../components/QR/QRScanner';
@@ -111,6 +119,7 @@ export default function Assets() {
   const navigate = useNavigate();
   
   // State management
+  const [currentTab, setCurrentTab] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -269,8 +278,8 @@ export default function Assets() {
     trackTouch: true,
   });
 
-  // Filter assets based on search and filters
-  const filteredAssets = (assets || []).filter((asset: Asset) => {
+  // Base filtering for search and filters
+  const baseFilteredAssets = (assets || []).filter((asset: Asset) => {
     const matchesSearch = asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          asset.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          asset.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -286,6 +295,35 @@ export default function Assets() {
     
     return matchesSearch && matchesStatus && matchesCriticality && matchesLocation;
   });
+
+  // Tab-based filtering
+  const filteredAssets = baseFilteredAssets.filter((asset: Asset) => {
+    const matchesTab = currentTab === 0 || // All
+                      (currentTab === 1 && asset.status === 'ONLINE') ||
+                      (currentTab === 2 && asset.status === 'OFFLINE') ||
+                      (currentTab === 3 && asset.criticality === 'HIGH') ||
+                      (currentTab === 4 && asset.criticality === 'IMPORTANT');
+    
+    return matchesTab;
+  });
+
+  // Calculate filtered tab counts
+  const filteredTabCounts = {
+    all: baseFilteredAssets.length,
+    online: baseFilteredAssets.filter((a: Asset) => a.status === 'ONLINE').length,
+    offline: baseFilteredAssets.filter((a: Asset) => a.status === 'OFFLINE').length,
+    high: baseFilteredAssets.filter((a: Asset) => a.criticality === 'HIGH').length,
+    critical: baseFilteredAssets.filter((a: Asset) => a.criticality === 'IMPORTANT').length,
+  };
+
+  // Enhanced stats calculation
+  const assetStats = {
+    total: assets.length,
+    online: assets.filter((a: Asset) => a.status === 'ONLINE').length,
+    offline: assets.filter((a: Asset) => a.status === 'OFFLINE').length,
+    high: assets.filter((a: Asset) => a.criticality === 'HIGH').length,
+    critical: assets.filter((a: Asset) => a.criticality === 'IMPORTANT').length,
+  };
 
   // Sort filtered assets
   const sortedAssets = [...filteredAssets].sort((a, b) => {
@@ -1150,7 +1188,7 @@ export default function Assets() {
             pb: 10, // Space for FAB and bottom nav
           }}
         >
-          {sortedAssets.length === 0 ? (
+          {filteredAssets.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <BuildIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
               <Typography variant="h6" color="text.secondary">
@@ -1165,18 +1203,62 @@ export default function Assets() {
           ) : (
             <Box>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {sortedAssets.length} assets found
+                {filteredAssets.length} assets found
               </Typography>
               
               {viewMode === 'card' ? (
                 <Box>
-                  {sortedAssets.map((asset) => (
+                  {[...filteredAssets].sort((a, b) => {
+                    // Apply the same sorting logic as sortedAssets
+                    switch (sortBy) {
+                      case 'name':
+                        return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+                      case 'status':
+                        const statusOrder = { 'ONLINE': 0, 'OFFLINE': 1, 'MAINTENANCE': 2 };
+                        const aStatus = (statusOrder as any)[a.status] ?? 999;
+                        const bStatus = (statusOrder as any)[b.status] ?? 999;
+                        return sortOrder === 'asc' ? aStatus - bStatus : bStatus - aStatus;
+                      case 'criticality':
+                        const criticalityOrder = { 'LOW': 0, 'MEDIUM': 1, 'HIGH': 2, 'IMPORTANT': 3 };
+                        const aCrit = (criticalityOrder as any)[a.criticality] ?? 999;
+                        const bCrit = (criticalityOrder as any)[b.criticality] ?? 999;
+                        return sortOrder === 'asc' ? aCrit - bCrit : bCrit - aCrit;
+                      case 'created':
+                        const aDate = new Date(a.createdAt || 0).getTime();
+                        const bDate = new Date(b.createdAt || 0).getTime();
+                        return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
+                      default:
+                        return 0;
+                    }
+                  }).map((asset) => (
                     <MobileAssetCard key={asset.id} asset={asset} />
                   ))}
                 </Box>
               ) : (
                 <List>
-                  {sortedAssets.map((asset, index) => [
+                  {[...filteredAssets].sort((a, b) => {
+                    // Apply the same sorting logic as sortedAssets
+                    switch (sortBy) {
+                      case 'name':
+                        return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+                      case 'status':
+                        const statusOrder = { 'ONLINE': 0, 'OFFLINE': 1, 'MAINTENANCE': 2 };
+                        const aStatus = (statusOrder as any)[a.status] ?? 999;
+                        const bStatus = (statusOrder as any)[b.status] ?? 999;
+                        return sortOrder === 'asc' ? aStatus - bStatus : bStatus - aStatus;
+                      case 'criticality':
+                        const criticalityOrder = { 'LOW': 0, 'MEDIUM': 1, 'HIGH': 2, 'IMPORTANT': 3 };
+                        const aCrit = (criticalityOrder as any)[a.criticality] ?? 999;
+                        const bCrit = (criticalityOrder as any)[b.criticality] ?? 999;
+                        return sortOrder === 'asc' ? aCrit - bCrit : bCrit - aCrit;
+                      case 'created':
+                        const aDate = new Date(a.createdAt || 0).getTime();
+                        const bDate = new Date(b.createdAt || 0).getTime();
+                        return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
+                      default:
+                        return 0;
+                    }
+                  }).map((asset, index) => [
                     <ListItem
                       key={asset.id}
                       onClick={() => handleCardClick(asset)}
@@ -1223,7 +1305,7 @@ export default function Assets() {
                         }
                       />
                     </ListItem>,
-                    index < sortedAssets.length - 1 && <Divider key={`divider-${asset.id}`} />
+                    index < filteredAssets.length - 1 && <Divider key={`divider-${asset.id}`} />
                   ]).flat().filter(Boolean)}
                 </List>
               )}
@@ -1315,185 +1397,366 @@ export default function Assets() {
     );
   }
 
-  // Desktop/Tablet Layout (keeping existing functionality)
+  // Desktop/Tablet Layout (updated to match WorkOrders pattern)
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
-          Assets
-        </Typography>
-        
-        {/* Desktop search and filters */}
-        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            placeholder="Search assets..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ maxWidth: 400 }}
-          />
+    <Fade in timeout={400}>
+      <Container maxWidth="xl" sx={{ py: 3 }}>
+        {/* Header with breadcrumbs */}
+        <Box sx={{ mb: 3 }}>
+          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
+            <Link color="inherit" href="/">
+              Dashboard
+            </Link>
+            <Typography color="text.primary">Assets</Typography>
+          </Breadcrumbs>
           
-          <Button
-            variant="outlined"
-            startIcon={<QrScannerIcon />}
-            onClick={() => setQrScannerOpen(true)}
-          >
-            Scan QR
-          </Button>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+                Assets
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                Manage and track your equipment and resources
+              </Typography>
+            </Box>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<QrScannerIcon />}
+                onClick={() => setQrScannerOpen(true)}
+              >
+                Scan QR
+              </Button>
+              <UniversalExportButton
+                data={filteredAssets}
+                dataSource="assets"
+                entityType="assets"
+                showBadge={filteredAssets.length > 0}
+                badgeContent={filteredAssets.length}
+                buttonText="Export"
+              />
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleCreateAsset}
+              >
+                Add Asset
+              </Button>
+            </Box>
+          </Box>
 
-          <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
-            onClick={() => setFilterDrawerOpen(true)}
-          >
-            Filters
-          </Button>
+          {/* Stats Cards */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            <Grid xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {assetStats.total}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Assets
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
+                  {assetStats.online}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Online
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                  {assetStats.offline}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Offline
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid xs={12} sm={6} md={3}>
+              <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                  {assetStats.critical}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Critical
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
-          <UniversalExportButton
-            data={sortedAssets}
-            dataSource="assets"
-            entityType="assets"
-            showBadge={sortedAssets.length > 0}
-            badgeContent={sortedAssets.length}
-            buttonText="Export"
-          />
-          
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateAsset}
-          >
-            Add Asset
-          </Button>
-        </Stack>
-      </Box>
+          {/* Search and Filters */}
+          <Box sx={{ mb: 3 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                placeholder="Search assets..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ maxWidth: { sm: 400 } }}
+              />
+              
+              <Button
+                variant="outlined"
+                startIcon={<FilterIcon />}
+                onClick={() => setFilterDrawerOpen(true)}
+                sx={{ minWidth: 120 }}
+              >
+                Filters
+              </Button>
+            </Stack>
 
-      {/* Desktop grid view */}
-      <Grid container spacing={3}>
-        {sortedAssets.map((asset) => (
-          <Grid xs={12} sm={6} md={4} lg={3} key={asset.id}>
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: theme.shadows[4],
-                },
-              }}
-              onClick={() => handleCardClick(asset)}
+            {/* Tabs */}
+            <Tabs
+              value={currentTab}
+              onChange={(event, newValue) => setCurrentTab(newValue)}
+              sx={{ borderBottom: 1, borderColor: 'divider' }}
             >
-              {/* Asset Image */}
-              {(asset.imageUrl || (asset.attachments && asset.attachments.length > 0)) && (
-                <CardMedia
-                  sx={{
-                    height: 140,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                  }}
-                  image={
-                    asset.imageUrl || 
-                    (asset.attachments && asset.attachments.find((att: any) => 
-                      att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
-                    )?.url)
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    All
+                    <Chip label={filteredTabCounts.all} size="small" />
+                  </Box>
+                }
+              />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Online
+                    <Chip label={filteredTabCounts.online} size="small" color="success" />
+                  </Box>
+                }
+              />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Offline
+                    <Chip label={filteredTabCounts.offline} size="small" color="error" />
+                  </Box>
+                }
+              />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    High Priority
+                    <Chip label={filteredTabCounts.high} size="small" color="warning" />
+                  </Box>
+                }
+              />
+              <Tab 
+                label={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    Critical
+                    <Chip label={filteredTabCounts.critical} size="small" color="error" />
+                  </Box>
+                }
+              />
+            </Tabs>
+          </Box>
+        </Box>
+
+        {/* DataTable with responsive design */}
+        <DataTable
+          data={filteredAssets}
+          columns={[
+            {
+              accessorKey: 'name',
+              header: 'Asset Name',
+              cell: ({ row }) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {(row.original.imageUrl || (row.original.attachments && row.original.attachments.length > 0)) && (
+                    <Avatar
+                      src={
+                        row.original.imageUrl || 
+                        (row.original.attachments && row.original.attachments.find((att: any) => 
+                          att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+                        )?.url)
+                      }
+                      sx={{ width: 40, height: 40 }}
+                    />
+                  )}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      {row.original.name}
+                    </Typography>
+                    {row.original.location && (
+                      <Typography variant="caption" color="text.secondary">
+                        {row.original.location.name}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              ),
+            },
+            {
+              accessorKey: 'status',
+              header: 'Status',
+              cell: ({ row }) => (
+                <Chip
+                  label={row.original.status}
+                  size="small"
+                  color={row.original.status === 'ONLINE' ? 'success' : 'error'}
+                />
+              ),
+            },
+            {
+              accessorKey: 'criticality',
+              header: 'Criticality',
+              cell: ({ row }) => (
+                <Chip
+                  label={row.original.criticality}
+                  size="small"
+                  variant="outlined"
+                  color={
+                    row.original.criticality === 'HIGH' ? 'error' :
+                    row.original.criticality === 'IMPORTANT' ? 'warning' : 'default'
                   }
                 />
-              )}
-              
-              <CardContent sx={{ flex: 1 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  {asset.name}
+              ),
+            },
+            {
+              accessorKey: 'model',
+              header: 'Model',
+              cell: ({ row }) => (
+                <Typography variant="body2">
+                  {row.original.model || '-'}
                 </Typography>
-                
-                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-                  <Chip
-                    label={asset.status}
-                    size="small"
-                    color={asset.status === 'ONLINE' ? 'success' : 'error'}
-                  />
-                  <Chip
-                    label={asset.criticality}
-                    size="small"
-                    variant="outlined"
-                  />
-                </Stack>
-                
-                {asset.location && (
-                  <Typography variant="body2" color="text.secondary">
-                    {asset.location.name}
-                  </Typography>
-                )}
-              </CardContent>
-              
-              <Box sx={{ p: 2, pt: 0 }}>
+              ),
+            },
+            {
+              accessorKey: 'serialNumber',
+              header: 'Serial Number',
+              cell: ({ row }) => (
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                  {row.original.serialNumber || '-'}
+                </Typography>
+              ),
+            },
+            {
+              accessorKey: 'actions',
+              header: 'Actions',
+              cell: ({ row }) => (
                 <Stack direction="row" spacing={1}>
                   <Button
                     size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickEdit(asset);
-                    }}
+                    variant="outlined"
+                    onClick={() => handleCardClick(row.original)}
+                  >
+                    View
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => handleQuickEdit(row.original)}
                   >
                     Edit
                   </Button>
                   <Button
                     size="small"
                     color="error"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteAsset(asset);
-                    }}
+                    onClick={() => handleDeleteAsset(row.original)}
                   >
                     Delete
                   </Button>
                 </Stack>
-              </Box>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+              ),
+            },
+          ]}
+          mobileCardConfig={{
+            titleAccessor: 'name',
+            subtitleAccessor: 'location.name',
+            avatarConfig: {
+              accessor: (row: any) => 
+                row.imageUrl || 
+                (row.attachments && row.attachments.find((att: any) => 
+                  att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+                )?.url),
+              fallback: <BuildIcon />
+            },
+            chips: [
+              {
+                accessor: 'status',
+                color: (value: string) => value === 'ONLINE' ? 'success' : 'error'
+              },
+              {
+                accessor: 'criticality',
+                variant: 'outlined',
+                color: (value: string) => 
+                  value === 'HIGH' ? 'error' :
+                  value === 'IMPORTANT' ? 'warning' : 'default'
+              }
+            ],
+            actions: [
+              {
+                label: 'View',
+                onClick: (row: any) => handleCardClick(row),
+                variant: 'outlined'
+              },
+              {
+                label: 'Edit',
+                onClick: (row: any) => handleQuickEdit(row)
+              },
+              {
+                label: 'Delete',
+                onClick: (row: any) => handleDeleteAsset(row),
+                color: 'error'
+              }
+            ]
+          }}
+          onRowClick={handleCardClick}
+          emptyState={{
+            icon: <BuildIcon sx={{ fontSize: 64, color: 'text.disabled' }} />,
+            title: 'No assets found',
+            subtitle: filteredAssets.length === 0 && (searchTerm || activeFilters.status.length > 0 || activeFilters.criticality.length > 0) 
+              ? 'Try adjusting your search or filters'
+              : 'Add your first asset to get started'
+          }}
+        />
 
-      {/* Desktop filter drawer */}
-      <FilterDrawer />
+        {/* Desktop filter drawer */}
+        <FilterDrawer />
 
-      {/* Asset Form Dialog */}
-      <AssetForm
-        open={openDialog}
-        onClose={() => {
-          setOpenDialog(false);
-          setSelectedAsset(null);
-        }}
-        onSubmit={handleSubmitAsset}
-        initialData={selectedAsset}
-        mode={formMode}
-        loading={createAssetMutation.isPending || updateAssetMutation.isPending}
-      />
+        {/* Asset Form Dialog */}
+        <AssetForm
+          open={openDialog}
+          onClose={() => {
+            setOpenDialog(false);
+            setSelectedAsset(null);
+          }}
+          onSubmit={handleSubmitAsset}
+          initialData={selectedAsset}
+          mode={formMode}
+          loading={createAssetMutation.isPending || updateAssetMutation.isPending}
+        />
 
-      {/* QR Scanner */}
-      <QRScanner
-        open={qrScannerOpen}
-        onClose={() => setQrScannerOpen(false)}
-        onScan={handleQRScan}
-        title="Scan Asset QR Code"
-      />
+        {/* QR Scanner */}
+        <QRScanner
+          open={qrScannerOpen}
+          onClose={() => setQrScannerOpen(false)}
+          onScan={handleQRScan}
+          title="Scan Asset QR Code"
+        />
 
-      {/* QR Action Handler */}
-      <QRActionHandler
-        scanResult={qrScanResult}
-        onClose={() => {
-          setQrScanResult(null);
-        }}
-      />
-    </Container>
+        {/* QR Action Handler */}
+        <QRActionHandler
+          scanResult={qrScanResult}
+          onClose={() => {
+            setQrScanResult(null);
+          }}
+        />
+      </Container>
+    </Fade>
   );
 }
