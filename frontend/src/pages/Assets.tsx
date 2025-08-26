@@ -1569,161 +1569,110 @@ export default function Assets() {
         </Box>
 
         {/* DataTable with responsive design */}
-        <DataTable
-          data={filteredAssets}
-          columns={[
-            {
-              accessorKey: 'name',
-              header: 'Asset Name',
-              cell: ({ row }) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {(row.original.imageUrl || (row.original.attachments && row.original.attachments.length > 0)) && (
-                    <Avatar
-                      src={
-                        row.original.imageUrl || 
-                        (row.original.attachments && row.original.attachments.find((att: any) => 
-                          att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
-                        )?.url)
-                      }
-                      sx={{ width: 40, height: 40 }}
+        <Card>
+          <CardContent sx={{ p: 0 }}>
+            <DataTable
+              data={filteredAssets}
+              onRowClick={(row: any) => handleCardClick(row)}
+              onView={(row: any) => handleCardClick(row)}
+              onEdit={(row: any) => handleQuickEdit(row)}
+              onDelete={(row: any) => handleDeleteAsset(row)}
+              columns={[
+                {
+                  key: 'name',
+                  label: 'Asset Name',
+                  sortable: true,
+                  priority: 'high' as const,
+                  render: (value: string, row: any) => (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      {(row.imageUrl || (row.attachments && row.attachments.length > 0)) && (
+                        <Avatar
+                          src={
+                            row.imageUrl || 
+                            (row.attachments && row.attachments.find((att: any) => 
+                              att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
+                            )?.url)
+                          }
+                          sx={{ width: 40, height: 40 }}
+                        >
+                          <BuildIcon />
+                        </Avatar>
+                      )}
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          {row.name}
+                        </Typography>
+                        {row.location && (
+                          <Typography variant="caption" color="text.secondary">
+                            {row.location.name}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  ),
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  sortable: true,
+                  priority: 'high' as const,
+                  render: (value: string, row: any) => (
+                    <Chip
+                      label={row.status}
+                      size="small"
+                      color={row.status === 'ONLINE' ? 'success' : 'error'}
                     />
-                  )}
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {row.original.name}
+                  ),
+                },
+                {
+                  key: 'criticality',
+                  label: 'Criticality',
+                  sortable: true,
+                  priority: 'medium' as const,
+                  render: (value: string, row: any) => (
+                    <Chip
+                      label={row.criticality}
+                      size="small"
+                      variant="outlined"
+                      color={
+                        row.criticality === 'HIGH' ? 'error' :
+                        row.criticality === 'IMPORTANT' ? 'warning' : 'default'
+                      }
+                    />
+                  ),
+                },
+                {
+                  key: 'model',
+                  label: 'Model',
+                  sortable: true,
+                  priority: 'low' as const,
+                  render: (value: string, row: any) => (
+                    <Typography variant="body2">
+                      {row.model || '-'}
                     </Typography>
-                    {row.original.location && (
-                      <Typography variant="caption" color="text.secondary">
-                        {row.original.location.name}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-              ),
-            },
-            {
-              accessorKey: 'status',
-              header: 'Status',
-              cell: ({ row }) => (
-                <Chip
-                  label={row.original.status}
-                  size="small"
-                  color={row.original.status === 'ONLINE' ? 'success' : 'error'}
-                />
-              ),
-            },
-            {
-              accessorKey: 'criticality',
-              header: 'Criticality',
-              cell: ({ row }) => (
-                <Chip
-                  label={row.original.criticality}
-                  size="small"
-                  variant="outlined"
-                  color={
-                    row.original.criticality === 'HIGH' ? 'error' :
-                    row.original.criticality === 'IMPORTANT' ? 'warning' : 'default'
-                  }
-                />
-              ),
-            },
-            {
-              accessorKey: 'model',
-              header: 'Model',
-              cell: ({ row }) => (
-                <Typography variant="body2">
-                  {row.original.model || '-'}
-                </Typography>
-              ),
-            },
-            {
-              accessorKey: 'serialNumber',
-              header: 'Serial Number',
-              cell: ({ row }) => (
-                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                  {row.original.serialNumber || '-'}
-                </Typography>
-              ),
-            },
-            {
-              accessorKey: 'actions',
-              header: 'Actions',
-              cell: ({ row }) => (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => handleCardClick(row.original)}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={() => handleQuickEdit(row.original)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteAsset(row.original)}
-                  >
-                    Delete
-                  </Button>
-                </Stack>
-              ),
-            },
-          ]}
-          mobileCardConfig={{
-            titleAccessor: 'name',
-            subtitleAccessor: 'location.name',
-            avatarConfig: {
-              accessor: (row: any) => 
-                row.imageUrl || 
-                (row.attachments && row.attachments.find((att: any) => 
-                  att.url && (att.url.includes('.png') || att.url.includes('.jpg') || att.url.includes('.jpeg') || att.url.includes('.gif'))
-                )?.url),
-              fallback: <BuildIcon />
-            },
-            chips: [
-              {
-                accessor: 'status',
-                color: (value: string) => value === 'ONLINE' ? 'success' : 'error'
-              },
-              {
-                accessor: 'criticality',
-                variant: 'outlined',
-                color: (value: string) => 
-                  value === 'HIGH' ? 'error' :
-                  value === 'IMPORTANT' ? 'warning' : 'default'
+                  ),
+                },
+                {
+                  key: 'serialNumber',
+                  label: 'Serial Number',
+                  sortable: true,
+                  priority: 'low' as const,
+                  render: (value: string, row: any) => (
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      {row.serialNumber || '-'}
+                    </Typography>
+                  ),
+                },
+              ]}
+              emptyMessage={
+                filteredAssets.length === 0 && (searchTerm || activeFilters.status.length > 0 || activeFilters.criticality.length > 0) 
+                  ? 'No assets match your search or filters'
+                  : 'No assets found. Add your first asset to get started.'
               }
-            ],
-            actions: [
-              {
-                label: 'View',
-                onClick: (row: any) => handleCardClick(row),
-                variant: 'outlined'
-              },
-              {
-                label: 'Edit',
-                onClick: (row: any) => handleQuickEdit(row)
-              },
-              {
-                label: 'Delete',
-                onClick: (row: any) => handleDeleteAsset(row),
-                color: 'error'
-              }
-            ]
-          }}
-          onRowClick={handleCardClick}
-          emptyState={{
-            icon: <BuildIcon sx={{ fontSize: 64, color: 'text.disabled' }} />,
-            title: 'No assets found',
-            subtitle: filteredAssets.length === 0 && (searchTerm || activeFilters.status.length > 0 || activeFilters.criticality.length > 0) 
-              ? 'Try adjusting your search or filters'
-              : 'Add your first asset to get started'
-          }}
-        />
+              hideToolbar={true}
+            />
+          </CardContent>
+        </Card>
 
         {/* Desktop filter drawer */}
         <FilterDrawer />
