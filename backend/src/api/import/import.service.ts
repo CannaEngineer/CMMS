@@ -792,6 +792,23 @@ export class ImportService {
     const freq = frequency.toLowerCase().trim();
     console.log(`[Import] Normalizing frequency: "${frequency}" -> "${freq}"`);
     
+    // Handle complex MaintainX-style patterns like "MonthlyByWeekday|1|First_Mon"
+    if (freq.includes('monthlybyweekday') || freq.includes('monthly|') || freq.includes('|first_') || freq.includes('|last_')) {
+      console.log(`[Import] MaintainX monthly pattern detected, converting to monthly`);
+      return 'monthly';
+    }
+    
+    // Handle other complex MaintainX patterns
+    if (freq.includes('weeklybyweekday') || freq.includes('weekly|')) {
+      console.log(`[Import] MaintainX weekly pattern detected, converting to weekly`);
+      return 'weekly';
+    }
+    
+    if (freq.includes('yearlybymonth') || freq.includes('yearly|')) {
+      console.log(`[Import] MaintainX yearly pattern detected, converting to yearly`);
+      return 'yearly';
+    }
+    
     // Handle numeric patterns like "6 weeks", "2 months", etc.
     const numericWeekMatch = freq.match(/(\d+)\s*weeks?/);
     if (numericWeekMatch) {
