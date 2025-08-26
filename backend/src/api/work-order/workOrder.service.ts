@@ -1,7 +1,9 @@
 import { PrismaClient, WorkOrderStatus } from '@prisma/client';
 import { notificationTriggersService } from '../../services/notification-triggers.service';
+import { NotificationService } from '../notification/notification.service';
 
 const prisma = new PrismaClient();
+const notificationService = new NotificationService();
 
 // Helper function to calculate next PM due date based on frequency
 const calculateNextDueDate = (frequency: string, fromDate?: Date): Date => {
@@ -33,16 +35,46 @@ const calculateNextDueDate = (frequency: string, fromDate?: Date): Date => {
 };
 
 // Function to reschedule PM schedule after work order completion
-const reschedulePMSchedule = async (pmScheduleId: number, pmSchedule: any) => {
+const reschedulePMSchedule = async (pmScheduleId: number, pmSchedule: any, completionDate: Date, updatedById?: number) => {
   console.log(`Rescheduling PM Schedule ${pmScheduleId} with frequency: ${pmSchedule.frequency}`);
   
-  // Calculate the next due date based on frequency
-  const nextDue = calculateNextDueDate(pmSchedule.frequency);
+  // Send notification that we're creating the next PM work order
+  const managersAndAdmins = await prisma.user.findMany({
+    where: {
+      organizationId: pmSchedule.asset?.organizationId || 1,
+      role: {
+        in: ['MANAGER', 'ADMIN', 'TECHNICIAN']
+      }
+    }
+  });
+
+  // Send "creating" notifications
+  for (const user of managersAndAdmins) {
+    await notificationService.createNotification({
+      userId: user.id,
+      organizationId: pmSchedule.asset?.organizationId || 1,
+      title: 'Creating PM Work Order',
+      message: `Creating next work order for PM schedule "${pmSchedule.title}"...`,
+      type: 'INFO',
+      priority: 'LOW',
+      category: 'MAINTENANCE',
+      relatedEntityType: 'pmSchedule',
+      relatedEntityId: pmScheduleId,
+      channels: ['IN_APP'],
+      createdById: updatedById
+    });
+  }
+  
+  // Calculate the next due date based on frequency FROM THE COMPLETION DATE
+  const nextDue = calculateNextDueDate(pmSchedule.frequency, completionDate);
   
   // Update PM schedule next due date
-  await prisma.pMSchedule.update({
+  const updatedPM = await prisma.pMSchedule.update({
     where: { id: pmScheduleId },
-    data: { nextDue }
+    data: { nextDue },
+    include: {
+      asset: { select: { name: true, organizationId: true } }
+    }
   });
   
   // Update associated triggers
@@ -57,8 +89,51 @@ const reschedulePMSchedule = async (pmScheduleId: number, pmSchedule: any) => {
     );
   }
   
+  // Create the next work order immediately
+  const workOrderTitle = `${updatedPM.title} - ${updatedPM.asset?.name || 'Asset'}`;
+  
+  const nextWorkOrder = await prisma.workOrder.create({
+    data: {
+      title: workOrderTitle,
+      description: updatedPM.description || `Preventive maintenance for ${updatedPM.asset?.name}`,
+      status: 'OPEN',
+      priority: 'MEDIUM', // Default priority, could be inherited from PM
+      dueDate: nextDue,
+      assetId: updatedPM.assetId,
+      assignedToId: null, // Will need to be assigned later, or inherit from PM settings
+      pmScheduleId: pmScheduleId,
+      organizationId: updatedPM.asset?.organizationId || 1,
+      estimatedHours: null, // Could be inherited from PM settings
+    },
+  });
+  
   console.log(`PM Schedule ${pmScheduleId} rescheduled for ${nextDue.toISOString()}`);
-  return { nextDue };
+  console.log(`Created next work order ${nextWorkOrder.id} for PM ${pmScheduleId}`);
+  
+  // Send notification with link to the new work order
+  for (const user of managersAndAdmins) {
+    await notificationService.createNotification({
+      userId: user.id,
+      organizationId: updatedPM.asset?.organizationId || 1,
+      title: 'PM Work Order Created',
+      message: `New work order "${nextWorkOrder.title}" created for PM schedule "${pmSchedule.title}". Due date: ${nextDue.toLocaleDateString()}`,
+      type: 'SUCCESS',
+      priority: 'MEDIUM',
+      category: 'MAINTENANCE',
+      relatedEntityType: 'workOrder',
+      relatedEntityId: nextWorkOrder.id,
+      actionUrl: `/work-orders/${nextWorkOrder.id}`,
+      actionLabel: 'View Work Order',
+      channels: ['IN_APP'],
+      createdById: updatedById
+    });
+  }
+  
+  return { 
+    nextDue, 
+    nextWorkOrderId: nextWorkOrder.id,
+    nextWorkOrderTitle: nextWorkOrder.title
+  };
 };
 
 export const getAllWorkOrders = async (organizationId: number) => {
@@ -145,7 +220,9 @@ export const updateWorkOrder = async (id: number, data: any, organizationId: num
     // If work order is completed and associated with a PM schedule, reschedule the next PM
     if (data.status === 'COMPLETED' && currentWorkOrder.pmScheduleId && currentWorkOrder.pmSchedule) {
       try {
-        await reschedulePMSchedule(currentWorkOrder.pmScheduleId, currentWorkOrder.pmSchedule);
+        // Use the completion date (now) as the basis for the next schedule
+        const completionDate = new Date();
+        await reschedulePMSchedule(currentWorkOrder.pmScheduleId, currentWorkOrder.pmSchedule, completionDate, updatedById);
         console.log(`PM Schedule ${currentWorkOrder.pmScheduleId} rescheduled after work order completion`);
       } catch (error) {
         console.error(`Failed to reschedule PM Schedule ${currentWorkOrder.pmScheduleId}:`, error);
