@@ -217,11 +217,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 15000, // Refresh every 15 seconds to keep data current
-    refetchIntervalInBackground: true, // Continue refetching when tab is in background
+    refetchInterval: 60000, // Refresh every 60 seconds (reduced from 15s to prevent overload)
+    refetchIntervalInBackground: false, // Don't refetch in background to reduce load
     refetchOnWindowFocus: true, // Refetch when user returns to the tab
     refetchOnReconnect: true, // Refetch when network reconnects
-    staleTime: 5000, // Consider data stale after 5 seconds
+    staleTime: 30000, // Consider data stale after 30 seconds (increased from 5s)
   });
 
   // Separate assigned and unassigned work orders
@@ -242,65 +242,43 @@ export default function TechnicianDashboard() {
   // Current work orders based on active tab
   const workOrders = activeTab === 0 ? assignedWorkOrders : activeTab === 1 ? unassignedWorkOrders : [];
 
-  // Load files for each work order when work orders change
+  // Load files only for DISPLAYED work orders (not all work orders) - Fixed system overload
   useEffect(() => {
     const loadWorkOrderFiles = async () => {
-      if (workOrders.length > 0) {
-        const filesMap: {[key: number]: any[]} = {};
-        
-        for (const workOrder of workOrders) {
-          try {
-            const uploadService = new UploadService();
-            const files = await uploadService.getWorkOrderFiles(workOrder.id.toString());
-            filesMap[workOrder.id] = files || [];
-          } catch (error) {
-            console.error(`Error loading files for work order ${workOrder.id}:`, error);
-            filesMap[workOrder.id] = [];
-          }
-        }
-        
-        setWorkOrderFiles(filesMap);
+      if (workOrders.length === 0) {
+        setWorkOrderFiles({});
+        return;
       }
-    };
-    
-    loadWorkOrderFiles();
-  }, [workOrders.map(wo => wo.id).join(',')]); // Only re-run if work order IDs change
-
-  // Load files for work orders
-  useEffect(() => {
-    const loadWorkOrderFiles = async () => {
-      console.log('Loading files for work orders...');
-      const uploadService = new UploadService();
-      const filesData: {[key: number]: any[]} = {};
       
-      // Use Promise.all to load files in parallel for better performance
-      const filePromises = allWorkOrders.map(async (workOrder) => {
+      console.log(`Loading files for ${workOrders.length} displayed work orders...`);
+      const filesMap: {[key: number]: any[]} = {};
+      const uploadService = new UploadService();
+      
+      // Load files sequentially with delay to avoid overwhelming the database
+      for (let i = 0; i < workOrders.length; i++) {
+        const workOrder = workOrders[i];
         try {
           console.log(`Loading files for work order ${workOrder.id}...`);
           const files = await uploadService.getWorkOrderFiles(workOrder.id.toString());
-          console.log(`Work order ${workOrder.id} has ${files?.length || 0} files:`, files);
-          return { workOrderId: workOrder.id, files: files || [] };
+          filesMap[workOrder.id] = files || [];
+          console.log(`Work order ${workOrder.id} has ${files?.length || 0} files`);
+          
+          // Add small delay between requests to prevent database overload
+          if (i < workOrders.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         } catch (error) {
           console.error(`Error loading files for work order ${workOrder.id}:`, error);
-          return { workOrderId: workOrder.id, files: [] };
+          filesMap[workOrder.id] = [];
         }
-      });
+      }
       
-      const results = await Promise.all(filePromises);
-      
-      // Build the filesData object from results
-      results.forEach(result => {
-        filesData[result.workOrderId] = result.files;
-      });
-      
-      console.log('All work order files loaded:', filesData);
-      setWorkOrderFiles(filesData);
+      console.log(`Files loaded for ${Object.keys(filesMap).length} work orders`);
+      setWorkOrderFiles(filesMap);
     };
-
-    if (allWorkOrders.length > 0) {
-      loadWorkOrderFiles();
-    }
-  }, [allWorkOrders]);
+    
+    loadWorkOrderFiles();
+  }, [workOrders.map(wo => wo.id).join(',')]); // Only re-run if displayed work order IDs change
 
   // Fetch inventory/parts data
   const { data: parts = [], isLoading: partsLoading } = useQuery({
@@ -314,11 +292,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds for inventory updates
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
+    refetchInterval: 300000, // Refresh every 5 minutes (parts don't change often)
+    refetchIntervalInBackground: false, // Don't refetch in background to reduce load
+    refetchOnWindowFocus: false, // Parts don't need immediate refresh on focus
     refetchOnReconnect: true,
-    staleTime: 10000, // Consider data stale after 10 seconds
+    staleTime: 120000, // Consider data stale after 2 minutes
   });
 
   // Fetch assets data
@@ -333,11 +311,11 @@ export default function TechnicianDashboard() {
         return [];
       }
     },
-    refetchInterval: 30000, // Refresh every 30 seconds for asset updates
-    refetchIntervalInBackground: true,
-    refetchOnWindowFocus: true,
+    refetchInterval: 120000, // Refresh every 2 minutes (assets don't change often)
+    refetchIntervalInBackground: false, // Don't refetch in background to reduce load
+    refetchOnWindowFocus: false, // Assets don't need immediate refresh on focus
     refetchOnReconnect: true,
-    staleTime: 10000, // Consider data stale after 10 seconds
+    staleTime: 60000, // Consider data stale after 1 minute
   });
 
 
