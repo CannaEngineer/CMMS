@@ -61,10 +61,16 @@ class NotificationService {
    * Initialize WebSocket connection
    */
   connect() {
+    // Disable WebSocket in production (Vercel doesn't support persistent connections)
+    if (import.meta.env.PROD) {
+      console.log('WebSocket connections disabled in production environment');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token || this.socket?.connected) return;
 
-    this.socket = io(process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000', {
+    this.socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
       auth: {
         token: token
       },

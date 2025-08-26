@@ -147,7 +147,9 @@ export default function Maintenance() {
     },
     onError: (error) => {
       console.error("Error updating PM schedule:", error);
-      alert("Failed to update PM schedule.");
+      console.error("Error details:", error?.response?.data);
+      const errorMessage = error?.response?.data?.message || error?.message || "Unknown error occurred";
+      alert(`Failed to update PM schedule: ${errorMessage}`);
     },
   });
 
@@ -650,6 +652,7 @@ export default function Maintenance() {
         onSubmit={handleSubmitSchedule}
         initialData={selectedSchedule || {}}
         mode={formMode}
+        loading={createMutation.isPending || updateMutation.isPending}
       />
     </Box>
   );

@@ -348,7 +348,11 @@ export const pmScheduleSchema = z.object({
     .transform(val => val === '' ? undefined : val),
   frequency: z
     .string()
-    .min(1, 'Frequency is required'),
+    .min(1, 'Frequency is required')
+    .transform(val => {
+      // Allow any frequency string - the backend will normalize it
+      return val?.trim();
+    }),
   nextDue: z
     .string()
     .min(1, 'Next due date is required'),

@@ -58,6 +58,13 @@ const frequencyOptions = [
   { value: 'yearly', label: 'Yearly' },
 ];
 
+// Helper to check if a frequency is non-standard
+const isNonStandardFrequency = (frequency: string): boolean => {
+  if (!frequency) return false;
+  const standardFrequencies = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
+  return !standardFrequencies.includes(frequency.toLowerCase());
+};
+
 const customFrequencyUnitOptions = [
   { value: 'DAYS', label: 'Days' },
   { value: 'WEEKS', label: 'Weeks' },
@@ -120,7 +127,16 @@ export default function MaintenanceScheduleForm({
 
   const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(true);
+  const [showCustomFrequency, setShowCustomFrequency] = useState(false);
   const watchedData = watch();
+
+  // Check if current frequency is non-standard
+  useEffect(() => {
+    const currentFreq = watchedData.frequency;
+    if (currentFreq && isNonStandardFrequency(currentFreq)) {
+      setShowCustomFrequency(true);
+    }
+  }, [watchedData.frequency]);
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
@@ -281,16 +297,81 @@ export default function MaintenanceScheduleForm({
         />
       </Grid>
       <Grid xs={12} md={6}>
-        <HookFormField
-          name="frequency"
-          control={control}
-          label="Frequency"
-          type="select"
-          options={frequencyOptions}
-          required
-          disabled={mode === 'view'}
-          helperText="How often should this maintenance be performed"
-        />
+        {showCustomFrequency && isNonStandardFrequency(watchedData.frequency) ? (
+          <Box>
+            <HookFormField
+              name="frequency"
+              control={control}
+              label="Custom Frequency"
+              type="text"
+              required
+              disabled={mode === 'view'}
+              helperText={`Original: "${watchedData.frequency}". Update to standard frequency.`}
+            />
+            {mode !== 'view' && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Switch to standard frequency:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                  {frequencyOptions.map((option) => (
+                    <Chip
+                      key={option.value}
+                      label={option.label}
+                      size="small"
+                      clickable
+                      onClick={() => {
+                        reset({ ...watchedData, frequency: option.value });
+                        setShowCustomFrequency(false);
+                      }}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
+          </Box>
+        ) : (
+          <Box>
+            <HookFormField
+              name="frequency"
+              control={control}
+              label="Frequency"
+              type="select"
+              options={frequencyOptions}
+              required
+              disabled={mode === 'view'}
+              helperText="How often should this maintenance be performed"
+            />
+            {mode !== 'view' && (
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showCustomFrequency}
+                    onChange={(e) => setShowCustomFrequency(e.target.checked)}
+                    size="small"
+                  />
+                }
+                label="Custom frequency"
+                sx={{ mt: 1 }}
+              />
+            )}
+            {showCustomFrequency && !isNonStandardFrequency(watchedData.frequency) && (
+              <Box sx={{ mt: 2 }}>
+                <HookFormField
+                  name="frequency"
+                  control={control}
+                  label="Custom Frequency"
+                  type="text"
+                  required
+                  disabled={mode === 'view'}
+                  helperText="Enter custom frequency (e.g., '6 weeks', 'bi-monthly')"
+                />
+              </Box>
+            )}
+          </Box>
+        )}
       </Grid>
       <Grid xs={12} md={6}>
         <HookFormField
