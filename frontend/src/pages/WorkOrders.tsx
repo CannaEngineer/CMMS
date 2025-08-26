@@ -89,7 +89,7 @@ import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
 import { LoadingSpinner, TemplatedSkeleton } from '../components/Loading';
 import { ViewProvider } from '../contexts/ViewContext';
-import { workOrdersService } from '../services/api';
+import { workOrdersService, usersService } from '../services/api';
 import { statusColors } from '../theme/theme';
 import { qrService } from '../services/qrService';
 import { useNavigate } from 'react-router-dom';
@@ -101,6 +101,7 @@ interface WorkOrder {
   description?: string;
   status: 'OPEN' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  dueDate?: string;
   assetId?: number;
   assignedToId?: number;
   organizationId: number;
@@ -184,6 +185,14 @@ export default function WorkOrders() {
     queryKey: ['work-orders'],
     queryFn: workOrdersService.getAll,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch users for assignment dropdown
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: usersService.getAll,
+    staleTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -317,7 +326,9 @@ export default function WorkOrders() {
                   result = await workOrdersService.update(id, { assignedToId: null });
                   break;
                 case 'dueDate':
-                  result = await workOrdersService.update(id, { dueDate: data.dueDate });
+                  // Convert datetime-local format to ISO string
+                  const dueDate = data.dueDate ? new Date(data.dueDate).toISOString() : null;
+                  result = await workOrdersService.update(id, { dueDate });
                   break;
                 default:
                   throw new Error(`Unknown bulk action: ${action}`);
@@ -2429,10 +2440,14 @@ export default function WorkOrders() {
                     label="Assign To"
                     onChange={(e) => handleBulkEditChange('assignedToId', e.target.value)}
                   >
-                    <MenuItem value="1">John Doe</MenuItem>
-                    <MenuItem value="2">Jane Smith</MenuItem>
-                    <MenuItem value="3">Bob Johnson</MenuItem>
-                    {/* Add more users as needed */}
+                    {users.map((user: any) => (
+                      <MenuItem key={user.id} value={user.id.toString()}>
+                        {user.name || user.firstName + ' ' + user.lastName || user.email}
+                      </MenuItem>
+                    ))}
+                    {users.length === 0 && (
+                      <MenuItem disabled>No users available</MenuItem>
+                    )}
                   </Select>
                 </FormControl>
               )}
