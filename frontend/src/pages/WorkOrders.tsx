@@ -41,6 +41,13 @@ import {
   Snackbar,
   AppBar,
   Toolbar,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  LinearProgress,
+  MenuItem,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -69,6 +76,11 @@ import {
   CheckCircle as CompleteIcon,
   PlayArrow as StartIcon,
   Pause as HoldIcon,
+  SelectAll as SelectAllIcon,
+  Clear as ClearIcon,
+  Assignment as AssignIcon,
+  PersonOff as UnassignIcon,
+  DateRange as DateIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
@@ -132,6 +144,30 @@ export default function WorkOrders() {
   const [selectedCardId, setSelectedCardId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  // Bulk edit states
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [selectedWorkOrderIds, setSelectedWorkOrderIds] = useState<Set<number>>(new Set());
+  const [bulkEditData, setBulkEditData] = useState({
+    action: '', // 'delete', 'status', 'priority', 'assign', 'unassign', 'dueDate'
+    status: '',
+    priority: '',
+    assignedToId: '',
+    dueDate: '',
+  });
+  const [bulkEditProgress, setBulkEditProgress] = useState<{
+    isProcessing: boolean;
+    processed: number;
+    total: number;
+    currentBatch: number;
+    totalBatches: number;
+  }>({
+    isProcessing: false,
+    processed: 0,
+    total: 0,
+    currentBatch: 0,
+    totalBatches: 0
+  });
   const [snackbarMessage, setSnackbarMessage] = useState('');
   
   // Refs for touch interactions
@@ -227,6 +263,173 @@ export default function WorkOrders() {
     },
   });
 
+  // Bulk edit mutations
+  const bulkEditMutation = useMutation({
+    mutationFn: async ({ ids, action, data }: { ids: number[], action: string, data: any }) => {
+      const BATCH_SIZE = 5; // Process 5 items at a time
+      const DELAY_MS = 200; // 200ms delay between batches
+      const results = [];
+      const errors = [];
+      const totalBatches = Math.ceil(ids.length / BATCH_SIZE);
+
+      console.log(`Processing bulk ${action} for ${ids.length} work orders in batches of ${BATCH_SIZE}`);
+      
+      // Initialize progress
+      setBulkEditProgress({
+        isProcessing: true,
+        processed: 0,
+        total: ids.length,
+        currentBatch: 0,
+        totalBatches
+      });
+
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        const currentBatchNum = Math.floor(i / BATCH_SIZE) + 1;
+        
+        console.log(`Processing batch ${currentBatchNum}/${totalBatches}: ${batch.length} items`);
+        
+        // Update progress
+        setBulkEditProgress(prev => ({
+          ...prev,
+          currentBatch: currentBatchNum
+        }));
+
+        try {
+          // Process batch with individual error handling
+          const batchPromises = batch.map(async (id) => {
+            try {
+              let result;
+              switch (action) {
+                case 'delete':
+                  result = await workOrdersService.delete(id);
+                  break;
+                case 'status':
+                  result = await workOrdersService.update(id, { status: data.status });
+                  break;
+                case 'priority':
+                  result = await workOrdersService.update(id, { priority: data.priority });
+                  break;
+                case 'assign':
+                  result = await workOrdersService.update(id, { assignedToId: parseInt(data.assignedToId) });
+                  break;
+                case 'unassign':
+                  result = await workOrdersService.update(id, { assignedToId: null });
+                  break;
+                case 'dueDate':
+                  result = await workOrdersService.update(id, { dueDate: data.dueDate });
+                  break;
+                default:
+                  throw new Error(`Unknown bulk action: ${action}`);
+              }
+              return { id, success: true, result };
+            } catch (error) {
+              console.error(`Failed to ${action} work order ${id}:`, error);
+              return { id, success: false, error: error.message || 'Unknown error' };
+            }
+          });
+
+          const batchResults = await Promise.all(batchPromises);
+          
+          // Separate successful and failed updates
+          batchResults.forEach(result => {
+            if (result.success) {
+              results.push(result);
+            } else {
+              errors.push(result);
+            }
+          });
+
+          // Update progress with completed items
+          setBulkEditProgress(prev => ({
+            ...prev,
+            processed: results.length + errors.length
+          }));
+
+          // Add delay between batches (except for the last batch)
+          if (i + BATCH_SIZE < ids.length) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+          }
+
+        } catch (batchError) {
+          console.error(`Batch processing failed:`, batchError);
+          // If entire batch fails, mark all items in batch as failed
+          batch.forEach(id => {
+            errors.push({ id, success: false, error: batchError.message || 'Batch processing failed' });
+          });
+          
+          // Update progress
+          setBulkEditProgress(prev => ({
+            ...prev,
+            processed: results.length + errors.length
+          }));
+        }
+      }
+
+      console.log(`Bulk ${action} completed: ${results.length} successful, ${errors.length} failed`);
+      
+      return {
+        action,
+        successful: results,
+        failed: errors,
+        totalProcessed: ids.length,
+        successCount: results.length,
+        failureCount: errors.length
+      };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+      
+      // Reset progress
+      setBulkEditProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0,
+        currentBatch: 0,
+        totalBatches: 0
+      });
+      
+      // Show detailed success/failure message
+      const actionText = {
+        'delete': 'deleted',
+        'status': 'status updated for',
+        'priority': 'priority updated for',
+        'assign': 'assigned',
+        'unassign': 'unassigned',
+        'dueDate': 'due date updated for'
+      }[result.action] || 'processed';
+
+      if (result.failureCount === 0) {
+        setSnackbarMessage(`Successfully ${actionText} ${result.successCount} work orders.`);
+      } else if (result.successCount === 0) {
+        setSnackbarMessage(`Failed to process any work orders. Please try again or contact support.`);
+      } else {
+        setSnackbarMessage(`${actionText} ${result.successCount} work orders successfully. ${result.failureCount} failed.`);
+        console.log('Failed updates:', result.failed);
+      }
+      
+      setBulkEditOpen(false);
+      setSelectedWorkOrderIds(new Set());
+      setBulkEditData({ action: '', status: '', priority: '', assignedToId: '', dueDate: '' });
+      setSnackbarOpen(true);
+    },
+    onError: (error) => {
+      console.error("Error during bulk edit operation:", error);
+      
+      // Reset progress
+      setBulkEditProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0,
+        currentBatch: 0,
+        totalBatches: 0
+      });
+      
+      setSnackbarMessage(`Bulk operation failed: ${error.message || 'Unknown error'}. Please try with fewer items.`);
+      setSnackbarOpen(true);
+    },
+  });
+
   // Pull-to-refresh functionality
   const handlePullToRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -280,6 +483,103 @@ export default function WorkOrders() {
     setSnackbarOpen(true);
     setQuickActionOpen(false);
   }, [updateWorkOrderMutation]);
+
+  // Bulk edit handlers
+  const handleSelectWorkOrder = useCallback((workOrderId: number, selected: boolean) => {
+    const newSelection = new Set(selectedWorkOrderIds);
+    if (selected) {
+      newSelection.add(workOrderId);
+    } else {
+      newSelection.delete(workOrderId);
+    }
+    setSelectedWorkOrderIds(newSelection);
+  }, [selectedWorkOrderIds]);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedWorkOrderIds.size === filteredWorkOrders.length) {
+      // Deselect all
+      setSelectedWorkOrderIds(new Set());
+    } else {
+      // Select all visible work orders
+      const allIds = new Set(filteredWorkOrders.map((wo: WorkOrder) => wo.id));
+      setSelectedWorkOrderIds(allIds);
+    }
+  }, [selectedWorkOrderIds.size, filteredWorkOrders]);
+
+  const handleBulkEditOpen = useCallback((action: string) => {
+    if (selectedWorkOrderIds.size === 0) {
+      setSnackbarMessage('Please select at least one work order to edit.');
+      setSnackbarOpen(true);
+      return;
+    }
+    
+    // Warn for large batch operations
+    if (selectedWorkOrderIds.size > 20) {
+      const proceed = confirm(
+        `You are about to ${action} ${selectedWorkOrderIds.size} work orders. This may take some time and will be processed in batches. Do you want to proceed?`
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+    
+    setBulkEditData(prev => ({ ...prev, action }));
+    setBulkEditOpen(true);
+  }, [selectedWorkOrderIds.size]);
+
+  const handleBulkEditClose = useCallback(() => {
+    // Prevent closing while processing
+    if (bulkEditProgress.isProcessing) {
+      return;
+    }
+    setBulkEditOpen(false);
+    setBulkEditData({ action: '', status: '', priority: '', assignedToId: '', dueDate: '' });
+  }, [bulkEditProgress.isProcessing]);
+
+  const handleBulkEditChange = useCallback((field: string, value: string) => {
+    setBulkEditData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+
+  const handleBulkEditSubmit = useCallback(() => {
+    const { action, ...data } = bulkEditData;
+    
+    if (!action) {
+      setSnackbarMessage('Please select an action.');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validate required fields based on action
+    if (action === 'status' && !data.status) {
+      setSnackbarMessage('Please select a status.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'priority' && !data.priority) {
+      setSnackbarMessage('Please select a priority.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'assign' && !data.assignedToId) {
+      setSnackbarMessage('Please select a user to assign.');
+      setSnackbarOpen(true);
+      return;
+    }
+    if (action === 'dueDate' && !data.dueDate) {
+      setSnackbarMessage('Please select a due date.');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    bulkEditMutation.mutate({
+      ids: Array.from(selectedWorkOrderIds),
+      action,
+      data
+    });
+  }, [bulkEditData, selectedWorkOrderIds, bulkEditMutation]);
 
   const handleWorkOrderSubmit = useCallback((data: any) => {
     if (formMode === 'create') {
@@ -536,6 +836,14 @@ export default function WorkOrders() {
               </Box>
               
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <Checkbox
+                  checked={selectedWorkOrderIds.has(workOrder.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleSelectWorkOrder(workOrder.id, e.target.checked);
+                  }}
+                  sx={{ p: 0.5 }}
+                />
                 <Chip
                   label={workOrder.status.replace('_', ' ')}
                   color={getStatusColor(workOrder.status) as any}
@@ -1230,6 +1538,86 @@ export default function WorkOrders() {
               </Typography>
             )}
           </Box>
+
+          {/* Bulk Action Toolbar */}
+          {!isLoading && filteredWorkOrders.length > 0 && (
+            <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Checkbox
+                  checked={selectedWorkOrderIds.size > 0 && selectedWorkOrderIds.size === filteredWorkOrders.length}
+                  indeterminate={selectedWorkOrderIds.size > 0 && selectedWorkOrderIds.size < filteredWorkOrders.length}
+                  onChange={handleSelectAll}
+                />
+                <Typography variant="body2">
+                  {selectedWorkOrderIds.size > 0 
+                    ? `${selectedWorkOrderIds.size} of ${filteredWorkOrders.length} selected` 
+                    : 'Select all'}
+                </Typography>
+                
+                {selectedWorkOrderIds.size > 0 && (
+                  <Box sx={{ ml: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleBulkEditOpen('status')}
+                    >
+                      Status
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<PriorityIcon />}
+                      onClick={() => handleBulkEditOpen('priority')}
+                    >
+                      Priority
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AssignIcon />}
+                      onClick={() => handleBulkEditOpen('assign')}
+                    >
+                      Assign
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<UnassignIcon />}
+                      onClick={() => handleBulkEditOpen('unassign')}
+                    >
+                      Unassign
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<DateIcon />}
+                      onClick={() => handleBulkEditOpen('dueDate')}
+                    >
+                      Due Date
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleBulkEditOpen('delete')}
+                    >
+                      Delete ({selectedWorkOrderIds.size})
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ClearIcon />}
+                      onClick={() => setSelectedWorkOrderIds(new Set())}
+                    >
+                      Clear
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          )}
           
           {/* Loading State */}
           {isLoading && (
@@ -1295,6 +1683,20 @@ export default function WorkOrders() {
                   onEdit={(row: WorkOrder) => handleEditWorkOrder(row)}
                   onDelete={(row: WorkOrder) => handleDeleteWorkOrder(row)}
                   columns={[
+                    {
+                      key: 'select',
+                      label: '',
+                      sortable: false,
+                      priority: 'high' as const,
+                      width: '50px',
+                      render: (value: any, row: WorkOrder) => (
+                        <Checkbox
+                          checked={selectedWorkOrderIds.has(row.id)}
+                          onChange={(e) => handleSelectWorkOrder(row.id, e.target.checked)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ),
+                    },
                     {
                       key: 'id',
                       label: 'ID',
@@ -1959,6 +2361,147 @@ export default function WorkOrders() {
               </Button>
             </DialogActions>
           )}
+        </Dialog>
+
+        {/* Bulk Edit Dialog */}
+        <Dialog
+          open={bulkEditOpen}
+          onClose={handleBulkEditClose}
+          maxWidth="sm"
+          fullWidth
+          disableEscapeKeyDown={bulkEditProgress.isProcessing}
+          PaperProps={{
+            sx: { 
+              minHeight: bulkEditProgress.isProcessing ? '400px' : 'auto'
+            }
+          }}
+        >
+          <DialogTitle>
+            <Typography variant="h6">
+              Bulk Edit Work Orders ({selectedWorkOrderIds.size} selected)
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Action: {bulkEditData.action.replace(/([A-Z])/g, ' $1').toLowerCase().replace(/^./, (str) => str.toUpperCase())}
+            </Typography>
+          </DialogTitle>
+          
+          <DialogContent>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {bulkEditData.action === 'status' && (
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={bulkEditData.status}
+                    label="Status"
+                    onChange={(e) => handleBulkEditChange('status', e.target.value)}
+                  >
+                    <MenuItem value="OPEN">Open</MenuItem>
+                    <MenuItem value="IN_PROGRESS">In Progress</MenuItem>
+                    <MenuItem value="ON_HOLD">On Hold</MenuItem>
+                    <MenuItem value="COMPLETED">Completed</MenuItem>
+                    <MenuItem value="CANCELED">Canceled</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {bulkEditData.action === 'priority' && (
+                <FormControl fullWidth>
+                  <InputLabel>Priority</InputLabel>
+                  <Select
+                    value={bulkEditData.priority}
+                    label="Priority"
+                    onChange={(e) => handleBulkEditChange('priority', e.target.value)}
+                  >
+                    <MenuItem value="LOW">Low</MenuItem>
+                    <MenuItem value="MEDIUM">Medium</MenuItem>
+                    <MenuItem value="HIGH">High</MenuItem>
+                    <MenuItem value="URGENT">Urgent</MenuItem>
+                  </Select>
+                </FormControl>
+              )}
+
+              {bulkEditData.action === 'assign' && (
+                <FormControl fullWidth>
+                  <InputLabel>Assign To</InputLabel>
+                  <Select
+                    value={bulkEditData.assignedToId}
+                    label="Assign To"
+                    onChange={(e) => handleBulkEditChange('assignedToId', e.target.value)}
+                  >
+                    <MenuItem value="1">John Doe</MenuItem>
+                    <MenuItem value="2">Jane Smith</MenuItem>
+                    <MenuItem value="3">Bob Johnson</MenuItem>
+                    {/* Add more users as needed */}
+                  </Select>
+                </FormControl>
+              )}
+
+              {bulkEditData.action === 'dueDate' && (
+                <TextField
+                  fullWidth
+                  label="Due Date"
+                  type="datetime-local"
+                  value={bulkEditData.dueDate}
+                  onChange={(e) => handleBulkEditChange('dueDate', e.target.value)}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              )}
+
+              {bulkEditData.action === 'delete' && (
+                <Alert severity="warning">
+                  Are you sure you want to delete {selectedWorkOrderIds.size} work orders? This action cannot be undone.
+                </Alert>
+              )}
+
+              {bulkEditData.action === 'unassign' && (
+                <Alert severity="info">
+                  This will remove the assigned user from {selectedWorkOrderIds.size} work orders.
+                </Alert>
+              )}
+
+              {/* Progress Indicator */}
+              {bulkEditProgress.isProcessing && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    Processing batch {bulkEditProgress.currentBatch} of {bulkEditProgress.totalBatches}...
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={(bulkEditProgress.processed / bulkEditProgress.total) * 100}
+                    sx={{ mb: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {bulkEditProgress.processed} of {bulkEditProgress.total} items processed
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </DialogContent>
+
+          <DialogActions>
+            <Button 
+              onClick={handleBulkEditClose}
+              disabled={bulkEditProgress.isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkEditSubmit}
+              variant="contained"
+              disabled={bulkEditMutation.isPending || bulkEditProgress.isProcessing}
+              color={bulkEditData.action === 'delete' ? 'error' : 'primary'}
+            >
+              {bulkEditProgress.isProcessing 
+                ? `Processing... (${bulkEditProgress.processed}/${bulkEditProgress.total})`
+                : bulkEditMutation.isPending 
+                  ? 'Starting...' 
+                  : bulkEditData.action === 'delete'
+                    ? `Delete ${selectedWorkOrderIds.size} Work Orders`
+                    : `Update ${selectedWorkOrderIds.size} Work Orders`}
+            </Button>
+          </DialogActions>
         </Dialog>
 
         {/* Notifications */}
