@@ -852,11 +852,33 @@ export default function TechnicianDashboard() {
                         {workOrder.title}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                        <Chip
-                          label={workOrder.status.replace('_', ' ')}
-                          color={getStatusColor(workOrder.status) as any}
-                          size="small"
-                        />
+                        {/* Inline Status Change Dropdown */}
+                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                          <Select
+                            value={workOrder.status}
+                            onChange={(e) => updateStatusMutation.mutate({ id: workOrder.id, status: e.target.value })}
+                            disabled={updateStatusMutation.isPending}
+                            sx={{ 
+                              '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                              '& .MuiSelect-select': {
+                                py: 0.5,
+                                px: 1,
+                                borderRadius: 1,
+                                backgroundColor: statusColors[workOrder.status as keyof typeof statusColors] || 'grey.100',
+                                color: 'white',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                              },
+                              '&:hover .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { border: '2px solid primary.main' },
+                            }}
+                          >
+                            <MenuItem value="OPEN">OPEN</MenuItem>
+                            <MenuItem value="IN_PROGRESS">IN PROGRESS</MenuItem>
+                            <MenuItem value="ON_HOLD">ON HOLD</MenuItem>
+                            <MenuItem value="COMPLETED">COMPLETED</MenuItem>
+                          </Select>
+                        </FormControl>
                         <Chip
                           label={workOrder.priority}
                           color={getPriorityColor(workOrder.priority) as any}
@@ -1504,10 +1526,26 @@ export default function TechnicianDashboard() {
                     <CardHeader title="Related Work Orders" />
                     <CardContent>
                       {(() => {
-                        const assetWorkOrders = workOrders.filter(wo => 
-                          wo.assetId === selectedAsset.id || 
-                          wo.assetName === selectedAsset.name
-                        );
+                        // Filter work orders for the selected asset using multiple possible field names
+                        const assetWorkOrders = workOrders.filter(wo => {
+                          // Check various possible field mappings
+                          const matchesById = wo.assetId === selectedAsset.id;
+                          const matchesByName = wo.assetName === selectedAsset.name;
+                          const matchesByAssetProperty = wo.asset?.id === selectedAsset.id || wo.asset?.name === selectedAsset.name;
+                          
+                          console.log(`Checking work order ${wo.id} against asset ${selectedAsset.id}:`, {
+                            woAssetId: wo.assetId,
+                            woAssetName: wo.assetName,
+                            woAsset: wo.asset,
+                            selectedAssetId: selectedAsset.id,
+                            selectedAssetName: selectedAsset.name,
+                            matchesById,
+                            matchesByName,
+                            matchesByAssetProperty
+                          });
+                          
+                          return matchesById || matchesByName || matchesByAssetProperty;
+                        });
                         
                         return assetWorkOrders.length > 0 ? (
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

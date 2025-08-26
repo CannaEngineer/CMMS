@@ -181,6 +181,49 @@ const handleUpload = (req: any, res: any) => {
 app.post('/api/uploads/:entityType/:entityId', authenticate, handleUpload);
 app.post('/api/uploads/:entityType', authenticate, handleUpload);
 
+// GET routes for fetching uploaded files
+app.get('/api/uploads/:entityType/:entityId', authenticate, async (req, res) => {
+  try {
+    const { entityType, entityId } = req.params;
+    const { organizationId } = req.user;
+
+    console.log(`Fetching files for ${entityType} ${entityId} in organization ${organizationId}`);
+
+    // For now, return empty array - this endpoint exists to prevent 404s
+    // In a full implementation, you would fetch from a database or file system
+    res.json({
+      success: true,
+      files: [],
+      entityType,
+      entityId,
+      organizationId
+    });
+  } catch (error) {
+    console.error('Error fetching files:', error);
+    res.status(500).json({ error: 'Failed to fetch files' });
+  }
+});
+
+app.get('/api/uploads/:entityType', authenticate, async (req, res) => {
+  try {
+    const { entityType } = req.params;
+    const { organizationId } = req.user;
+
+    console.log(`Fetching files for ${entityType} in organization ${organizationId}`);
+
+    // For now, return empty array - this endpoint exists to prevent 404s
+    res.json({
+      success: true,
+      files: [],
+      entityType,
+      organizationId
+    });
+  } catch (error) {
+    console.error('Error fetching files:', error);
+    res.status(500).json({ error: 'Failed to fetch files' });
+  }
+});
+
 // Legacy blob upload route (for backward compatibility)
 app.post('/api/upload/blob', authenticate, (req, res) => {
   const upload = blobUploadService.getMulterConfig();

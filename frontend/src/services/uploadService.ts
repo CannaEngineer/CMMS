@@ -206,14 +206,16 @@ export class UploadService {
         reject(new Error('Upload was aborted'));
       });
 
-      // Add authentication headers
+      // Open request first
+      xhr.open('POST', endpoint);
+      
+      // Add authentication headers after opening
       const token = localStorage.getItem('token');
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
 
       // Send request
-      xhr.open('POST', endpoint);
       xhr.send(formData);
     });
   }
