@@ -236,4 +236,42 @@ export class PartController {
       res.status(500).json({ error: 'Failed to fetch recent activity' });
     }
   }
+
+  async checkoutParts(req: Request, res: Response) {
+    try {
+      const organizationId = req.user?.organizationId;
+      const userId = req.user?.id;
+      const { items, reason, notes } = req.body;
+      
+      if (!organizationId || !userId) {
+        return res.status(400).json({ error: 'Organization ID and User ID required' });
+      }
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Items array is required and must not be empty' });
+      }
+
+      console.log(`Parts checkout request from user ${userId} in org ${organizationId}`);
+      console.log('Items:', items);
+      console.log('Reason:', reason);
+
+      // Process the checkout (update inventory, create records, etc.)
+      const result = await partService.checkoutParts(organizationId, userId, {
+        items,
+        reason: reason || 'Parts checkout',
+        notes: notes || ''
+      });
+
+      console.log('Checkout completed successfully:', result);
+      
+      res.json({
+        success: true,
+        message: 'Parts checked out successfully',
+        checkout: result
+      });
+    } catch (error) {
+      console.error('Error in parts checkout:', error);
+      res.status(500).json({ error: 'Failed to process parts checkout' });
+    }
+  }
 }

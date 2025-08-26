@@ -13,6 +13,7 @@ router.post('/batch', (req, res) => partController.batchCreateOrMerge(req, res))
 router.post('/cleanup-duplicates', (req, res) => partController.cleanupDuplicates(req, res));
 router.put('/:id', (req, res) => partController.updatePart(req, res));
 router.patch('/:id/stock', (req, res) => partController.updateStockLevel(req, res));
+router.post('/checkout', (req, res) => partController.checkoutParts(req, res));
 router.delete('/:id', (req, res) => partController.deletePart(req, res));
 
 export default router;

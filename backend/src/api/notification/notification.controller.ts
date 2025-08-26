@@ -299,4 +299,29 @@ export class NotificationController {
       res.status(500).json({ error: 'Failed to cleanup notifications' });
     }
   }
+
+  // Send email notification
+  async sendEmail(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { to, subject, body } = req.body;
+      
+      if (!to || !subject || !body) {
+        return res.status(400).json({ error: 'Missing required fields: to, subject, body' });
+      }
+
+      console.log(`Sending email notification to: ${to}`);
+      console.log(`Subject: ${subject}`);
+      
+      const result = await this.notificationService.sendEmailNotification(to, subject, body);
+
+      res.json({
+        success: true,
+        message: 'Email sent successfully',
+        result
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      res.status(500).json({ error: 'Failed to send email notification' });
+    }
+  }
 }

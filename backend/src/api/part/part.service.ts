@@ -372,4 +372,69 @@ export class PartService {
       take: limit,
     });
   }
+
+  async checkoutParts(organizationId: number, userId: number, checkoutData: {
+    items: Array<{ partId: number; quantity: number; partName?: string }>;
+    reason: string;
+    notes: string;
+  }) {
+    const { items, reason, notes } = checkoutData;
+    
+    console.log(`Processing parts checkout for user ${userId} in org ${organizationId}`);
+    
+    // Start a transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      const processedItems = [];
+      
+      for (const item of items) {
+        const { partId, quantity } = item;
+        
+        // Find the part and check availability
+        const part = await tx.part.findFirst({
+          where: { id: partId, organizationId }
+        });
+        
+        if (!part) {
+          throw new Error(`Part with ID ${partId} not found`);
+        }
+        
+        if (part.quantityOnHand < quantity) {
+          console.warn(`Insufficient stock for part ${part.name}: requested ${quantity}, available ${part.quantityOnHand}`);
+          // Allow checkout even with insufficient stock but log it
+        }
+        
+        // Update part quantity
+        const updatedPart = await tx.part.update({
+          where: { id: partId },
+          data: {
+            quantityOnHand: Math.max(0, part.quantityOnHand - quantity)
+          }
+        });
+        
+        processedItems.push({
+          partId,
+          partName: part.name,
+          quantity,
+          previousStock: part.quantityOnHand,
+          newStock: updatedPart.quantityOnHand
+        });
+        
+        console.log(`Updated ${part.name}: ${part.quantityOnHand} → ${updatedPart.quantityOnHand} (checked out ${quantity})`);
+      }
+      
+      return {
+        id: Date.now(), // Simple ID for tracking
+        userId,
+        organizationId,
+        items: processedItems,
+        reason,
+        notes,
+        checkedOutAt: new Date(),
+        totalItems: items.length
+      };
+    });
+    
+    console.log(`Parts checkout completed: ${result.totalItems} items processed`);
+    return result;
+  }
 }

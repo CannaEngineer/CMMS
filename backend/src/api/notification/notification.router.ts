@@ -47,6 +47,9 @@ router.put('/all/read', notificationController.markAllAsRead.bind(notificationCo
 // Clear all notifications
 router.delete('/all/clear', notificationController.clearAllNotifications.bind(notificationController));
 
+// Email endpoint
+router.post('/email', notificationController.sendEmail.bind(notificationController));
+
 // Admin endpoints
 router.post('/test', notificationController.sendTestNotification.bind(notificationController));
 router.delete('/cleanup', notificationController.cleanupOldNotifications.bind(notificationController));

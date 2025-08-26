@@ -752,4 +752,25 @@ export class NotificationService {
       }
     }
   }
+
+  // Simple email sending method for direct email notifications
+  async sendEmailNotification(to: string, subject: string, body: string) {
+    try {
+      console.log(`📧 Sending email to: ${to}`);
+      console.log(`📧 Subject: ${subject}`);
+      
+      const result = await emailService.sendEmail({
+        to,
+        subject,
+        text: body,
+        html: body.replace(/\n/g, '<br>') // Simple HTML conversion
+      });
+
+      console.log(`📧 Email sent successfully to ${to}`);
+      return result;
+    } catch (error) {
+      console.error(`❌ Failed to send email to ${to}:`, error);
+      throw error;
+    }
+  }
 }
