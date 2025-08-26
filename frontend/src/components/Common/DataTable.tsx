@@ -31,6 +31,7 @@ import {
   Fade,
   Button,
   Alert,
+  alpha,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -44,6 +45,7 @@ import {
   TouchApp as TouchIcon,
   Schedule as ScheduleIcon,
   Refresh as RefreshIcon,
+  ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 
 interface Column {
@@ -96,6 +98,11 @@ interface DataTableProps {
   onView?: (row: any) => void;
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
+  // Control actions column visibility
+  showActionsColumn?: boolean;
+  hideToolbar?: boolean;
+  showExportButton?: boolean;
+  showFilterButton?: boolean;
 }
 
 const DataTable = memo(function DataTable({
@@ -118,6 +125,10 @@ const DataTable = memo(function DataTable({
   onView,
   onEdit,
   onDelete,
+  showActionsColumn = true,
+  hideToolbar = false,
+  showExportButton = true,
+  showFilterButton = true,
 }: DataTableProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -296,12 +307,12 @@ const DataTable = memo(function DataTable({
   const getVisibleColumns = () => {
     if (!isMobile) return columns;
     
-    // On mobile, show high priority columns and hide others based on hideOnMobile flag
+    // On mobile, prioritize essential columns and hide others based on screen size
     return columns.filter(col => {
       if (col.hideOnMobile) return false;
       if (col.priority === 'high') return true;
       if (col.priority === 'medium' && !isSmallMobile) return true;
-      return col.priority === undefined; // Default behavior for columns without priority
+      return col.priority === undefined && !isSmallMobile; // Default behavior for columns without priority
     });
   };
 
@@ -504,8 +515,8 @@ const DataTable = memo(function DataTable({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 }, '&:last-child': { pb: { xs: 2.5, sm: 3 } } }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 } }}>
             {selectable && (
               <Checkbox
                 color="primary"
@@ -514,16 +525,33 @@ const DataTable = memo(function DataTable({
                   event.stopPropagation();
                   handleSelect(event, row.id);
                 }}
-                sx={{ mt: -0.5 }}
+                sx={{ 
+                  mt: -0.5,
+                  p: 1,
+                  '& .MuiSvgIcon-root': {
+                    fontSize: { xs: 20, sm: 24 }
+                  }
+                }}
               />
             )}
             
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               {/* Primary information - first 2 high priority columns */}
-              {visibleColumns.slice(0, 2).map((column) => (
-                <Box key={`${row.id}-${column.key}`} sx={{ mb: 1 }}>
+              {visibleColumns.slice(0, Math.min(2, visibleColumns.length)).map((column, index) => (
+                <Box key={`${row.id}-${column.key}`} sx={{ mb: index === 0 ? 1 : 0.5 }}>
                   {column.render ? column.render(row[column.key], row) : (
-                    <Typography variant="body1" fontWeight={600} noWrap>
+                    <Typography 
+                      variant={index === 0 ? "subtitle1" : "body2"} 
+                      fontWeight={index === 0 ? 600 : 400}
+                      color={index === 0 ? "text.primary" : "text.secondary"}
+                      sx={{ 
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: index === 0 ? 2 : 1,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
                       {row[column.key]}
                     </Typography>
                   )}
@@ -531,54 +559,109 @@ const DataTable = memo(function DataTable({
               ))}
             </Box>
 
-            <IconButton
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                setSelectedRow(row);
-                setAnchorEl(event.currentTarget);
-              }}
-              sx={{ mt: -0.5 }}
-            >
-              <MoreVertIcon />
-            </IconButton>
+            {(onView || onEdit || onDelete || showActionsColumn) && (
+              <IconButton
+                size={isSmallMobile ? "small" : "medium"}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setSelectedRow(row);
+                  setAnchorEl(event.currentTarget);
+                }}
+                sx={{ 
+                  mt: -0.5,
+                  minWidth: { xs: 40, sm: 44 },
+                  minHeight: { xs: 40, sm: 44 },
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                    transform: 'scale(1.05)',
+                  }
+                }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            )}
           </Box>
 
           {/* Secondary information - show/hide toggle */}
           {visibleColumns.length > 2 && (
             <>
               <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-                <Stack spacing={1}>
-                  {visibleColumns.slice(2).map((column) => (
-                    <Box key={`${row.id}-${column.key}-detail`} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ minWidth: 80 }}>
-                        {column.label}:
-                      </Typography>
-                      <Box sx={{ textAlign: 'right', ml: 1 }}>
-                        {column.render ? column.render(row[column.key], row) : (
-                          <Typography variant="body2">
-                            {row[column.key]}
-                          </Typography>
-                        )}
+                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                  <Stack spacing={1.5}>
+                    {visibleColumns.slice(2).map((column) => (
+                      <Box key={`${row.id}-${column.key}-detail`} 
+                           sx={{ 
+                             display: 'flex', 
+                             justifyContent: 'space-between', 
+                             alignItems: 'flex-start',
+                             gap: 2
+                           }}>
+                        <Typography 
+                          variant="caption" 
+                          color="text.secondary" 
+                          sx={{ 
+                            minWidth: { xs: 60, sm: 80 },
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: 0.5
+                          }}
+                        >
+                          {column.label}:
+                        </Typography>
+                        <Box sx={{ 
+                          textAlign: 'right', 
+                          flex: 1,
+                          minWidth: 0
+                        }}>
+                          {column.render ? column.render(row[column.key], row) : (
+                            <Typography 
+                              variant="body2"
+                              sx={{ 
+                                wordBreak: 'break-word',
+                                fontSize: { xs: '0.875rem', sm: '1rem' }
+                              }}
+                            >
+                              {row[column.key] || '-'}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
-                    </Box>
-                  ))}
-                </Stack>
+                    ))}
+                  </Stack>
+                </Box>
               </Collapse>
               
               {visibleColumns.length > 2 && (
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
-                  <Typography
-                    variant="caption"
+                <Box sx={{ textAlign: 'center', mt: { xs: 1.5, sm: 2 } }}>
+                  <Button
+                    variant="text"
+                    size="small"
                     color="primary"
-                    sx={{ cursor: 'pointer', textDecoration: 'underline' }}
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleCardExpansion(row.id);
                     }}
+                    sx={{
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      minHeight: { xs: 32, sm: 36 },
+                      px: 2,
+                      textTransform: 'none',
+                      '&:hover': {
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      }
+                    }}
+                    endIcon={
+                      <ExpandMoreIcon 
+                        sx={{ 
+                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s ease',
+                          fontSize: { xs: 16, sm: 20 }
+                        }} 
+                      />
+                    }
                   >
-                    {isExpanded ? 'Show Less' : 'Show More'}
-                  </Typography>
+                    {isExpanded ? 'Show Less' : `Show More (${visibleColumns.length - 2})`}
+                  </Button>
                 </Box>
               )}
             </>
@@ -590,15 +673,16 @@ const DataTable = memo(function DataTable({
 
   return (
     <Paper sx={{ width: '100%', mb: 2 }}>
-      <Toolbar
-        sx={{
-          pl: { sm: 2 },
-          pr: { xs: 1, sm: 1 },
-          ...(selected.length > 0 && {
-            bgcolor: theme.palette.primary.light + '20',
-          }),
-        }}
-      >
+      {!hideToolbar && (
+        <Toolbar
+          sx={{
+            pl: { sm: 2 },
+            pr: { xs: 1, sm: 1 },
+            ...(selected.length > 0 && {
+              bgcolor: theme.palette.primary.light + '20',
+            }),
+          }}
+        >
         {selected.length > 0 ? (
           <Typography
             sx={{ flex: '1 1 100%' }}
@@ -653,23 +737,28 @@ const DataTable = memo(function DataTable({
           )}
           
         <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
-          <Tooltip title="Filter list">
-            <IconButton>
-              <FilterListIcon />
-            </IconButton>
-          </Tooltip>
+          {showFilterButton && (
+            <Tooltip title="Filter list">
+              <IconButton>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
-          <Tooltip title="Export">
-            <IconButton>
-              <DownloadIcon />
-            </IconButton>
-          </Tooltip>
+          {showExportButton && (
+            <Tooltip title="Export">
+              <IconButton>
+                <DownloadIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
           
           {actions}
         </Box>
-      </Toolbar>
+        </Toolbar>
+      )}
 
       {/* Card View for Mobile */}
       {viewMode === 'cards' && (
@@ -784,11 +873,13 @@ const DataTable = memo(function DataTable({
                   )}
                 </TableCell>
               ))}
-              <TableCell align="right" sx={{ minWidth: 80 }}>
-                <Typography variant="body2" fontWeight={600}>
-                  Actions
-                </Typography>
-              </TableCell>
+              {showActionsColumn && (
+                <TableCell align="right" sx={{ minWidth: 80 }}>
+                  <Typography variant="body2" fontWeight={600}>
+                    Actions
+                  </Typography>
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -839,34 +930,36 @@ const DataTable = memo(function DataTable({
                       )}
                     </TableCell>
                   ))}
-                  <TableCell 
-                    align="right"
-                    sx={{ 
-                      px: { xs: 1, sm: 2 },
-                      py: { xs: 1.5, sm: 2 }
-                    }}
-                  >
-                    <IconButton
-                      size="small"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setSelectedRow(row);
-                        setAnchorEl(event.currentTarget);
-                      }}
+                  {showActionsColumn && (
+                    <TableCell 
+                      align="right"
                       sx={{ 
-                        minWidth: 44,
-                        minHeight: 44
+                        px: { xs: 1, sm: 2 },
+                        py: { xs: 1.5, sm: 2 }
                       }}
                     >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setSelectedRow(row);
+                          setAnchorEl(event.currentTarget);
+                        }}
+                        sx={{ 
+                          minWidth: 44,
+                          minHeight: 44
+                        }}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}
             {paginatedData.length === 0 && (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length + (selectable ? 1 : 0) + 1} align="center">
+                <TableCell colSpan={visibleColumns.length + (selectable ? 1 : 0) + (showActionsColumn ? 1 : 0)} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
                     {emptyMessage}
                   </Typography>

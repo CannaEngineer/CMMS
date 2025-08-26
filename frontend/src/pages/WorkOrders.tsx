@@ -1291,6 +1291,9 @@ export default function WorkOrders() {
                 <DataTable
                   data={filteredWorkOrders}
                   onRowClick={(row: WorkOrder) => handleViewWorkOrder(row)}
+                  onView={(row: WorkOrder) => handleViewWorkOrder(row)}
+                  onEdit={(row: WorkOrder) => handleEditWorkOrder(row)}
+                  onDelete={(row: WorkOrder) => handleDeleteWorkOrder(row)}
                   columns={[
                     {
                       key: 'id',
@@ -1386,51 +1389,6 @@ export default function WorkOrders() {
                         </Typography>
                       ),
                     },
-                    {
-                      key: 'actions',
-                      label: 'Quick Actions',
-                      priority: 'high' as const,
-                      render: (value: any, row: WorkOrder) => (
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          {row.status === 'OPEN' && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<StartIcon />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuickStatusUpdate(row, 'IN_PROGRESS');
-                              }}
-                              sx={{ minWidth: 'auto' }}
-                            >
-                              Start
-                            </Button>
-                          )}
-                          {row.status === 'IN_PROGRESS' && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="success"
-                              startIcon={<CompleteIcon />}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleQuickStatusUpdate(row, 'COMPLETED');
-                              }}
-                              sx={{ minWidth: 'auto' }}
-                            >
-                              Complete
-                            </Button>
-                          )}
-                          <IconButton
-                            onClick={(e) => handleCardAction(e, row)}
-                            size="small"
-                            sx={{ minWidth: 40, minHeight: 40 }}
-                          >
-                            <MoreIcon />
-                          </IconButton>
-                        </Stack>
-                      ),
-                    },
                   ]}
                   loading={isLoading}
                   emptyMessage="No work orders found"
@@ -1438,6 +1396,8 @@ export default function WorkOrders() {
                   mobileCardView={false}
                   showExportButton={false}
                   showFilterButton={false}
+                  hideToolbar={false}
+                  showActionsColumn={true}
                 />
               </CardContent>
             </Card>

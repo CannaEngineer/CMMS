@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NotificationCenter from '../Notifications/NotificationCenter';
-import { notificationService } from '../../services/notificationService';
+import { NotificationBell } from '../Notifications/NotificationBell';
 import { workOrdersService } from '../../services/api';
 import {
   Box,
@@ -33,7 +32,6 @@ import {
   People as PeopleIcon,
   Assessment as AssessmentIcon,
   Settings as SettingsIcon,
-  Notifications as NotificationsIcon,
   AccountCircle as AccountCircleIcon,
   Sync as SyncIcon,
   SyncDisabled as SyncDisabledIcon,
@@ -71,51 +69,20 @@ export default function DashboardLayout() {
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [notificationPreferencesOpen, setNotificationPreferencesOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
   const [workOrderCount, setWorkOrderCount] = useState<number | undefined>(undefined);
 
-  // Initialize notification service and WebSocket
+  // Monitor online status
   useEffect(() => {
-    notificationService.initializeWebSocket();
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
     
-    // Load initial notification stats
-    const loadStats = async () => {
-      try {
-        const stats = await notificationService.getNotificationStats();
-        setUnreadCount(stats.unread);
-      } catch (error) {
-        console.error('Failed to load notification stats:', error);
-      }
-    };
-
-    loadStats();
-
-    // Set up event listeners
-    const handleNewNotification = () => {
-      loadStats(); // Reload stats when new notification arrives
-    };
-
-    const handleStatsUpdated = (stats: any) => {
-      setUnreadCount(stats.unread);
-    };
-
-    const handleConnectionStatus = (status: any) => {
-      setIsConnected(status.connected);
-    };
-
-    notificationService.on('new_notification', handleNewNotification);
-    notificationService.on('stats_updated', handleStatsUpdated);
-    notificationService.on('connection_status', handleConnectionStatus);
-
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
     return () => {
-      notificationService.off('new_notification', handleNewNotification);
-      notificationService.off('stats_updated', handleStatsUpdated);
-      notificationService.off('connection_status', handleConnectionStatus);
-      notificationService.cleanup();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -152,24 +119,6 @@ export default function DashboardLayout() {
     setAnchorEl(null);
   };
 
-  const handleNotificationOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationAnchor(event.currentTarget);
-  };
-
-  const handleNotificationClose = () => {
-    setNotificationAnchor(null);
-  };
-
-  const handleNotificationSettingsClick = () => {
-    console.log('Notification settings clicked - TODO: Implement preferences dialog');
-    setNotificationAnchor(null);
-  };
-
-  const handleNotificationClick = (notification: any) => {
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
-    }
-  };
 
   // Create navigation items with dynamic badges
   const navItems = baseNavItems.map(item => {
@@ -298,35 +247,13 @@ export default function DashboardLayout() {
                   }
                 }}
               />
-              {isConnected && (
-                <Chip
-                  label="Live"
-                  color="success"
-                  size="small"
-                  sx={{ 
-                    '& .MuiChip-label': {
-                      fontSize: { xs: '0.75rem', sm: '0.8125rem' }
-                    }
-                  }}
-                />
-              )}
             </Box>
 
             {/* Notifications */}
-            <IconButton
-              size={isMobile ? "medium" : "large"}
-              aria-label="show notifications"
-              color="inherit"
-              onClick={handleNotificationOpen}
-              sx={{ 
-                minWidth: 44,
-                minHeight: 44
-              }}
-            >
-              <Badge badgeContent={unreadCount} color="error" max={99}>
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+            <NotificationBell 
+              onSettingsClick={() => navigate('/profile')}
+              showActiveIndicator={true}
+            />
 
             {/* Profile */}
             <IconButton
@@ -390,15 +317,6 @@ export default function DashboardLayout() {
         </MenuItem>
       </Menu>
 
-      {/* Notification Center */}
-      <NotificationCenter
-        anchorEl={notificationAnchor}
-        open={Boolean(notificationAnchor)}
-        onClose={handleNotificationClose}
-        onSettingsClick={handleNotificationSettingsClick}
-      />
-
-      {/* TODO: Add notification preferences dialog and toast notifications */}
 
       {/* Drawer */}
       <Box

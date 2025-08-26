@@ -8,6 +8,8 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  Badge,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -18,14 +20,19 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
+  Person as PersonIcon,
+  Business as AssetIcon,
+  Schedule as DateIcon,
+  PriorityHigh as PriorityIcon,
+  Assignment as WorkOrderIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
-import { ViewProvider } from '../contexts/ViewContext';
+import { ViewProvider, useView } from '../contexts/ViewContext';
 import WorkOrderForm from '../components/Forms/WorkOrderForm';
+import UniversalTableView from '../components/Common/UniversalTableView';
 import { workOrdersService } from '../services/api';
 import { statusColors } from '../theme/theme';
-import { ViewMapping } from '../components/Common/UniversalViewContainer';
+import { workOrdersHierarchy, generateTableColumns } from '../types/table-hierarchy';
 
 interface WorkOrder {
   id: number;
@@ -86,7 +93,7 @@ const getStatusIcon = (status: string) => {
 export default function WorkOrdersWithViewToggle() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { isMobile } = useView();
   
   // Form and modal states
   const [workOrderFormOpen, setWorkOrderFormOpen] = useState(false);
@@ -190,184 +197,254 @@ export default function WorkOrdersWithViewToggle() {
     });
   };
 
-  // Define the view mapping for work orders
-  const workOrderViewMapping: ViewMapping = {
-    // Primary fields (always visible)
-    primary: [
-      {
-        key: 'id',
-        label: 'WO#',
-        render: (item: WorkOrder) => `WO-${item.id}`,
-        sortable: true,
-        width: 100,
-      },
-      {
-        key: 'title',
-        label: 'Title',
-        sortable: true,
-      },
-      {
-        key: 'status',
-        label: 'Status',
-        render: (item: WorkOrder) => (
-          <Chip
-            icon={getStatusIcon(item.status)}
-            label={item.status.replace('_', ' ')}
-            color={getStatusColor(item.status) as any}
-            size="small"
-            variant="filled"
-          />
-        ),
-        sortable: true,
-        width: 130,
-      },
-      {
-        key: 'priority',
-        label: 'Priority',
-        render: (item: WorkOrder) => (
-          <Chip
-            label={item.priority}
-            color={getPriorityColor(item.priority) as any}
-            size="small"
-            variant="outlined"
-          />
-        ),
-        sortable: true,
-        width: 100,
-      },
-    ],
-    
-    // Secondary fields (visible on larger screens)
-    secondary: [
-      {
-        key: 'asset',
-        label: 'Asset',
-        render: (item: WorkOrder) => item.asset?.name || '-',
-        sortable: false,
-      },
-      {
-        key: 'assignedTo',
-        label: 'Assigned To',
-        render: (item: WorkOrder) => item.assignedTo?.name || 'Unassigned',
-        sortable: false,
-      },
-    ],
-    
-    // Tertiary fields (visible on desktop only)
-    tertiary: [
-      {
-        key: 'createdAt',
-        label: 'Created',
-        render: (item: WorkOrder) => new Date(item.createdAt).toLocaleDateString(),
-        sortable: true,
-        width: 120,
-      },
-      {
-        key: 'updatedAt',
-        label: 'Updated',
-        render: (item: WorkOrder) => new Date(item.updatedAt).toLocaleDateString(),
-        sortable: true,
-        width: 120,
-      },
-    ],
-    
-    // Card view specific configuration
-    cardConfig: {
-      title: (item: WorkOrder) => item.title,
-      subtitle: (item: WorkOrder) => `WO-${item.id}`,
-      description: (item: WorkOrder) => item.description || 'No description',
-      badges: (item: WorkOrder) => [
-        {
-          label: item.status.replace('_', ' '),
-          color: getStatusColor(item.status),
-          icon: getStatusIcon(item.status),
-        },
-        {
-          label: item.priority,
-          color: getPriorityColor(item.priority),
-        },
-      ],
-      metadata: (item: WorkOrder) => [
-        { label: 'Asset', value: item.asset?.name || 'None' },
-        { label: 'Assigned', value: item.assignedTo?.name || 'Unassigned' },
-        { label: 'Created', value: new Date(item.createdAt).toLocaleDateString() },
-      ],
+  // Enhanced render functions for mobile-optimized display
+  const renderWorkOrderId = useCallback((item: WorkOrder) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <WorkOrderIcon fontSize="small" color="primary" />
+      <Typography 
+        variant="body2" 
+        fontWeight={600} 
+        sx={{ 
+          fontFamily: 'monospace',
+          color: 'primary.main',
+        }}
+      >
+        WO-{item.id}
+      </Typography>
+    </Box>
+  ), []);
+
+  const renderWorkOrderTitle = useCallback((item: WorkOrder) => (
+    <Box>
+      <Typography 
+        variant="body2" 
+        fontWeight={600}
+        sx={{ 
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: isMobile ? '200px' : '300px',
+        }}
+        title={item.title}
+      >
+        {item.title}
+      </Typography>
+      {item.description && (
+        <Typography 
+          variant="caption" 
+          color="text.secondary"
+          sx={{ 
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: isMobile ? '200px' : '300px',
+            display: 'block',
+            mt: 0.25,
+          }}
+          title={item.description}
+        >
+          {item.description}
+        </Typography>
+      )}
+    </Box>
+  ), [isMobile]);
+
+  const renderStatus = useCallback((item: WorkOrder) => (
+    <Chip
+      icon={getStatusIcon(item.status)}
+      label={item.status.replace('_', ' ')}
+      color={getStatusColor(item.status) as any}
+      size={isMobile ? 'small' : 'medium'}
+      variant="filled"
+      sx={{ 
+        fontWeight: 600,
+        minWidth: isMobile ? 'auto' : '120px',
+      }}
+    />
+  ), [isMobile]);
+
+  const renderPriority = useCallback((item: WorkOrder) => (
+    <Chip
+      icon={<PriorityIcon fontSize="small" />}
+      label={item.priority}
+      color={getPriorityColor(item.priority) as any}
+      size="small"
+      variant="outlined"
+      sx={{ fontWeight: 600 }}
+    />
+  ), []);
+
+  const renderAssignedTo = useCallback((item: WorkOrder) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <PersonIcon fontSize="small" color="action" />
+      <Typography variant="body2">
+        {item.assignedTo?.name || (
+          <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+            Unassigned
+          </span>
+        )}
+      </Typography>
+    </Box>
+  ), []);
+
+  const renderAsset = useCallback((item: WorkOrder) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <AssetIcon fontSize="small" color="action" />
+      <Typography 
+        variant="body2"
+        sx={{ 
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          maxWidth: '150px',
+        }}
+        title={item.asset?.name || 'No asset assigned'}
+      >
+        {item.asset?.name || (
+          <span style={{ color: 'rgba(0,0,0,0.4)', fontStyle: 'italic' }}>
+            No asset
+          </span>
+        )}
+      </Typography>
+    </Box>
+  ), []);
+
+  const renderDate = useCallback((dateString: string) => (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <DateIcon fontSize="small" color="action" />
+      <Typography variant="body2" color="text.secondary">
+        {new Date(dateString).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: isMobile ? '2-digit' : 'numeric',
+        })}
+      </Typography>
+    </Box>
+  ), [isMobile]);
+
+  // Generate enhanced table columns using our hierarchy system
+  const tableColumns = useMemo(() => {
+    const hierarchyColumns = generateTableColumns(
+      workOrdersHierarchy,
+      isMobile ? 'mobile' : 'desktop'
+    );
+
+    // Apply custom render functions
+    return hierarchyColumns.map(col => {
+      switch (col.key) {
+        case 'id':
+          return { ...col, render: (value: any, item: WorkOrder) => renderWorkOrderId(item) };
+        case 'title':
+          return { ...col, render: (value: any, item: WorkOrder) => renderWorkOrderTitle(item) };
+        case 'status':
+          return { ...col, render: (value: any, item: WorkOrder) => renderStatus(item) };
+        case 'priority':
+          return { ...col, render: (value: any, item: WorkOrder) => renderPriority(item) };
+        case 'assignedTo':
+          return { ...col, render: (value: any, item: WorkOrder) => renderAssignedTo(item) };
+        case 'asset':
+          return { ...col, render: (value: any, item: WorkOrder) => renderAsset(item) };
+        case 'createdAt':
+          return { ...col, render: (value: any, item: WorkOrder) => renderDate(item.createdAt) };
+        case 'updatedAt':
+          return { ...col, render: (value: any, item: WorkOrder) => renderDate(item.updatedAt) };
+        default:
+          return col;
+      }
+    });
+  }, [isMobile, renderWorkOrderId, renderWorkOrderTitle, renderStatus, renderPriority, renderAssignedTo, renderAsset, renderDate]);
+
+  // Enhanced actions configuration with mobile optimization
+  const tableActions = useMemo(() => [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <ViewIcon />,
+      onClick: handleViewWorkOrder,
+      color: 'primary' as const,
+      description: 'View work order details',
+      touchPriority: 'high' as const,
+      hapticFeedback: true,
+      shortcut: 'Enter',
     },
-    
-    // Actions for each item
-    actions: [
-      {
-        label: 'View',
-        icon: <ViewIcon />,
-        onClick: handleViewWorkOrder,
-        color: 'primary',
-      },
-      {
-        label: 'Edit',
-        icon: <EditIcon />,
-        onClick: handleEditWorkOrder,
-        color: 'default',
-      },
-      {
-        label: 'Delete',
-        icon: <DeleteIcon />,
-        onClick: handleDeleteWorkOrder,
-        color: 'error',
-        confirmRequired: true,
-      },
-    ],
-    
-    // Bulk actions
-    bulkActions: [
-      {
-        label: 'Delete Selected',
-        icon: <DeleteIcon />,
-        onClick: handleBulkDelete,
-        color: 'error',
-        confirmRequired: true,
-      },
-    ],
-    
-    // Status actions for quick updates
-    statusActions: (item: WorkOrder) => {
-      const actions = [];
-      
-      if (item.status === 'OPEN') {
-        actions.push({
-          label: 'Start',
-          icon: <StartIcon />,
-          onClick: () => handleUpdateStatus(item, 'IN_PROGRESS'),
-          color: 'primary',
-        });
-      }
-      
-      if (item.status === 'IN_PROGRESS') {
-        actions.push({
-          label: 'Hold',
-          icon: <HoldIcon />,
-          onClick: () => handleUpdateStatus(item, 'ON_HOLD'),
-          color: 'warning',
-        });
-        actions.push({
-          label: 'Complete',
-          icon: <CompleteIcon />,
-          onClick: () => handleUpdateStatus(item, 'COMPLETED'),
-          color: 'success',
-        });
-      }
-      
-      if (item.status === 'ON_HOLD') {
-        actions.push({
-          label: 'Resume',
-          icon: <StartIcon />,
-          onClick: () => handleUpdateStatus(item, 'IN_PROGRESS'),
-          color: 'primary',
-        });
-      }
-      
-      return actions;
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditIcon />,
+      onClick: handleEditWorkOrder,
+      color: 'secondary' as const,
+      description: 'Edit work order information',
+      touchPriority: 'high' as const,
+      hapticFeedback: true,
     },
-  };
+    {
+      key: 'start',
+      label: 'Start Work',
+      icon: <StartIcon />,
+      onClick: (item: WorkOrder) => handleUpdateStatus(item, 'IN_PROGRESS'),
+      color: 'primary' as const,
+      show: (item: WorkOrder) => item.status === 'OPEN',
+      description: 'Begin working on this order',
+      touchPriority: 'medium' as const,
+      hapticFeedback: true,
+    },
+    {
+      key: 'complete',
+      label: 'Complete',
+      icon: <CompleteIcon />,
+      onClick: (item: WorkOrder) => handleUpdateStatus(item, 'COMPLETED'),
+      color: 'success' as const,
+      show: (item: WorkOrder) => item.status === 'IN_PROGRESS',
+      description: 'Mark work order as completed',
+      touchPriority: 'medium' as const,
+      hapticFeedback: true,
+    },
+    {
+      key: 'hold',
+      label: 'Put on Hold',
+      icon: <HoldIcon />,
+      onClick: (item: WorkOrder) => handleUpdateStatus(item, 'ON_HOLD'),
+      color: 'warning' as const,
+      show: (item: WorkOrder) => item.status === 'IN_PROGRESS',
+      description: 'Pause work on this order',
+      touchPriority: 'low' as const,
+      hapticFeedback: true,
+    },
+    {
+      key: 'resume',
+      label: 'Resume',
+      icon: <StartIcon />,
+      onClick: (item: WorkOrder) => handleUpdateStatus(item, 'IN_PROGRESS'),
+      color: 'primary' as const,
+      show: (item: WorkOrder) => item.status === 'ON_HOLD',
+      description: 'Resume work on this order',
+      touchPriority: 'medium' as const,
+      hapticFeedback: true,
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteIcon />,
+      onClick: handleDeleteWorkOrder,
+      color: 'error' as const,
+      description: 'Permanently delete this work order',
+      touchPriority: 'low' as const,
+      confirmRequired: true,
+      hapticFeedback: true,
+    },
+  ], [handleViewWorkOrder, handleEditWorkOrder, handleDeleteWorkOrder, handleUpdateStatus]);
+
+  // Status indicator function for visual feedback
+  const getWorkOrderStatus = useCallback((item: WorkOrder) => {
+    switch (item.status) {
+      case 'COMPLETED': return 'success';
+      case 'IN_PROGRESS': return 'info';
+      case 'OPEN': return 'warning';
+      case 'ON_HOLD': return 'default';
+      case 'CANCELED': return 'error';
+      default: return 'default';
+    }
+  }, []);
 
   // Filter work orders by status
   const filterByStatus = useCallback((workOrders: WorkOrder[], status?: string) => {
@@ -412,34 +489,33 @@ export default function WorkOrdersWithViewToggle() {
             </Button>
           </Box>
 
-          {/* Universal View Container */}
-          <UniversalViewContainer
-            componentKey="workOrders"
+          {/* Enhanced Mobile-First Work Orders Table */}
+          <UniversalTableView
             items={filteredWorkOrders}
-            viewMapping={workOrderViewMapping}
-            availableViews={['table', 'card', 'list']}
-            defaultView={isMobile ? 'card' : 'table'}
-            selectable={true}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
+            columns={tableColumns}
+            actions={tableActions}
             loading={isLoading}
-            title=""
-            filterOptions={[
-              { label: 'All', value: 'ALL' },
-              { label: 'Open', value: 'OPEN' },
-              { label: 'In Progress', value: 'IN_PROGRESS' },
-              { label: 'On Hold', value: 'ON_HOLD' },
-              { label: 'Completed', value: 'COMPLETED' },
-              { label: 'Canceled', value: 'CANCELED' },
-            ]}
-            onFilterChange={(filter) => {
-              // Handle filter change
-              console.log('Filter changed:', filter);
-            }}
-            searchable={true}
-            exportable={true}
-            refreshable={true}
-            onRefresh={() => refetch()}
+            selectedItems={new Set(selectedItems.map(String))}
+            onSelectionChange={(selectedIds) => setSelectedItems(Array.from(selectedIds).map(Number))}
+            selectable={true}
+            expandable={true}
+            onRowClick={handleViewWorkOrder}
+            getRowStatus={getWorkOrderStatus}
+            // Enhanced mobile and accessibility features
+            ariaLabel="Work Orders Table"
+            ariaDescription="Table showing all work orders with their status, priority, and assignment details"
+            swipeActions={true}
+            hapticFeedback={true}
+            touchTargetSize={48}
+            keyboardNavigation={true}
+            mobileActionDrawer={true}
+            // Visual enhancements
+            dense={false}
+            stickyHeader={true}
+            maxHeight={isMobile ? 600 : 800}
+            pagination={true}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            defaultRowsPerPage={isMobile ? 10 : 25}
           />
         </Container>
 
