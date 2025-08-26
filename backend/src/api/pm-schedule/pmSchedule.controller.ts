@@ -61,11 +61,18 @@ export class PMScheduleController {
   async updatePMSchedule(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
+      console.log(`[PMController] Updating PM schedule ${id} with data:`, req.body);
+      console.log(`[PMController] User org ID:`, req.user?.organizationId);
+      
       const updatedSchedule = await pmScheduleService.updatePMSchedule(Number(id), req.body);
+      console.log(`[PMController] PM schedule ${id} updated successfully`);
       res.json(updatedSchedule);
     } catch (error) {
-      console.error('Error updating PM schedule:', error);
-      res.status(500).json({ error: 'Failed to update PM schedule' });
+      console.error(`[PMController] Error updating PM schedule ${id}:`, error);
+      res.status(500).json({ 
+        error: 'Failed to update PM schedule',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 
