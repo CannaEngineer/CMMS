@@ -42,6 +42,7 @@ import DataTable from '../components/Common/DataTable';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import PartForm from '../components/Forms/PartForm';
 import { LoadingSpinner, LoadingBar, TemplatedSkeleton, LoadingOverlay } from '../components/Loading';
+import { ResponsiveText, MobileContainer, MobileCard } from '../components/Common/MobileComponents';
 import { statusColors } from '../theme/theme';
 import { partsService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -91,34 +92,21 @@ const inventoryColumns = [
     width: 200,
     render: (value: string, row: Part) => (
       <Box>
-        <Typography 
+        <ResponsiveText
           variant="body2" 
-          fontWeight="600"
-          sx={{ 
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            maxWidth: '180px'
-          }}
-          title={value}
+          maxLines={2}
+          sx={{ fontWeight: 600 }}
         >
           {value}
-        </Typography>
+        </ResponsiveText>
         {row.description && (
-          <Typography 
+          <ResponsiveText
             variant="caption" 
             color="text.secondary"
-            sx={{ 
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '180px',
-              display: 'block'
-            }}
-            title={row.description}
+            maxLines={1}
           >
             {row.description}
-          </Typography>
+          </ResponsiveText>
         )}
       </Box>
     )
@@ -462,7 +450,7 @@ export default function Inventory() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <MobileContainer maxHeight="100vh" sx={{ bgcolor: 'background.default' }}>
       {/* Header Section */}
       <Paper 
         elevation={0} 
@@ -476,12 +464,12 @@ export default function Inventory() {
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
-            <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            <ResponsiveText variant="h4" maxLines={2} sx={{ fontWeight: 700, mb: 1, color: 'white' }}>
               Inventory Management
-            </Typography>
-            <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
+            </ResponsiveText>
+            <ResponsiveText variant="subtitle1" maxLines={2} sx={{ opacity: 0.9, color: 'white' }}>
               Monitor stock levels, track parts, and manage inventory efficiently
-            </Typography>
+            </ResponsiveText>
           </Box>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             {!isMobile && (
@@ -851,6 +839,6 @@ export default function Inventory() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </MobileContainer>
   );
 }

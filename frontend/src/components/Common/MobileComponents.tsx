@@ -471,6 +471,171 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   );
 };
 
+// Responsive Text Component with proper truncation
+interface ResponsiveTextProps {
+  children: React.ReactNode;
+  maxLines?: number;
+  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'subtitle1' | 'subtitle2' | 'body1' | 'body2' | 'caption';
+  color?: string;
+  sx?: any;
+  showTooltip?: boolean;
+}
+
+export const ResponsiveText: React.FC<ResponsiveTextProps> = ({
+  children,
+  maxLines = 2,
+  variant = 'body1',
+  color,
+  sx = {},
+  showTooltip = true
+}) => {
+  const theme = useTheme();
+  
+  const textSx = {
+    display: '-webkit-box',
+    WebkitLineClamp: maxLines,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    wordBreak: 'break-word',
+    hyphens: 'auto',
+    ...sx
+  };
+
+  const content = (
+    <Typography 
+      variant={variant}
+      color={color}
+      sx={textSx}
+      title={showTooltip ? String(children) : undefined}
+    >
+      {children}
+    </Typography>
+  );
+
+  return content;
+};
+
+// Mobile-optimized Container with proper overflow handling
+interface MobileContainerProps {
+  children: React.ReactNode;
+  maxHeight?: string | number;
+  padding?: number | string;
+  disableGutters?: boolean;
+  sx?: any;
+}
+
+export const MobileContainer: React.FC<MobileContainerProps> = ({
+  children,
+  maxHeight = '100vh',
+  padding = 2,
+  disableGutters = false,
+  sx = {}
+}) => {
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        maxWidth: '100vw',
+        maxHeight,
+        overflow: 'hidden auto',
+        px: disableGutters ? 0 : padding,
+        py: disableGutters ? 0 : padding,
+        boxSizing: 'border-box',
+        ...sx
+      }}
+    >
+      {children}
+    </Box>
+  );
+};
+
+// Mobile-optimized Card with proper text handling
+interface MobileCardProps {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  actions?: React.ReactNode;
+  status?: React.ReactNode;
+  onClick?: () => void;
+  elevation?: number;
+  sx?: any;
+}
+
+export const MobileCard: React.FC<MobileCardProps> = ({
+  title,
+  subtitle,
+  description,
+  actions,
+  status,
+  onClick,
+  elevation = 1,
+  sx = {}
+}) => {
+  return (
+    <Card 
+      elevation={elevation}
+      onClick={onClick}
+      sx={{
+        mb: 2,
+        cursor: onClick ? 'pointer' : 'default',
+        overflow: 'hidden',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        '&:hover': onClick ? {
+          boxShadow: (theme) => theme.shadows[4]
+        } : {},
+        ...sx
+      }}
+    >
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <ResponsiveText 
+                variant="subtitle1" 
+                maxLines={2}
+                sx={{ fontWeight: 600, flex: 1 }}
+              >
+                {title}
+              </ResponsiveText>
+              {status}
+            </Box>
+            
+            {subtitle && (
+              <ResponsiveText 
+                variant="body2" 
+                color="text.secondary"
+                maxLines={1}
+                sx={{ mb: description ? 0.5 : 0 }}
+              >
+                {subtitle}
+              </ResponsiveText>
+            )}
+            
+            {description && (
+              <ResponsiveText 
+                variant="body2" 
+                color="text.secondary"
+                maxLines={2}
+              >
+                {description}
+              </ResponsiveText>
+            )}
+          </Box>
+          
+          {actions && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {actions}
+            </Box>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Progress Card Component
 interface ProgressCardProps {
   title: string;

@@ -88,6 +88,7 @@ import WorkOrderForm from '../components/Forms/WorkOrderForm';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
 import { LoadingSpinner, TemplatedSkeleton } from '../components/Loading';
+import { ResponsiveText, MobileContainer } from '../components/Common/MobileComponents';
 import { ViewProvider } from '../contexts/ViewContext';
 import { workOrdersService, usersService } from '../services/api';
 import { statusColors } from '../theme/theme';
@@ -661,6 +662,8 @@ export default function WorkOrders() {
             mb: 2,
             position: 'relative',
             overflow: 'hidden',
+            width: '100%',
+            maxWidth: '100%',
             cursor: 'pointer',
             transform: isSwipingLeft ? 'translateX(-10px)' : isSwipingRight ? 'translateX(10px)' : 'none',
             transition: 'all 0.3s ease',
@@ -690,7 +693,7 @@ export default function WorkOrders() {
           
           <CardContent sx={{ p: 3, '&:last-child': { pb: 3 } }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
-              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Box sx={{ flexGrow: 1, minWidth: 0, overflow: 'hidden' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600}>
                     WO-{workOrder.id}
@@ -703,44 +706,43 @@ export default function WorkOrders() {
                   />
                 </Box>
                 
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 1, lineHeight: 1.2 }}>
+                <ResponsiveText 
+                  variant="h6" 
+                  maxLines={2}
+                  sx={{ fontWeight: 600, mb: 1, lineHeight: 1.2 }}
+                >
                   {workOrder.title}
-                </Typography>
+                </ResponsiveText>
                 
                 {workOrder.description && (
-                  <Typography 
+                  <ResponsiveText 
                     variant="body2" 
-                    color="text.secondary" 
-                    sx={{ 
-                      mb: 2,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
+                    color="text.secondary"
+                    maxLines={2}
+                    sx={{ mb: 2 }}
                   >
                     {workOrder.description}
-                  </Typography>
+                  </ResponsiveText>
                 )}
                 
-                <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                <Stack direction="row" spacing={2} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
                   {workOrder.asset && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
                       <LocationIcon fontSize="small" color="action" />
-                      <Typography variant="caption" color="text.secondary">
+                      <ResponsiveText variant="caption" color="text.secondary" maxLines={1}>
                         {workOrder.asset.name}
-                      </Typography>
+                      </ResponsiveText>
                     </Box>
                   )}
                   
                   {workOrder.assignedTo && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
                       <Avatar sx={{ width: 16, height: 16, fontSize: '0.7rem' }}>
                         {workOrder.assignedTo.name.charAt(0)}
                       </Avatar>
-                      <Typography variant="caption" color="text.secondary">
+                      <ResponsiveText variant="caption" color="text.secondary" maxLines={1}>
                         {workOrder.assignedTo.name}
-                      </Typography>
+                      </ResponsiveText>
                     </Box>
                   )}
                   
@@ -917,7 +919,7 @@ export default function WorkOrders() {
   }, [bulkEditData, selectedWorkOrderIds, bulkEditMutation]);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <MobileContainer maxHeight="100vh" disableGutters sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       {/* Mobile Header with Breadcrumbs */}
       {isMobile && (
         <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
@@ -2561,6 +2563,6 @@ export default function WorkOrders() {
           </Fab>
         </Fade>
       )}
-    </Box>
+    </MobileContainer>
   );
 }

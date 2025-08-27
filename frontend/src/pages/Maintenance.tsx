@@ -63,6 +63,7 @@ import StatCard from '../components/Common/StatCard';
 import UniversalExportButton from '../components/Common/UniversalExportButton';
 import MaintenanceScheduleForm from '../components/Forms/MaintenanceScheduleForm';
 import { PMCalendar } from '../components/PMCalendar';
+import { ResponsiveText, MobileContainer, MobileCard } from '../components/Common/MobileComponents';
 import { statusColors } from '../theme/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pmService, dashboardService, assetsService, workOrdersService } from '../services/api';
@@ -638,11 +639,11 @@ export default function Maintenance() {
   }
 
   return (
-    <Box>
+    <MobileContainer maxHeight="100vh" sx={{ bgcolor: 'background.default' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <ResponsiveText variant="h4" maxLines={2} sx={{ fontWeight: 700 }}>
           Maintenance Management
-        </Typography>
+        </ResponsiveText>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <UniversalExportButton
             dataSource="maintenance"
@@ -1370,6 +1371,6 @@ export default function Maintenance() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </MobileContainer>
   );
 }
