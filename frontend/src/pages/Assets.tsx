@@ -1160,7 +1160,13 @@ export default function Assets() {
   // Mobile Layout
   if (isMobile) {
     return (
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      <Box sx={{ 
+        height: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        bgcolor: 'background.default',
+        overflow: 'hidden' // Prevent horizontal scroll
+      }}>
         <MobileHeader />
         <SearchBar />
         
@@ -1570,8 +1576,12 @@ export default function Assets() {
         </Box>
 
         {/* DataTable with responsive design */}
-        <Card>
-          <CardContent sx={{ p: 0 }}>
+        <Card sx={{ 
+          overflow: 'hidden', // Prevent horizontal scroll
+          width: '100%',
+          maxWidth: '100vw' // Ensure it doesn't exceed viewport width
+        }}>
+          <CardContent sx={{ p: 0, overflow: 'hidden' }}>
             <DataTable
               data={filteredAssets}
               onRowClick={(row: any) => handleCardClick(row)}

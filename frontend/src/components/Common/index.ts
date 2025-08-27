@@ -43,3 +43,15 @@ export type { FileAttachment } from './FileUploadManager';
 
 // Re-export examples for documentation and development
 export * as Examples from './examples';
+
+// Mobile-first components
+export * from './MobileComponents';
+export * from './GestureComponents';
+export * from './MobileNavigation';
+
+// Enhanced DataTable component
+export { default as DataTable } from './DataTable';
+export * from './MobileComponents';
+
+// Network and offline components
+export { default as NetworkStatus } from './NetworkStatus';
