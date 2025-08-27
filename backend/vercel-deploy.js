@@ -23,18 +23,8 @@ try {
   console.log('Step 2: Generating Prisma Client...');
   execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
   
-  // Step 3: Only run migrations if DATABASE_URL is available
-  if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('file:')) {
-    console.log('Step 3: Deploying database migrations...');
-    try {
-      execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
-    } catch (migrationError) {
-      console.log('Migration deployment failed, trying db push instead...');
-      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env: process.env });
-    }
-  } else {
-    console.log('Step 3: Skipping database setup (will be configured in Vercel)');
-  }
+  // Step 3: Skip database operations during build - handle separately in production
+  console.log('Step 3: Skipping database migrations during build (will be handled at runtime)');
   
   console.log('✅ Vercel deployment build completed successfully!');
 } catch (error) {

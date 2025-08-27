@@ -47,6 +47,22 @@ import {
   asyncHandler 
 } from './middleware/errorHandler.middleware';
 
+// Initialize database connection for Vercel
+async function initializeDatabase() {
+  if (process.env.VERCEL && process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('file:')) {
+    try {
+      console.log('[Backend] Checking database connection...');
+      await prisma.$connect();
+      console.log('[Backend] Database connection successful');
+    } catch (error) {
+      console.warn('[Backend] Database connection failed:', error);
+    }
+  }
+}
+
+// Initialize database on startup
+initializeDatabase();
+
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5000;
