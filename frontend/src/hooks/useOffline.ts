@@ -324,3 +324,6 @@ export const useOfflineQuery = (queryKey: string[], queryFn: () => Promise<any>)
 
   return offlineQueryFn;
 };
+
+// Backward compatibility export
+export const useOfflineMode = useOffline;

@@ -29,7 +29,7 @@ import {
   Refresh as RefreshIcon,
   Storage as StorageIcon,
 } from '@mui/icons-material';
-import { useOfflineMode } from '../../hooks/useOffline';
+import { useOffline } from '../../hooks/useOffline';
 
 interface NetworkStatusProps {
   position?: 'fixed' | 'static';
@@ -53,7 +53,7 @@ export default function NetworkStatus({
     syncProgress,
     offlineCapabilities,
     operations,
-  } = useOfflineMode();
+  } = useOffline();
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

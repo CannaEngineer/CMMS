@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { workOrdersService } from '../../../services/api';
-import { useOfflineMode } from '../../../hooks/useOffline';
+import { useOffline } from '../../../hooks/useOffline';
 
 export const useWorkOrdersList = (filters?: { 
   status?: string; 
@@ -10,7 +10,7 @@ export const useWorkOrdersList = (filters?: {
   limit?: number;
 }) => {
   const queryClient = useQueryClient();
-  const { isOnline, operations } = useOfflineMode();
+  const { isOnline, operations } = useOffline();
 
   const query = useQuery({
     queryKey: ['work-orders', 'list', filters],
@@ -92,7 +92,7 @@ export const useWorkOrdersList = (filters?: {
 };
 
 export const useWorkOrderDetails = (id: string) => {
-  const { isOnline } = useOfflineMode();
+  const { isOnline } = useOffline();
 
   return useQuery({
     queryKey: ['work-orders', 'detail', id],
