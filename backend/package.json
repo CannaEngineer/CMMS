@@ -12,9 +12,6 @@
     "vercel-build": "npm install && tsc && npx prisma generate",
     "postinstall": "npx prisma generate"
   },
-  "prisma": {
-    "seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",

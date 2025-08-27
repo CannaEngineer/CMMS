@@ -1,0 +1,56 @@
+# Development files
+*.log
+backend.log
+prod-test.txt
+
+# Test and setup scripts
+check-*.js
+cleanup-*.js
+create-*.js
+delete-*.js
+demo-*.js
+setup-*.js
+simple-*.js
+test-*.js
+update-*.js
+migrate-*.js
+fix-*.js
+
+# Minimal test files
+minimal-*.js
+minimal-*.json
+
+# Upload directories
+uploads/
+node_modules/.cache/
+
+# Development database
+prisma/dev.db
+prisma/dev.db-journal
+
+# Documentation that's not needed in production
+*.md
+!README.md
+
+# QR system files (if not needed in production)
+qr-system-*.md
+qr-system-*.prisma
+qr-system-*.sql
+qr-system-*.ts
+
+# Vercel files
+.env.vercel
+
+# Git files  
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
