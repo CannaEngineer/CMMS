@@ -6,7 +6,7 @@
  */
 
 import { Logger } from '../middleware/errorHandler.middleware';
-import { prisma } from '../../lib/prisma';
+import { prisma } from '../lib/prisma';
 
 // Prisma client imported from singleton
 

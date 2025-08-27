@@ -477,5 +477,5 @@ async function checkQRGenerationPermission(
 }
 
 // Import prisma for database operations
-import { prisma } from '../../lib/prisma';
+import { prisma } from '../lib/prisma';
 // Prisma client imported from singleton
