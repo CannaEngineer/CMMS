@@ -398,8 +398,8 @@ export class PartService {
           throw new Error(`Part with ID ${partId} not found`);
         }
         
-        if (part.quantityOnHand < quantity) {
-          console.warn(`Insufficient stock for part ${part.name}: requested ${quantity}, available ${part.quantityOnHand}`);
+        if (part.stockLevel < quantity) {
+          console.warn(`Insufficient stock for part ${part.name}: requested ${quantity}, available ${part.stockLevel}`);
           // Allow checkout even with insufficient stock but log it
         }
         
@@ -407,7 +407,7 @@ export class PartService {
         const updatedPart = await tx.part.update({
           where: { id: partId },
           data: {
-            quantityOnHand: Math.max(0, part.quantityOnHand - quantity)
+            stockLevel: Math.max(0, part.stockLevel - quantity)
           }
         });
         
@@ -415,11 +415,11 @@ export class PartService {
           partId,
           partName: part.name,
           quantity,
-          previousStock: part.quantityOnHand,
-          newStock: updatedPart.quantityOnHand
+          previousStock: part.stockLevel,
+          newStock: updatedPart.stockLevel
         });
         
-        console.log(`Updated ${part.name}: ${part.quantityOnHand} → ${updatedPart.quantityOnHand} (checked out ${quantity})`);
+        console.log(`Updated ${part.name}: ${part.stockLevel} → ${updatedPart.stockLevel} (checked out ${quantity})`);
       }
       
       return {

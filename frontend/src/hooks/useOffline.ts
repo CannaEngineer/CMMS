@@ -17,7 +17,7 @@ interface OfflineState {
   };
 }
 
-export const useOfflineMode = () => {
+export const useOffline = () => {
   const [offlineState, setOfflineState] = useState<OfflineState>({
     isOnline: navigator.onLine,
     isBackgroundSyncing: false,
@@ -293,7 +293,7 @@ export const registerServiceWorker = async () => {
 
 // Hook for managing offline-first queries
 export const useOfflineQuery = (queryKey: string[], queryFn: () => Promise<any>) => {
-  const { isOnline, operations } = useOfflineMode();
+  const { isOnline, operations } = useOffline();
   const queryClient = useQueryClient();
 
   const offlineQueryFn = useCallback(async () => {
