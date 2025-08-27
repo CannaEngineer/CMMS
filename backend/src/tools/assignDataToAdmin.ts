@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 async function assignDataToAdmin() {
   console.log(`Assigning data to admin user...`);

@@ -1,6 +1,7 @@
-import { PrismaClient, Comment, Prisma } from '@prisma/client';
+import { Comment, Prisma } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface CreateCommentRequest {
   entityType: 'workOrder' | 'asset' | 'location' | 'part' | 'pmSchedule';

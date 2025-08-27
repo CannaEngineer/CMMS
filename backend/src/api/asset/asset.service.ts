@@ -1,8 +1,9 @@
 
-import { PrismaClient, AssetStatus } from '@prisma/client';
+import { AssetStatus } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { notificationTriggersService } from '../../services/notification-triggers.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const getAllAssets = async (organizationId: number) => {
   return prisma.asset.findMany({

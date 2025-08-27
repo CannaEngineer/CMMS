@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const getOrganizationById = async (organizationId: number) => {
   return prisma.organization.findUnique({

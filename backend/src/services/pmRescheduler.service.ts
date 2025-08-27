@@ -1,9 +1,10 @@
-import { PrismaClient, PMTriggerType, TaskCompletionStatus, WorkOrderStatus } from '@prisma/client';
+import { PMTriggerType, TaskCompletionStatus, WorkOrderStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { PMTriggerService } from '../api/pm-trigger/pmTrigger.service';
 import { WorkOrderGeneratorService } from './workOrderGenerator.service';
 import { NotificationService } from './notification.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface RescheduleRule {
   triggerType: PMTriggerType;

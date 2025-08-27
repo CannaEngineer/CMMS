@@ -1,6 +1,7 @@
-import { PrismaClient, MaintenanceType } from '@prisma/client';
+import { MaintenanceType } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class MaintenanceHistoryService {
   async getMaintenanceHistory(assetId: number, limit: number = 50) {

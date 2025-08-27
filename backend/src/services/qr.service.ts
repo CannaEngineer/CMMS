@@ -1,10 +1,11 @@
-import { PrismaClient, QRCodeType, QRCodeStatus, QRScanActionType, QRBatchOperationType } from '@prisma/client';
+import { QRCodeType, QRCodeStatus, QRScanActionType, QRBatchOperationType } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { blobUploadService } from './blobUploadService';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface CreateQRCodeRequest {
   entityType: QRCodeType;

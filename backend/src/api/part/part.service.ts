@@ -1,6 +1,7 @@
-import { PrismaClient, Part } from '@prisma/client';
+import { Part } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class PartService {
   async getAllParts(organizationId: number) {

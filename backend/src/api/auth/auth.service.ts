@@ -1,9 +1,9 @@
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const register = async (data: any) => {
   try {

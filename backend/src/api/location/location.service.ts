@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const getAllLocations = async (organizationId: number) => {
   // Get all locations with asset counts

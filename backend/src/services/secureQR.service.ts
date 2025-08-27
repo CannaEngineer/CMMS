@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 // Secure QR Configuration
 interface SecureQRConfig {

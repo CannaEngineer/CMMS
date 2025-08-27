@@ -1,8 +1,8 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { AuthenticatedRequest } from '../../types/auth';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const settingsController = {
   // Clean slate - delete all operational data

@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { QRService } from '../../services/qr.service';
 import { AuthenticatedRequest } from '../../types/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export const qrController = {
   // Generate single QR code

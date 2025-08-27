@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import dayjs from 'dayjs';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface CalendarItem {
   id: number;

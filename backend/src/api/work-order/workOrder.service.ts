@@ -1,8 +1,7 @@
-import { PrismaClient, WorkOrderStatus } from '@prisma/client';
+import { WorkOrderStatus } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { notificationTriggersService } from '../../services/notification-triggers.service';
 import { NotificationService } from '../notification/notification.service';
-
-const prisma = new PrismaClient();
 const notificationService = new NotificationService();
 
 // Helper function to calculate next PM due date based on frequency

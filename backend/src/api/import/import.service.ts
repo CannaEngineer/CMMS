@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { parse } from 'csv-parse/sync';
 import Fuse from 'fuse.js';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface ColumnMapping {
   csvColumn: string;

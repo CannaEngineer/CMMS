@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { notificationTriggersService } from '../../services/notification-triggers.service';
 import type {
   Portal,
@@ -10,7 +10,7 @@ import type {
   SubmitPortalRequest
 } from './portal.types';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class PortalService {
   // Portal Management

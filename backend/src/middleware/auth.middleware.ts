@@ -1,10 +1,10 @@
 
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { UnauthorizedError, Logger } from './errorHandler.middleware';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export interface AuthenticatedRequest extends Request {
   user?: {

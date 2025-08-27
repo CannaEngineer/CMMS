@@ -1,9 +1,9 @@
 import { PMSchedulerService } from './pmScheduler.service';
 import { PMReschedulerService } from './pmRescheduler.service';
 import { NotificationService } from './notification.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class PMSchedulerEnhancedService {
   private pmScheduler: PMSchedulerService;

@@ -1,8 +1,9 @@
-import { PrismaClient, NotificationType, NotificationPriority, NotificationCategory, NotificationChannel, NotificationFrequency } from '@prisma/client';
+import { NotificationType, NotificationPriority, NotificationCategory, NotificationChannel, NotificationFrequency } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { WebSocketService } from '../../services/websocket.service';
 import { emailService } from '../../services/email.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 interface CreateNotificationData {
   userId: number;

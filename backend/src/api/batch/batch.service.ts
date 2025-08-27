@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { getAllWorkOrders, updateWorkOrder } from '../work-order/workOrder.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 const dashboardService = new DashboardService();
 
 export class BatchService {

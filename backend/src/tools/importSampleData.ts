@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
 import { ImportService } from '../api/import/import.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 async function importSampleData() {
   console.log('Starting sample data import...');

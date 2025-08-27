@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 async function importLocations() {
   console.log(`Importing locations...`);

@@ -1,7 +1,8 @@
-import { PrismaClient, WorkOrderStatus, AssetStatus, NotificationType, NotificationPriority, NotificationCategory } from '@prisma/client';
+import { WorkOrderStatus, AssetStatus, NotificationType, NotificationPriority, NotificationCategory } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { NotificationService } from '../api/notification/notification.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 class NotificationTriggersService {
   private notificationService: NotificationService;

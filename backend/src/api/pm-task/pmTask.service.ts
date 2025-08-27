@@ -1,6 +1,7 @@
-import { PrismaClient, TaskType } from '@prisma/client';
+import { TaskType } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class PMTaskService {
   async getAllPMTasks(organizationId: number) {

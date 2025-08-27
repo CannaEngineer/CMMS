@@ -1,7 +1,8 @@
-import { PrismaClient, User, UserRole } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class UserService {
   async getAllUsers(organizationId: number) {

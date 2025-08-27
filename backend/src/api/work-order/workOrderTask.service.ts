@@ -1,6 +1,7 @@
-import { PrismaClient, TaskCompletionStatus } from '@prisma/client';
+import { TaskCompletionStatus } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class WorkOrderTaskService {
   async getTasksByWorkOrder(workOrderId: number) {

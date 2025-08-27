@@ -1,10 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import { parse } from 'csv-parse/sync';
 import * as fs from 'fs';
 import * as path from 'path';
 import bcrypt from 'bcrypt';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 // Define enums for type safety
 enum UserRole {

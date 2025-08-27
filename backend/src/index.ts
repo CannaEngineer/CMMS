@@ -11,7 +11,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import http from 'http';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma';
 import authRouter from './api/auth/auth.router';
 import assetRouter from './api/asset/asset.router';
 import locationRouter from './api/location/location.router';
@@ -35,6 +35,7 @@ import emailRouter from './api/email/email.router';
 import calendarRouter from './api/calendar/calendar.router';
 import qrRouter from './api/qr/qr.router';
 import settingsRouter from './api/settings/settings.routes';
+import debugRouter from './api/debug/debug.router';
 import { authenticate } from './middleware/auth.middleware';
 import { blobUploadService } from './services/blobUploadService';
 import { WebSocketService } from './services/websocket.service';
@@ -49,7 +50,7 @@ import {
 const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5000;
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 // Initialize WebSocket service only in non-serverless environments
 // WebSockets don't work in Vercel serverless functions
@@ -135,6 +136,7 @@ app.use('/api/import', authenticate, importRouter);
 app.use('/api/notifications', authenticate, notificationRouter);
 app.use('/api/email', authenticate, emailRouter);
 app.use('/api/settings', authenticate, settingsRouter);
+app.use('/api/debug', debugRouter); // Debug routes for database connection testing
 app.use('/api/qr', qrRouter); // QR routes include their own authentication where needed
 
 // Static file serving removed - all files now served from Vercel Blob CDN

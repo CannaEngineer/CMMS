@@ -1,6 +1,7 @@
-import { PrismaClient, MeterType } from '@prisma/client';
+import { MeterType } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class MeterReadingService {
   async getMeterReadings(assetId: number, meterType?: MeterType, limit: number = 100) {

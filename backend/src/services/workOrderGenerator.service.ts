@@ -1,8 +1,9 @@
-import { PrismaClient, WorkOrderPriority } from '@prisma/client';
+import { WorkOrderPriority } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { WorkOrderTaskService } from '../api/work-order/workOrderTask.service';
 import { PMTriggerService } from '../api/pm-trigger/pmTrigger.service';
 
-const prisma = new PrismaClient();
+// Prisma client imported from singleton
 
 export class WorkOrderGeneratorService {
   private workOrderTaskService: WorkOrderTaskService;
