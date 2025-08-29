@@ -9,7 +9,7 @@
     "build": "tsc",
     "start": "node dist/src/index.js",
     "seed": "ts-node --project prisma/tsconfig.json prisma/seed.ts",
-    "vercel-build": "npm install && tsc && npx prisma generate",
+    "vercel-build": "npm install && npx prisma generate && tsc",
     "postinstall": "npx prisma generate"
   },
   "keywords": [],

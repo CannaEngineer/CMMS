@@ -40,8 +40,8 @@ IP_HASH_SALT="6f247bdd23292909c2c782b2a9af7ebc"
 Add these in your Vercel project settings:
 
 ```bash
-# Database - TURSO (Recommended - Your data is already there!)
-DATABASE_URL="libsql://cmms-db-cannaengineer.aws-us-east-2.turso.io"
+# Database - TURSO (For direct queries - Prisma adapter has issues)
+# DO NOT set DATABASE_URL - it's hardcoded for build process
 LIBSQL_URL="libsql://cmms-db-cannaengineer.aws-us-east-2.turso.io"
 LIBSQL_AUTH_TOKEN="your-turso-auth-token"
 
