@@ -3,6 +3,7 @@ dotenv.config();
 
 import { PrismaClient } from '@prisma/client';
 import { createClient } from '@libsql/client';
+import { PrismaLibSQL } from "@prisma/adapter-libsql";
 
 // Prevent multiple instances of Prisma Client in development
 const globalForPrisma = global as unknown as { 
@@ -10,30 +11,58 @@ const globalForPrisma = global as unknown as {
   tursoClient?: any;
 };
 
+const isProduction = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const hasTursoConfig = !!(process.env.LIBSQL_URL && process.env.LIBSQL_AUTH_TOKEN);
+
 console.log('[Prisma] Environment check:', {
+  isProduction,
+  hasTursoConfig,
   VERCEL: !!process.env.VERCEL,
-  LIBSQL_URL: !!process.env.LIBSQL_URL,
   NODE_ENV: process.env.NODE_ENV
 });
 
-// For now, use regular Prisma client with local SQLite
-// Turso adapter will be added when it's more stable
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+function createPrismaClient(): PrismaClient {
+  // Use Turso in production if configured
+  if (isProduction && hasTursoConfig) {
+    try {
+      console.log('[Prisma] Using Turso database for production');
+      
+      const tursoClient = createClient({
+        url: process.env.LIBSQL_URL!,
+        authToken: process.env.LIBSQL_AUTH_TOKEN!,
+      });
+
+      const adapter = new PrismaLibSQL(tursoClient as any);
+      
+      return new PrismaClient({
+        adapter: adapter as any,
+        log: ['error'],
+      });
+    } catch (error) {
+      console.error('[Prisma] Failed to connect to Turso:', error);
+      throw new Error('Database connection failed. Please check Turso configuration.');
+    }
+  }
+
+  // Use local SQLite for development
+  console.log('[Prisma] Using local SQLite database');
+  return new PrismaClient({
     log: process.env.NODE_ENV === 'development' 
       ? ['query', 'warn', 'error'] 
       : ['error'],
   });
+}
 
-// Create Turso client for direct queries when needed
+// Create Prisma client
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+// Create direct Turso client for raw queries if needed
 let tursoClient: any = null;
-if (process.env.LIBSQL_URL && process.env.LIBSQL_AUTH_TOKEN) {
+if (hasTursoConfig) {
   try {
-    console.log('[Turso] Creating direct client for custom queries');
     tursoClient = createClient({
-      url: process.env.LIBSQL_URL,
-      authToken: process.env.LIBSQL_AUTH_TOKEN,
+      url: process.env.LIBSQL_URL!,
+      authToken: process.env.LIBSQL_AUTH_TOKEN!,
     });
     globalForPrisma.tursoClient = tursoClient;
   } catch (error) {
@@ -41,7 +70,6 @@ if (process.env.LIBSQL_URL && process.env.LIBSQL_AUTH_TOKEN) {
   }
 }
 
-// Export direct Turso client for custom queries
 export { tursoClient };
 
 if (process.env.NODE_ENV !== 'production') {
