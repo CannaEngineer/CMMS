@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "cmms-fullstack",
+  "name": "cmms-fullstack-v2",
   "buildCommand": "cd backend && npm install && npm run vercel-build && cd ../frontend && npm install && npm run build",
   "installCommand": null,
   "outputDirectory": "frontend/dist",
