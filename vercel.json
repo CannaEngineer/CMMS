@@ -1,13 +1,33 @@
 {
   "version": 2,
-  "name": "cmms-app",
-  "buildCommand": "cd backend && npm run vercel-build && cd ../frontend && npm run build",
+  "name": "cmms-fullstack",
+  "buildCommand": "cd backend && npm install && npm run vercel-build && cd ../frontend && npm install && npm run build",
+  "installCommand": null,
   "outputDirectory": "frontend/dist",
-  "installCommand": "cd backend && npm install && cd ../frontend && npm install",
+  "builds": [
+    {
+      "src": "backend/src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/dist/index.html"
+    }
+  ],
   "functions": {
-    "api/*.js": {
+    "backend/src/index.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "VITE_API_URL": ""
   },
   "headers": [
     {
@@ -21,16 +41,6 @@
           "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/server.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
     }
   ]
 }
