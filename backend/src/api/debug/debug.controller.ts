@@ -31,6 +31,62 @@ export const getEnvInfo = async (req: Request, res: Response) => {
   }
 };
 
+export const testTurso = async (req: Request, res: Response) => {
+  try {
+    if (!process.env.LIBSQL_URL || !process.env.LIBSQL_AUTH_TOKEN) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Turso credentials not configured'
+      });
+    }
+
+    // Test direct Turso connection
+    const { createClient } = await import('@libsql/client');
+    const client = createClient({
+      url: process.env.LIBSQL_URL,
+      authToken: process.env.LIBSQL_AUTH_TOKEN,
+    });
+
+    console.log('[Debug] Testing direct Turso connection...');
+    
+    // Test simple query
+    const result = await client.execute('SELECT 1 as test');
+    console.log('[Debug] Turso connection successful:', result);
+
+    // Test if tables exist
+    try {
+      const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table'");
+      console.log('[Debug] Available tables:', tables.rows);
+      
+      res.json({
+        status: 'turso_success',
+        message: 'Turso connection successful',
+        testQuery: result.rows,
+        tables: tables.rows.map(row => row.name),
+        timestamp: new Date().toISOString()
+      });
+    } catch (tableError) {
+      console.log('[Debug] Could not list tables:', tableError);
+      res.json({
+        status: 'turso_partial',
+        message: 'Connection works but cannot list tables',
+        testQuery: result.rows,
+        tableError: tableError.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+  } catch (error: any) {
+    console.error('[Debug] Turso connection failed:', error);
+    res.status(500).json({
+      status: 'turso_error',
+      message: error.message,
+      code: error.code,
+      timestamp: new Date().toISOString()
+    });
+  }
+};
+
 export const getDbInfo = async (req: Request, res: Response) => {
   try {
     // Test connection
