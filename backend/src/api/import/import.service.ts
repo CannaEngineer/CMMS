@@ -1111,36 +1111,37 @@ export class ImportService {
             const scheduleIndex = i + j + 1;
             
             try {
-              await prisma.$transaction(async (tx) => {
-                // Resolve asset relationship
-                const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
-                if (resolvedPMSchedule.length > 0) {
-                  // Store originalStatus before removing it
-                  const originalStatus = resolvedPMSchedule[0].originalStatus || pmSchedule.originalStatus;
-                  
-                  // Remove fields that don't exist in PMSchedule model
-                  const { organizationId: _, locationId: __, dueDate: ___, originalStatus: ____, ...scheduleData } = resolvedPMSchedule[0];
-                  
-                  // Check if required assetId was resolved
-                  if (!scheduleData.assetId) {
-                    console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Asset not found for "${pmSchedule.assetName}"`);
-                    errors.push(`PM Schedule ${scheduleIndex}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
-                    skippedCount++;
-                    return;
-                  }
-                  
-                  const createdPMSchedule = await (tx as any).pMSchedule.create({
-                    data: scheduleData
-                  });
-                  console.log(`    ✅ Created PM schedule ${scheduleIndex}/${pmConversion.pmSchedules.length}: ${createdPMSchedule.id}`);
-                  importedRecordIds.push(createdPMSchedule.id);
-                  importedCount++;
-                } else {
-                  console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Could not resolve relationships`);
-                  errors.push(`PM Schedule ${scheduleIndex}: Could not resolve asset or location relationships`);
+              // Resolve asset relationship OUTSIDE transaction to avoid timeout
+              const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
+              
+              if (resolvedPMSchedule.length > 0) {
+                // Store originalStatus before removing it
+                const originalStatus = resolvedPMSchedule[0].originalStatus || pmSchedule.originalStatus;
+                
+                // Remove fields that don't exist in PMSchedule model
+                const { organizationId: _, locationId: __, dueDate: ___, originalStatus: ____, ...scheduleData } = resolvedPMSchedule[0];
+                
+                // Check if required assetId was resolved
+                if (!scheduleData.assetId) {
+                  console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Asset not found for "${pmSchedule.assetName}"`);
+                  errors.push(`PM Schedule ${scheduleIndex}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
                   skippedCount++;
+                  continue;
                 }
-              }, { timeout: 15000 }); // 15 second timeout per schedule
+                
+                // Now create the PM schedule in a quick transaction (just the creation)
+                const createdPMSchedule = await prisma.pMSchedule.create({
+                  data: scheduleData as any
+                });
+                
+                console.log(`    ✅ Created PM schedule ${scheduleIndex}/${pmConversion.pmSchedules.length}: ${createdPMSchedule.id}`);
+                importedRecordIds.push(createdPMSchedule.id);
+                importedCount++;
+              } else {
+                console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Could not resolve relationships`);
+                errors.push(`PM Schedule ${scheduleIndex}: Could not resolve asset or location relationships`);
+                skippedCount++;
+              }
             } catch (error: any) {
               console.error(`    ❌ Error importing PM schedule ${scheduleIndex}:`, error.message);
               if (error.code === 'P2002') {
