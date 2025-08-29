@@ -16,7 +16,7 @@ async function checkHudsonData() {
       console.log('❌ User dan@hudsonhemp.com not found');
       return;
     }
-    
+        // testing comment
     console.log(`✅ Found user: ${user.name} (ID: ${user.id})`);
     console.log(`✅ Organization: ${user.organization.name} (ID: ${user.organizationId})`);
     
