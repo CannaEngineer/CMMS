@@ -94,6 +94,7 @@ const corsOptions = {
       'http://localhost:5173',
       'https://cmms-orpin.vercel.app',
       'https://your-cmms-app.vercel.app',
+      'https://cmms.elevatedcompliance.tech',
       /\.vercel\.app$/  // Allow all Vercel preview deployments
     ];
     
