@@ -87,6 +87,11 @@ export class ImportController {
   // Execute the import
   static async executeImport(req: AuthenticatedRequest, res: Response) {
     try {
+      // Set longer timeout for imports
+      if (res.socket) {
+        res.socket.setTimeout(55000); // 55 seconds, just under Vercel limit
+      }
+      
       console.log('Import request received:', {
         hasBody: !!req.body,
         bodyKeys: Object.keys(req.body || {}),

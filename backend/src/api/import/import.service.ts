@@ -1047,7 +1047,8 @@ export class ImportService {
       console.log('Starting batch import with', resolvedData.length, 'records...');
       
       // Process data in smaller batches to avoid transaction timeouts
-      const BATCH_SIZE = 50; // Process 50 records at a time
+      // Use smaller batch size for work orders to prevent timeout
+      const BATCH_SIZE = entityType === 'workorders' ? 20 : 50;
       const batches = [];
       for (let i = 0; i < resolvedData.length; i += BATCH_SIZE) {
         batches.push(resolvedData.slice(i, i + BATCH_SIZE));
