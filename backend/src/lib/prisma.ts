@@ -50,6 +50,10 @@ if (hasTursoConfig) {
   prismaClient = new PrismaClient({
     adapter,
     log: isProduction ? ['error'] : ['query', 'warn', 'error'],
+    transactionOptions: {
+      maxWait: 60000, // 60 seconds
+      timeout: 60000, // 60 seconds
+    },
   });
   
   console.log('[Prisma] PrismaClient with adapter created successfully');
@@ -62,6 +66,10 @@ if (hasTursoConfig) {
   // Fallback to local SQLite
   prismaClient = new PrismaClient({
     log: isProduction ? ['error'] : ['query', 'warn', 'error'],
+    transactionOptions: {
+      maxWait: 60000, // 60 seconds
+      timeout: 60000, // 60 seconds
+    },
   });
 }
 

@@ -1047,8 +1047,8 @@ export class ImportService {
       console.log('Starting batch import with', resolvedData.length, 'records...');
       
       // Process data in smaller batches to avoid transaction timeouts
-      // Use smaller batch size for work orders to prevent timeout
-      const BATCH_SIZE = entityType === 'workorders' ? 20 : 50;
+      // Use even smaller batch size for work orders to prevent timeout
+      const BATCH_SIZE = entityType === 'workorders' ? 10 : 25;
       const batches = [];
       for (let i = 0; i < resolvedData.length; i += BATCH_SIZE) {
         batches.push(resolvedData.slice(i, i + BATCH_SIZE));
@@ -1164,19 +1164,25 @@ export class ImportService {
               }
             }
           }
-        }, { timeout: 30000 }); // 30 second timeout for PM tasks
+        }, { timeout: 60000 }); // 60 second timeout for PM tasks
       }
 
       // Process regular data in batches with individual transactions for better error isolation
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         const batch = batches[batchIndex];
-        console.log(`Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} records...`);
+        const progressPercent = Math.round(((batchIndex + 1) / batches.length) * 100);
+        console.log(`\n📦 Processing batch ${batchIndex + 1}/${batches.length} (${progressPercent}%) with ${batch.length} records...`);
+        console.log(`   📊 Progress: ${importedCount} imported, ${skippedCount} skipped, ${errors.length} errors so far`);
         
         // Process each record individually in its own transaction to avoid transaction aborts
         for (let i = 0; i < batch.length; i++) {
           const row = batch[i];
           const globalIndex = (batchIndex * BATCH_SIZE) + i + 1; // Global row number for error reporting
-          console.log(`Processing row ${globalIndex}:`, row);
+          
+          // Show progress every 10 records to avoid log spam
+          if (globalIndex % 10 === 0 || i === 0) {
+            console.log(`   ⚡ Processing record ${globalIndex}/${resolvedData.length} (${Math.round((globalIndex / resolvedData.length) * 100)}%)...`);
+          }
           
           try {
             await prisma.$transaction(async (tx) => {
@@ -1304,7 +1310,7 @@ export class ImportService {
               
               importedRecordIds.push(createdRecord.id);
               importedCount++;
-            }, { timeout: 10000 }); // 10 second timeout per record
+            }, { timeout: 30000 }); // 30 second timeout per record
           } catch (error: any) {
             console.error(`Error importing row ${globalIndex}:`, error);
             console.error('Error code:', error.code);
@@ -1339,9 +1345,15 @@ export class ImportService {
           }
         }
         
-        console.log(`Completed batch ${batchIndex + 1}/${batches.length}. Running total: ${importedCount} imported, ${skippedCount} skipped`);
+        console.log(`✅ Completed batch ${batchIndex + 1}/${batches.length}. Running total: ${importedCount} imported, ${skippedCount} skipped`);
       }
-      console.log('Transaction completed successfully');
+      
+      // Final summary
+      console.log(`\n🎯 Import completed! Final results:`);
+      console.log(`   ✅ Successfully imported: ${importedCount} records`);
+      console.log(`   ⚠️  Skipped: ${skippedCount} records`);
+      console.log(`   ❌ Errors: ${errors.length}`);
+      console.log(`   🔄 Duplicates: ${duplicates.length}`);
 
       const endTime = Date.now();
       const durationMs = endTime - startTime;
