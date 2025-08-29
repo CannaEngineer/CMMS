@@ -1,4 +1,7 @@
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 console.log('[Backend] Starting CMMS backend application...');
 console.log('[Backend] Environment:', {
   NODE_ENV: process.env.NODE_ENV,
