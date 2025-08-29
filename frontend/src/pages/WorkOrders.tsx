@@ -81,6 +81,11 @@ import {
   Assignment as AssignIcon,
   PersonOff as UnassignIcon,
   DateRange as DateIcon,
+  Assignment as WorkOrderIcon,
+  FolderOpen as OpenIcon,
+  Hourglass as InProgressIcon,
+  CheckCircleOutline as CompletedIcon,
+  Priority as UrgentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
@@ -89,6 +94,7 @@ import UniversalExportButton from '../components/Common/UniversalExportButton';
 import { UniversalViewContainer } from '../components/Common/UniversalViewContainer';
 import { LoadingSpinner, TemplatedSkeleton } from '../components/Loading';
 import { ResponsiveText, MobileContainer } from '../components/Common/MobileComponents';
+import StatCard from '../components/Common/StatCard';
 import { ViewProvider } from '../contexts/ViewContext';
 import { workOrdersService, usersService } from '../services/api';
 import { statusColors } from '../theme/theme';
@@ -1094,286 +1100,58 @@ export default function WorkOrders() {
           </Box>
         )}
 
-        {/* Mobile-First Stats Section */}
-        <Box sx={{ mb: 3 }}>
-          <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
-            {/* Mobile: 2x2 grid */}
-            <Grid xs={6} sm={4} md={2}>
-              <Card sx={{ 
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
+        {/* Stats Section */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Total Work Orders"
+              value={workOrderStats.total}
+              icon={<WorkOrderIcon />}
+              color="primary"
               onClick={() => setCurrentTab(0)}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 2, sm: 2.5, md: 3 }, 
-                  '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    bgcolor: 'primary.main',
-                  }} />
-                  <Typography 
-                    variant="h3" 
-                    color="primary.main"
-                    sx={{ 
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {workOrderStats.total}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      fontWeight: 500,
-                    }}
-                  >
-                    Total
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid xs={6} sm={4} md={2.4}>
-              <Card sx={{ 
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
-              onClick={() => setCurrentTab(1)}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 2, sm: 2.5, md: 3 }, 
-                  '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    bgcolor: 'warning.main',
-                  }} />
-                  <Typography 
-                    variant="h3" 
-                    color="warning.main"
-                    sx={{ 
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {workOrderStats.open}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      fontWeight: 500,
-                    }}
-                  >
-                    Open
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid xs={6} sm={4} md={2.4}>
-              <Card sx={{ 
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
-              onClick={() => setCurrentTab(2)}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 2, sm: 2.5, md: 3 }, 
-                  '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    bgcolor: 'info.main',
-                  }} />
-                  <Typography 
-                    variant="h3" 
-                    color="info.main"
-                    sx={{ 
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {workOrderStats.inProgress}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      fontWeight: 500,
-                    }}
-                  >
-                    Active
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid xs={6} sm={4} md={2.4}>
-              <Card sx={{ 
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
-              onClick={() => setCurrentTab(3)}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 2, sm: 2.5, md: 3 }, 
-                  '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    bgcolor: 'success.main',
-                  }} />
-                  <Typography 
-                    variant="h3" 
-                    color="success.main"
-                    sx={{ 
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {workOrderStats.completed}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      fontWeight: 500,
-                    }}
-                  >
-                    Done
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            
-            <Grid xs={12} sm={8} md={2.4}>
-              <Card sx={{ 
-                transition: 'all 0.3s ease',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateY(-4px)',
-                  boxShadow: 4,
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                borderRadius: 3,
-                overflow: 'hidden',
-              }}
-              onClick={() => setUrgentModalOpen(true)}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 2, sm: 2.5, md: 3 }, 
-                  '&:last-child': { pb: { xs: 2, sm: 2.5, md: 3 } },
-                  textAlign: 'center',
-                  position: 'relative',
-                }}>
-                  <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 4,
-                    bgcolor: 'error.main',
-                  }} />
-                  <Typography 
-                    variant="h3" 
-                    color="error.main"
-                    sx={{ 
-                      fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.5rem' },
-                      fontWeight: 700,
-                      mb: 1,
-                    }}
-                  >
-                    {workOrderStats.urgent}
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    color="text.secondary"
-                    sx={{ 
-                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
-                      fontWeight: 500,
-                    }}
-                  >
-                    Urgent
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
+            />
           </Grid>
-        </Box>
+          <Grid xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Open"
+              value={workOrderStats.open}
+              subtitle="Awaiting action"
+              icon={<OpenIcon />}
+              color="warning"
+              onClick={() => setCurrentTab(1)}
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Active"
+              value={workOrderStats.inProgress}
+              subtitle="In progress"
+              icon={<InProgressIcon />}
+              color="info"
+              onClick={() => setCurrentTab(2)}
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Completed"
+              value={workOrderStats.completed}
+              subtitle="Finished tasks"
+              icon={<CompletedIcon />}
+              color="success"
+              onClick={() => setCurrentTab(3)}
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={2.4}>
+            <StatCard
+              title="Urgent"
+              value={workOrderStats.urgent}
+              subtitle="High priority"
+              icon={<UrgentIcon />}
+              color="error"
+              onClick={() => setUrgentModalOpen(true)}
+            />
+          </Grid>
+        </Grid>
 
         {/* Mobile-First Filters and Navigation */}
         <Paper sx={{ mb: 3, borderRadius: 3, overflow: 'hidden' }}>
