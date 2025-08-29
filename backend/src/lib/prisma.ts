@@ -29,16 +29,21 @@ if (hasTursoConfig) {
   console.log('[Prisma] LIBSQL_URL value:', process.env.LIBSQL_URL);
   console.log('[Prisma] LIBSQL_AUTH_TOKEN length:', process.env.LIBSQL_AUTH_TOKEN?.length);
   
-  // Create Turso client
-  const tursoClient = createClient({
+  // Create Turso client with explicit config
+  const clientConfig = {
     url: process.env.LIBSQL_URL!,
     authToken: process.env.LIBSQL_AUTH_TOKEN!,
-  });
+  };
   
+  const tursoClient = createClient(clientConfig);
   console.log('[Prisma] Turso client created successfully');
   
-  // Create Prisma adapter
-  const adapter = new PrismaLibSQL(tursoClient as any);
+  // Create Prisma adapter with explicit config
+  // The adapter might need the config, not just the client
+  const adapter = new PrismaLibSQL({
+    url: process.env.LIBSQL_URL!,
+    authToken: process.env.LIBSQL_AUTH_TOKEN!,
+  } as any);
   console.log('[Prisma] libSQL adapter created successfully');
   
   // Create Prisma client with Turso adapter
