@@ -103,6 +103,18 @@ export default function Maintenance() {
     currentBatch: 0,
     totalBatches: 0
   });
+  
+  // Bulk delete state
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState<{
+    isProcessing: boolean;
+    processed: number;
+    total: number;
+  }>({
+    isProcessing: false,
+    processed: 0,
+    total: 0
+  });
 
   // Fetch PM Schedules
   const { data: pmSchedules, isLoading: pmSchedulesLoading, error: pmSchedulesError } = useQuery({
@@ -394,6 +406,56 @@ export default function Maintenance() {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: number[]) => {
+      setBulkDeleteProgress(prev => ({
+        ...prev,
+        isProcessing: true,
+        total: ids.length,
+        processed: 0
+      }));
+
+      console.log(`Starting bulk delete of ${ids.length} PM schedules`);
+      
+      const result = await pmService.bulkDeleteSchedules(ids);
+      
+      setBulkDeleteProgress(prev => ({
+        ...prev,
+        processed: result.deletedSchedules
+      }));
+      
+      return result;
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
+      
+      // Reset progress
+      setBulkDeleteProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0
+      });
+      
+      alert(`Successfully deleted ${result.deletedSchedules} PM schedules and ${result.deletedWorkOrders} related work orders.`);
+      
+      setBulkDeleteOpen(false);
+      setSelectedPMIds(new Set());
+    },
+    onError: (error) => {
+      console.error("Error during bulk delete operation:", error);
+      
+      // Reset progress
+      setBulkDeleteProgress({
+        isProcessing: false,
+        processed: 0,
+        total: 0
+      });
+      
+      alert(`Bulk delete operation failed: ${error.message || 'Unknown error'}. Please try again or contact support.`);
+    },
+  });
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -556,6 +618,38 @@ export default function Maintenance() {
       ids: Array.from(selectedPMIds),
       data: updateData
     });
+  };
+
+  const handleBulkDeleteOpen = () => {
+    if (selectedPMIds.size === 0) {
+      alert('Please select at least one PM schedule to delete.');
+      return;
+    }
+    
+    // Warn for large batch operations
+    if (selectedPMIds.size > 10) {
+      const proceed = confirm(
+        `You are about to delete ${selectedPMIds.size} PM schedules and their related work orders. This action cannot be undone. Do you want to proceed?`
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+    
+    setBulkDeleteOpen(true);
+  };
+
+  const handleBulkDeleteClose = () => {
+    // Prevent closing while processing
+    if (bulkDeleteProgress.isProcessing) {
+      return;
+    }
+    setBulkDeleteOpen(false);
+  };
+
+  const handleBulkDeleteSubmit = () => {
+    const ids = Array.from(selectedPMIds).map(id => parseInt(id));
+    bulkDeleteMutation.mutate(ids);
   };
 
   // Filter PM schedules based on tab
@@ -939,6 +1033,15 @@ export default function Maintenance() {
                             onClick={handleBulkEditOpen}
                           >
                             Bulk Edit ({selectedPMIds.size})
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={handleBulkDeleteOpen}
+                          >
+                            Bulk Delete ({selectedPMIds.size})
                           </Button>
                           <Button
                             size="small"
@@ -1368,6 +1471,82 @@ export default function Maintenance() {
               : bulkEditMutation.isPending 
                 ? 'Starting...' 
                 : 'Update Selected'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog
+        open={bulkDeleteOpen}
+        onClose={handleBulkDeleteClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            border: '2px solid',
+            borderColor: 'error.main'
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: 'error.main' }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteIcon />
+            Confirm Bulk Delete
+          </Typography>
+        </DialogTitle>
+        
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <strong>This action cannot be undone!</strong>
+          </Alert>
+          
+          <Typography variant="body1" gutterBottom>
+            You are about to permanently delete <strong>{selectedPMIds.size}</strong> PM schedules and all their related work orders.
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This will remove:
+          </Typography>
+          <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+            <Typography component="li" variant="body2">All selected PM schedules</Typography>
+            <Typography component="li" variant="body2">All related work orders</Typography>
+            <Typography component="li" variant="body2">All associated tasks and triggers</Typography>
+          </Box>
+
+          {bulkDeleteProgress.isProcessing && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="body2" gutterBottom>
+                Deleting PM schedules... ({bulkDeleteProgress.processed}/{bulkDeleteProgress.total})
+              </Typography>
+              <LinearProgress 
+                variant="determinate" 
+                value={(bulkDeleteProgress.processed / bulkDeleteProgress.total) * 100} 
+                sx={{ mt: 1 }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        
+        <DialogActions>
+          <Button 
+            onClick={handleBulkDeleteClose}
+            disabled={bulkDeleteProgress.isProcessing}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleBulkDeleteSubmit}
+            variant="contained"
+            color="error"
+            startIcon={<DeleteIcon />}
+            disabled={bulkDeleteMutation.isPending || bulkDeleteProgress.isProcessing}
+          >
+            {bulkDeleteProgress.isProcessing 
+              ? `Deleting... (${bulkDeleteProgress.processed}/${bulkDeleteProgress.total})`
+              : bulkDeleteMutation.isPending 
+                ? 'Starting...' 
+                : `Delete ${selectedPMIds.size} PM Schedules`}
           </Button>
         </DialogActions>
       </Dialog>

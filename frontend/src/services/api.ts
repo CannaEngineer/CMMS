@@ -1222,6 +1222,15 @@ export const pmService = {
     }
   },
 
+  async bulkDeleteSchedules(ids: number[]): Promise<{ deletedSchedules: number; deletedWorkOrders: number; processedIds: number[] }> {
+    try {
+      const response = await apiClient.post('/api/pm-schedules/bulk-delete', { ids });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to bulk delete PM schedules: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
   async getScheduleById(id: string): Promise<any> {
     try {
       return await apiClient.get<any>(`/api/pm-schedules/${id}`);

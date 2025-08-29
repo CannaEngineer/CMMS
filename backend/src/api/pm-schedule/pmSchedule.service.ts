@@ -477,4 +477,75 @@ export class PMScheduleService {
       where: { id },
     });
   }
+
+  async bulkDeletePMSchedules(ids: number[], organizationId: number) {
+    try {
+      console.log(`[PMService] Starting bulk delete of ${ids.length} PM schedules for organization ${organizationId}`);
+      
+      // First, verify all schedules belong to the organization for security
+      const schedules = await prisma.pMSchedule.findMany({
+        where: { 
+          id: { in: ids },
+          asset: {
+            organizationId: organizationId
+          }
+        },
+        select: { id: true }
+      });
+
+      const verifiedIds = schedules.map(s => s.id);
+      const unauthorizedIds = ids.filter(id => !verifiedIds.includes(id));
+      
+      if (unauthorizedIds.length > 0) {
+        console.warn(`[PMService] Unauthorized deletion attempt for schedules: ${unauthorizedIds}`);
+        throw new Error(`Cannot delete schedules: ${unauthorizedIds.join(', ')} - not found or unauthorized`);
+      }
+
+      console.log(`[PMService] Verified ${verifiedIds.length} schedules for deletion`);
+
+      // Delete in transaction to ensure atomicity
+      const result = await prisma.$transaction(async (tx) => {
+        // Delete related work orders first (cascade should handle this, but being explicit)
+        const deletedWorkOrders = await tx.workOrder.deleteMany({
+          where: {
+            pmScheduleId: { in: verifiedIds }
+          }
+        });
+
+        // Delete PM schedule tasks relationships
+        await tx.pMScheduleTask.deleteMany({
+          where: {
+            pmScheduleId: { in: verifiedIds }
+          }
+        });
+
+        // Delete PM schedule triggers
+        await tx.pMTrigger.deleteMany({
+          where: {
+            pmScheduleId: { in: verifiedIds }
+          }
+        });
+
+        // Delete the PM schedules
+        const deletedSchedules = await tx.pMSchedule.deleteMany({
+          where: {
+            id: { in: verifiedIds }
+          }
+        });
+
+        return {
+          deletedSchedules: deletedSchedules.count,
+          deletedWorkOrders: deletedWorkOrders.count,
+          processedIds: verifiedIds
+        };
+      });
+
+      console.log(`[PMService] Bulk delete completed: ${result.deletedSchedules} schedules, ${result.deletedWorkOrders} work orders`);
+      return result;
+
+    } catch (error) {
+      console.error('[PMService] Error during bulk delete:', error);
+      throw new Error(`Failed to delete PM schedules: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

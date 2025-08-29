@@ -86,4 +86,37 @@ export class PMScheduleController {
       res.status(500).json({ error: 'Failed to delete PM schedule' });
     }
   }
+
+  async bulkDeletePMSchedules(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { ids } = req.body;
+      const organizationId = req.user?.organizationId;
+
+      if (!organizationId) {
+        return res.status(401).json({ error: 'User not authenticated or organization not found' });
+      }
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Invalid or empty IDs array' });
+      }
+
+      console.log(`[PMController] Starting bulk delete of ${ids.length} PM schedules for org ${organizationId}`);
+      
+      const result = await pmScheduleService.bulkDeletePMSchedules(ids, organizationId);
+      
+      console.log(`[PMController] Bulk delete completed: ${result.deletedSchedules} schedules deleted`);
+      res.json({
+        message: `Successfully deleted ${result.deletedSchedules} PM schedules`,
+        deletedSchedules: result.deletedSchedules,
+        deletedWorkOrders: result.deletedWorkOrders,
+        processedIds: result.processedIds
+      });
+    } catch (error) {
+      console.error('Error bulk deleting PM schedules:', error);
+      res.status(500).json({ 
+        error: 'Failed to bulk delete PM schedules',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 }
