@@ -421,12 +421,14 @@ export default function Maintenance() {
       
       setBulkDeleteProgress(prev => ({
         ...prev,
-        processed: result.deletedSchedules
+        processed: result?.deletedSchedules || ids.length
       }));
       
       return result;
     },
     onSuccess: (result) => {
+      console.log('Bulk delete success result:', result);
+      
       queryClient.invalidateQueries({ queryKey: ['pmSchedules'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'maintenance-stats'] });
       
@@ -437,7 +439,11 @@ export default function Maintenance() {
         total: 0
       });
       
-      alert(`Successfully deleted ${result.deletedSchedules} PM schedules and ${result.deletedWorkOrders} related work orders.`);
+      // Handle potential undefined result with fallback
+      const deletedCount = result?.deletedSchedules || 0;
+      const deletedWorkOrders = result?.deletedWorkOrders || 0;
+      
+      alert(`Successfully deleted ${deletedCount} PM schedules and ${deletedWorkOrders} related work orders.`);
       
       setBulkDeleteOpen(false);
       setSelectedPMIds(new Set());
