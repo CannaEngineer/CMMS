@@ -129,6 +129,18 @@ app.get('/', (req, res) => {
   res.send('Hello from the Compass CMMS Backend!');
 });
 
+// Debug endpoint to check environment variables (remove after fixing)
+app.get('/api/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    VERCEL: !!process.env.VERCEL,
+    LIBSQL_URL: process.env.LIBSQL_URL ? `SET (${process.env.LIBSQL_URL.substring(0, 30)}...)` : 'MISSING',
+    LIBSQL_AUTH_TOKEN: process.env.LIBSQL_AUTH_TOKEN ? `SET (${process.env.LIBSQL_AUTH_TOKEN.length} chars)` : 'MISSING',
+    JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'MISSING',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Remove development auth bypass - use real authentication
 
 // Public routes (no authentication required)
