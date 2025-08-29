@@ -21,7 +21,8 @@ export const getDbInfo = async (req: Request, res: Response) => {
       nodeVersion: process.version,
       // Don't expose actual URL for security
       dbConfigured: !!process.env.DATABASE_URL,
-      isVercel: !!process.env.VERCEL
+      isVercel: !!process.env.VERCEL,
+      timestamp: new Date().toISOString()
     });
   } catch (error: any) {
     res.status(500).json({
