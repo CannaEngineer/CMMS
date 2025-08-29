@@ -1056,14 +1056,22 @@ export class ImportService {
       
       console.log(`Processing ${batches.length} batches of up to ${BATCH_SIZE} records each`);
 
-      // Process PM tasks and schedules first (smaller transaction)
-      if (pmConversion.pmTasks.length > 0 || pmConversion.pmSchedules.length > 0) {
-        await prisma.$transaction(async (tx) => {
-          // First import PM tasks if detected
-          if (pmConversion.pmTasks.length > 0) {
-            console.log(`Importing ${pmConversion.pmTasks.length} PM tasks...`);
-            for (let i = 0; i < pmConversion.pmTasks.length; i++) {
-              const pmTask = pmConversion.pmTasks[i];
+      // Process PM tasks first (separate transaction)
+      if (pmConversion.pmTasks.length > 0) {
+        console.log(`🔧 Importing ${pmConversion.pmTasks.length} PM tasks in batches...`);
+        const PM_TASK_BATCH_SIZE = 25;
+        const pmTaskBatches = [];
+        for (let i = 0; i < pmConversion.pmTasks.length; i += PM_TASK_BATCH_SIZE) {
+          pmTaskBatches.push(pmConversion.pmTasks.slice(i, i + PM_TASK_BATCH_SIZE));
+        }
+        
+        for (let batchIndex = 0; batchIndex < pmTaskBatches.length; batchIndex++) {
+          const pmTaskBatch = pmTaskBatches[batchIndex];
+          console.log(`  📦 Processing PM task batch ${batchIndex + 1}/${pmTaskBatches.length} (${pmTaskBatch.length} tasks)...`);
+          
+          await prisma.$transaction(async (tx) => {
+            for (let i = 0; i < pmTaskBatch.length; i++) {
+              const pmTask = pmTaskBatch[i];
               pmTask.organizationId = organizationId;
               
               try {
@@ -1164,7 +1172,67 @@ export class ImportService {
               }
             }
           }
-        }, { timeout: 60000 }); // 60 second timeout for PM tasks
+          }, { timeout: 30000 }); // 30 second timeout per PM task batch
+        }
+      }
+      
+      // Process PM schedules separately with smaller batches  
+      if (pmConversion.pmSchedules.length > 0) {
+        console.log(`📅 Processing ${pmConversion.pmSchedules.length} PM schedules in small batches...`);
+        
+        // Process PM schedules in very small batches to avoid timeout
+        const PM_SCHEDULE_BATCH_SIZE = 5;
+        for (let i = 0; i < pmConversion.pmSchedules.length; i += PM_SCHEDULE_BATCH_SIZE) {
+          const pmScheduleBatch = pmConversion.pmSchedules.slice(i, i + PM_SCHEDULE_BATCH_SIZE);
+          console.log(`  📦 Processing PM schedule batch ${Math.floor(i/PM_SCHEDULE_BATCH_SIZE) + 1} (${pmScheduleBatch.length} schedules)...`);
+          
+          // Process each PM schedule individually to avoid transaction timeout
+          for (let j = 0; j < pmScheduleBatch.length; j++) {
+            const pmSchedule = pmScheduleBatch[j];
+            const scheduleIndex = i + j + 1;
+            
+            try {
+              await prisma.$transaction(async (tx) => {
+                // Resolve asset relationship
+                const resolvedPMSchedule = await this.resolveRelationships([pmSchedule], 'pmschedules', organizationId);
+                if (resolvedPMSchedule.length > 0) {
+                  // Store originalStatus before removing it
+                  const originalStatus = resolvedPMSchedule[0].originalStatus || pmSchedule.originalStatus;
+                  
+                  // Remove fields that don't exist in PMSchedule model
+                  const { organizationId: _, locationId: __, dueDate: ___, originalStatus: ____, ...scheduleData } = resolvedPMSchedule[0];
+                  
+                  // Check if required assetId was resolved
+                  if (!scheduleData.assetId) {
+                    console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Asset not found for "${pmSchedule.assetName}"`);
+                    errors.push(`PM Schedule ${scheduleIndex}: Asset "${pmSchedule.assetName}" not found - schedule skipped`);
+                    skippedCount++;
+                    return;
+                  }
+                  
+                  const createdPMSchedule = await (tx as any).pMSchedule.create({
+                    data: scheduleData
+                  });
+                  console.log(`    ✅ Created PM schedule ${scheduleIndex}/${pmConversion.pmSchedules.length}: ${createdPMSchedule.id}`);
+                  importedRecordIds.push(createdPMSchedule.id);
+                  importedCount++;
+                } else {
+                  console.log(`    ⚠️  Skipping PM schedule ${scheduleIndex}: Could not resolve relationships`);
+                  errors.push(`PM Schedule ${scheduleIndex}: Could not resolve asset or location relationships`);
+                  skippedCount++;
+                }
+              }, { timeout: 15000 }); // 15 second timeout per schedule
+            } catch (error: any) {
+              console.error(`    ❌ Error importing PM schedule ${scheduleIndex}:`, error.message);
+              if (error.code === 'P2002') {
+                duplicates.push(`PM Schedule ${scheduleIndex}: Duplicate record`);
+              } else {
+                errors.push(`PM Schedule ${scheduleIndex}: ${error.message}`);
+              }
+              skippedCount++;
+            }
+          }
+        }
       }
 
       // Process regular data in batches with individual transactions for better error isolation

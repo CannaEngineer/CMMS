@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { parse } from 'csv-parse/sync';
 import { ImportService, ImportRequest } from './import.service';
 import { AuthenticatedRequest } from '../../middleware/auth.middleware';
+import { ImportProgressTracker } from './import-progress';
 
 export class ImportController {
   // Parse and analyze CSV file
@@ -133,8 +134,18 @@ export class ImportController {
       res.json(result);
 
     } catch (error: any) {
-      console.error('Import execution error:', error);
-      console.error('Error stack:', error.stack);
+      console.error('💥 CRITICAL IMPORT ERROR:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+        timestamp: new Date().toISOString(),
+        userId: req.user?.id,
+        organizationId: req.user?.organizationId,
+        entityType: req.body?.entityType,
+        dataSize: req.body?.csvData?.length
+      });
+      
       res.status(500).json({ 
         error: error.message || 'Failed to execute import',
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined
