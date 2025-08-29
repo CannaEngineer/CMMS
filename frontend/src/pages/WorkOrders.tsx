@@ -83,9 +83,9 @@ import {
   DateRange as DateIcon,
   Assignment as WorkOrderIcon,
   FolderOpen as OpenIcon,
-  Hourglass as InProgressIcon,
+  PlayArrow as InProgressIcon,
   CheckCircleOutline as CompletedIcon,
-  Priority as UrgentIcon,
+  PriorityHigh as UrgentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import DataTable from '../components/Common/DataTable';
